@@ -1,0 +1,9 @@
+*.o
+*.d
+.*.swp
+/*.files
+/*.includes
+/*.config
+/*.creator
+/*.creator.user
+/build
