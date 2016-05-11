@@ -6,15 +6,17 @@
 class terminal
 {
 private:
-    string terminalIdentifier;
-    terminalType terminalType;
+    std::string terminalIdentifier;
+    tType terminalType;
     int terminalPosition[2];
     int terminalWidth;
     modules * const parentModule;
     bool systemTerminal;
-    net * const attachedNet;
+    net * attachedNet;
 public:
-    terminal();
+    terminal(std::string name, modules *parentPointer):terminalIdentifier(name),parentModule(parentPointer) {
+
+    }
 };
 
 #endif // TERMINAL_H

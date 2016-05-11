@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-enum terminalType {
+enum tType {
     in, out, inout
 };
 
