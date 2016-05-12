@@ -1,12 +1,16 @@
 CC=gcc
 CXX=g++
 RM=rm -rf
-CXXFLAGS= -g -std=c++11 -Wextra -Wall -Iinclude -fPIC
+SHARED_CXXFLAGS= -g -std=c++11 -Wextra -Wall -Iinclude -fPIC
 SHARED_LDFLAGS= -shared
+
+TEST_CXXFLAGS= -g -std=c++11 -Wextra -Wall -Iinclude
+TEST_LDFLAGS=
+
 #LDLIBS=$(shell root-config --libs)
 SRCS=$(wildcard src/*.cpp) 
 TEST_SRC=$(wildcard tests/*.cpp)
-TEST_EXEC=$(TESTS:.cpp=)
+TEST_EXEC=$(basename $(TEST_SRC))
 OBJS = $(SRCS:.cpp=.o)
 
 all: schema.so obj-clean
@@ -15,13 +19,12 @@ schema.so: $(OBJS)
 	$(CXX) -o $@ $^ $(SHARED_LDFLAGS)
 
 test: $(TEST_EXEC)
-	@echo $(SRCS)
 
-tests/%.o: tests/%.cpp
-	$(CXX) -o $@ $< $(TEST_LDFLAGS)
+tests/%: tests/%.cpp
+	$(CXX) $(TEST_CXXFLAGS) -o $@ $< $(TEST_LDFLAGS)
 
 %.o: %.cpp
-	g++ $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(SHARED_CXXFLAGS) -c -o $@ $<
 
 obj-clean:
 	$(RM) $(OBJS)
