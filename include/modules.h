@@ -9,7 +9,7 @@ class modules
 {
 private:
     std::string moduleType;
-    std::string moduleIdentifier;
+    const std::string moduleIdentifier;
     int modulePosition[2];
     //TODO: Currently using vectors for terminals
     //need to be sure if this is appropriate,
@@ -18,6 +18,21 @@ private:
 
 public:
     modules();
+    std::string getIdentifier() const {
+        return moduleIdentifier;
+    }
 };
+
+namespace std
+{
+    template <>
+    struct hash<modules>
+    {
+        size_t operator()(const modules& k) const
+        {
+            return (hash<string>()(k.getIdentifier()));
+        }
+    };
+}
 
 #endif // MODULES_H
