@@ -8,8 +8,10 @@
 class placement
 {
 private:
-    std::unordered_set<modules> subModules;
-    std::unordered_set<nets> internalNets;
+//    std::unordered_set<modules> subModules;
+//    std::unordered_set<nets> internalNets;
+    std::vector<modules> subModules;
+    std::vector<nets> internalNets;
     std::vector<terminal> systemTerminals;
 public:
     placement();

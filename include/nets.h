@@ -7,8 +7,9 @@
 class nets
 {
 private:
-    std::vector<terminal> source;
-    std::vector<terminal> sink;
+//    std::vector<terminal> source;
+//    std::vector<terminal> sink;
+    std::vector<terminal> connections;
     int netWidth;
 public:
     nets();

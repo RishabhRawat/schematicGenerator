@@ -10,7 +10,11 @@ class modules
 private:
     std::string moduleType;
     const std::string moduleIdentifier;
-    int modulePosition[2];
+    intPair modulePosition;
+
+    /* First along x-axis then along y-axis*/
+    intPair moduleSize = {50,100}; //Default size
+
     //TODO: Currently using vectors for terminals
     //need to be sure if this is appropriate,
     //it seems better than unordered set as the terminals are limited
@@ -21,6 +25,7 @@ public:
     std::string getIdentifier() const {
         return moduleIdentifier;
     }
+    intPair getModuleSize() { return moduleSize;}
 };
 
 namespace std
