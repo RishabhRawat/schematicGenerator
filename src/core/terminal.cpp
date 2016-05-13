@@ -9,7 +9,7 @@ void terminal::setRelativePosition(int x, int y){
 void terminal::updateTerminalSide(){
     if(isSystemTerminal()){
         if(terminalPosition.x == 0 && 0 <=  terminalPosition.y &&  terminalPosition.y <= parentModule->getModuleSize().y)
-            side= left;
+            side = left;
         else if(terminalPosition.y == 0 && 0 <  terminalPosition.x &&  terminalPosition.x < parentModule->getModuleSize().x)
             side = bottom;
         else if(terminalPosition.y == parentModule->getModuleSize().y && 0 < terminalPosition.x && terminalPosition.x < parentModule->getModuleSize().x)

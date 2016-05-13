@@ -11,7 +11,7 @@ private:
     terminalSide side;
     intPair terminalPosition;
     int terminalWidth;
-    modules * const parentModule;
+    modules * parentModule;
     bool systemTerminal;
     net * attachedNet;
 
@@ -26,9 +26,8 @@ public:
      * has no meaning for systemTerminals
      */
     void setRelativePosition(int x, int y);
-    bool isSystemTerminal(){
-        return systemTerminal;
-    }
+    bool isSystemTerminal() const { return systemTerminal; }
+    modules* getParent() const { return parentModule; }
 
 };
 

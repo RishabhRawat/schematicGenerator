@@ -7,6 +7,8 @@
 
 class modules
 {
+    friend class placement;
+
 private:
     std::string moduleType;
     const std::string moduleIdentifier;
@@ -20,12 +22,18 @@ private:
     //it seems better than unordered set as the terminals are limited
     std::vector<terminal> moduleTerminals;
 
+    std::vector<modules*> connectedModules;
+
+
 public:
     modules();
     std::string getIdentifier() const {
         return moduleIdentifier;
     }
     intPair getModuleSize() { return moduleSize;}
+    std::vector<terminal> getTerminals(){ return moduleTerminals; }
+
+
 };
 
 namespace std
@@ -35,7 +43,7 @@ namespace std
     {
         size_t operator()(const modules& k) const
         {
-            return (hash<string>()(k.getIdentifier()));
+            return ((size_t) &k) / sizeof(k);
         }
     };
 }
