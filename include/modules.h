@@ -4,6 +4,7 @@
 #include <vector>
 #include <common.h>
 #include <terminal.h> //for terminal vector
+#include <hashlib.h>
 
 class modules
 {
@@ -46,6 +47,10 @@ namespace std
             return ((size_t) &k) / sizeof(k);
         }
     };
+}
+
+namespace hashlib {
+	template<> struct hash_ops<modules*> : hash_ptr_ops {};
 }
 
 #endif // MODULES_H

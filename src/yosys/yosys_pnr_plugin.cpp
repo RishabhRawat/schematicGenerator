@@ -9,7 +9,7 @@ struct MyPass : public Pass {
             log("%s\n", arg.c_str());
         log("Modules in current design:\n");
         for (auto mod : design->modules())
-                        log("%s (%d wires, %d cells)\n", log_id(mod), GetSize(mod->wires), GetSize(mod->cells));
+                        log("%s (%d wires, %d cells)\n", log_id(mod), GetSize(mod->wires()), GetSize(mod->cells()));
 //            log("%s \n", log_id(mod));
     }
 } MyPass;
