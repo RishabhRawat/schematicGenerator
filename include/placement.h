@@ -1,21 +1,20 @@
 #ifndef PLACEMENT_H
 #define PLACEMENT_H
-#include <common.h>
-#include <modules.h>
-#include <nets.h>
+#include <module.h>
+#include <net.h>
 //#include <unordered_set>
 
 class placement
 {
-    typedef std::vector<modules*> box;
+    typedef std::vector<module*> box;
     typedef std::vector<box*> partition;
 
 
 private:
 //    std::unordered_set<modules> subModules;
 //    std::unordered_set<nets> internalNets;
-    std::vector<modules*> subModules;
-    std::vector<nets*> internalNets;
+    std::vector<module*> subModules;
+    std::vector<net*> internalNets;
     std::vector<terminal*> systemTerminals;
 
     // Do not ask me why... just gut feel...
@@ -29,7 +28,7 @@ private:
     void boxPlacement();
     void partitionPlacement();
     void terminalPlacement();
-    modules* selectSeed(hashlib::pool<modules*> moduleSet);
+    module* selectSeed(hashlib::pool<module*> moduleSet);
 public:
     placement();
     void doPlacement();

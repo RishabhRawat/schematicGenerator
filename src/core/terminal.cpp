@@ -1,5 +1,5 @@
 #include "terminal.h"
-#include "modules.h"
+#include "module.h"
 
 void terminal::setRelativePosition(int x, int y){
     terminalPosition.x=x;

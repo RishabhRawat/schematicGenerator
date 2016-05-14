@@ -1,24 +1,26 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
-#include <string>
 #include <common.h>
 
 class terminal
 {
+    friend class placement;
 private:
     std::string terminalIdentifier;
     terminalType type;
     terminalSide side;
     intPair terminalPosition;
     int terminalWidth;
-    modules * parentModule;
+    module * parentModule;
     bool systemTerminal;
     net * attachedNet;
 
     void updateTerminalSide();
+    module * getParent() const { return parentModule; }
+    net * getNet() const { return attachedNet; }
 
 public:
-    terminal(std::string name, modules *parentPointer):terminalIdentifier(name),parentModule(parentPointer) {
+    terminal(std::string name, module *parentPointer):terminalIdentifier(name),parentModule(parentPointer) {
     }
 
     /* sets position relative to the module which owns the terminal,
@@ -27,7 +29,7 @@ public:
      */
     void setRelativePosition(int x, int y);
     bool isSystemTerminal() const { return systemTerminal; }
-    modules* getParent() const { return parentModule; }
+
 
 };
 

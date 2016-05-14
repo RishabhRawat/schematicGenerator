@@ -17,8 +17,9 @@ void placement::doPlacement() {
 
 void placement::initializeStructures() {
     //Setting up net connectivity
-    for(auto const& n: internalNets) {
+    for(auto & n: internalNets) {
         for(auto const& t: n->getConnectedTerminals()) {
+            //PUT A SETTER
             n->connectedModules.insert(t->getParent());
         }
     }
@@ -26,9 +27,11 @@ void placement::initializeStructures() {
     //Setting up module connectivity
     for(auto const& m: subModules) {
         for(auto const& t: m->getTerminals()) {
-//            for(auto const& otherModules: t->) {
-
-//            }
+              for(auto & otherModules: (t.getNet())->getConnectedModules()) {
+                if(otherModules != m)
+                    //PUT A SETTER
+                    m->connectedModules.insert(otherModules);
+            }
         }
     }
 }
@@ -38,13 +41,13 @@ void placement::partitionFormation() {
 
 }
 
-modules* selectSeed(hashlib::pool<modules*> moduleSet) {
-    int maxConnections = 0;
-    for(auto const& m: moduleSet) {
-        int connections = 0;
-        for(auto const& t: m->getTerminals()) {
+//module* selectSeed(hashlib::pool<module*> moduleSet) {
+//    int maxConnections = 0;
+//    for(auto const& m: moduleSet) {
+//        int connections = 0;
+//        for(auto const& t: m->getTerminals()) {
 //            for(auto const& value: t.) {
 
-        }
-    }
-}
+//        }
+//    }
+//}

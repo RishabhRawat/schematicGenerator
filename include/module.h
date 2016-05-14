@@ -1,12 +1,14 @@
 #ifndef MODULES_H
 #define MODULES_H
-#include <string>
-#include <vector>
 #include <common.h>
 #include <terminal.h> //for terminal vector
-#include <hashlib.h>
 
-class modules
+namespace hashlib {
+    template<> struct hash_ops<module*> : hash_ptr_ops {};
+}
+
+
+class module
 {
     friend class placement;
 
@@ -23,16 +25,14 @@ private:
     //it seems better than unordered set as the terminals are limited
     std::vector<terminal> moduleTerminals;
 
-    std::vector<modules*> connectedModules;
+    hashlib::pool<module*> connectedModules;
 
 
 public:
-    modules();
-    std::string getIdentifier() const {
-        return moduleIdentifier;
-    }
-    intPair getModuleSize() { return moduleSize;}
-    std::vector<terminal> getTerminals(){ return moduleTerminals; }
+    module();
+    std::string getIdentifier() const { return moduleIdentifier;}
+    intPair getModuleSize() const{ return moduleSize; }
+    std::vector<terminal> getTerminals() const{ return moduleTerminals; }
 
 
 };
@@ -40,17 +40,12 @@ public:
 namespace std
 {
     template <>
-    struct hash<modules>
+    struct hash<module>
     {
-        size_t operator()(const modules& k) const
+        size_t operator()(const module& k) const
         {
             return ((size_t) &k) / sizeof(k);
         }
     };
 }
-
-namespace hashlib {
-	template<> struct hash_ops<modules*> : hash_ptr_ops {};
-}
-
 #endif // MODULES_H
