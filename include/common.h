@@ -22,16 +22,20 @@ struct intPair {
 class module;
 class terminal;
 class net;
+class box;
+class partition;
 
 namespace hashlib {
 template<> struct hash_ops<net*> : hash_ptr_ops {};
 template<> struct hash_ops<module*> : hash_ptr_ops {};
-
+template<> struct hash_ops<box*> : hash_ptr_ops {};
+template<> struct hash_ops<partition*> : hash_ptr_ops {};
 }
 
 
 typedef std::vector<terminal*> terminalCollection;
 typedef std::vector<net*> netCollection;
+
 typedef hashlib::dict<module*,std::vector<net*>> moduleNetMap;
 typedef hashlib::dict<module*,std::vector<terminal*>> moduleTerminalMap;
 

@@ -19,6 +19,7 @@ private:
 
 public:
     net();
+    int getNetWidth() const { return netWidth;}
 };
 
 namespace std

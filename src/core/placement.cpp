@@ -1,4 +1,7 @@
 #include "placement.h"
+#include "partition.h"
+#include "box.h"
+#include <iostream>
 
 placement::placement()
 {
@@ -57,13 +60,58 @@ void placement::partitionFormation() {
 
 }
 
-//module* selectSeed(hashlib::pool<module*> moduleSet) {
-//    int maxConnections = 0;
-//    for(auto const& m: moduleSet) {
-//        int connections = 0;
-//        for(auto const& t: m->getTerminals()) {
-//            for(auto const& value: t.) {
+module* placement::selectSeed(hashlib::pool<module*> moduleSet) {
+    int maxConnections = 0;
+    module * seed;
+    for(module* m: moduleSet) {
+        int connections = 0;
+        for(moduleNetPair pair: m->connectedModuleNetMap) {
+            for(net* n:pair.second) {
+                connections+=n->getNetWidth();
+            }
+        }
+        if(connections>maxConnections) {
+            maxConnections = connections;
+            seed = m;
+        }
+        else if(connections == maxConnections) {
+            //TODO: Implement Tie Breaker
+            std::cerr<<"Uninmplemented Tie Breaker"<<std::endl;
+        }
+    }
+    if(!seed)
+        throw "Bad moduleSet in placement::selectSeed";
+    return seed;
+}
 
-//        }
-//    }
-//}
+void placement::createPartition(hashlib::pool<module*> moduleSet, module * seed) {
+    partition * newPartition = new partition();
+    box * rootBox = new box();
+    newPartition->add(rootBox);
+    int connections = 0;
+    int partitionEntries = 0;
+    while(!moduleSet.empty() && (partitionEntries < maxPartitionSize) && (connections < maxPartitionConnections)){
+        module * selectedModule;
+        //TODO: algo to select module
+
+
+
+        moduleSet.erase(selectedModule);
+        rootBox->add(selectedModule);
+        for(moduleNetPair pair:selectedModule->connectedModuleNetMap){
+            if(pair.first->parentBox != rootBox){
+                for(net* n:pair.second){
+                    connections+=n->getNetWidth();
+                }
+            }
+            else{
+                for(net* n:pair.second){
+                    connections-=n->getNetWidth();
+                }
+            }
+        }
+    }
+    allPartitions.insert(newPartition);
+}
+
+//int placement::connectionsToExistingPartitions(module *m) {}

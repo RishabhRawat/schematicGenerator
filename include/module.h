@@ -19,12 +19,16 @@ private:
 
     moduleNetMap connectedModuleNetMap;
 
+    box* parentBox;
+
 
 public:
     module();
     std::string getIdentifier() const { return moduleIdentifier;}
     intPair getModuleSize() const{ return moduleSize; }
     std::vector<terminal*> getTerminals() const{ return moduleTerminals; }
+
+    void setParentBox(box *b) {parentBox = b;}
 
 
 };

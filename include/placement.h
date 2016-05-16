@@ -6,8 +6,6 @@
 
 class placement
 {
-    typedef std::vector<module*> box;
-    typedef std::vector<box*> partition;
 
 
 private:
@@ -19,16 +17,29 @@ private:
 
     // Do not ask me why... just gut feel...
     // Instead give me a reason saying this is wrong
-    std::vector<partition*> allPartitions;
+    hashlib::pool<partition*> allPartitions;
+
+    //Important Layout Parameters
+    int maxPartitionSize;
+    int maxPartitionConnections;
+
 
     void initializeStructures();
+
     void partitionFormation();
+    module* selectSeed(hashlib::pool<module*> moduleSet);
+    int connectionsToExistingPartitions(module *m);
+    void createPartition(hashlib::pool<module*> moduleSet, module *seed);
+
     void boxFormation();
+
     void modulePlacement();
     void boxPlacement();
     void partitionPlacement();
     void terminalPlacement();
-    module* selectSeed(hashlib::pool<module*> moduleSet);
+
+
+
 public:
     placement();
     void doPlacement();
