@@ -24,8 +24,19 @@ class terminal;
 class net;
 
 namespace hashlib {
-    template<> struct hash_ops<net*> : hash_ptr_ops {};
+template<> struct hash_ops<net*> : hash_ptr_ops {};
+template<> struct hash_ops<module*> : hash_ptr_ops {};
+
 }
+
+
+typedef std::vector<terminal*> terminalCollection;
+typedef std::vector<net*> netCollection;
+typedef hashlib::dict<module*,std::vector<net*>> moduleNetMap;
+typedef hashlib::dict<module*,std::vector<terminal*>> moduleTerminalMap;
+
+typedef std::pair<module*,std::vector<net*>> moduleNetPair;
+typedef std::pair<module*,std::vector<terminal*>> moduleTerminalPair;
 
 
 #endif // COMMON_H

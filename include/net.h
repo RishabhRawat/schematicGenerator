@@ -11,16 +11,14 @@ class net
 private:
 //    std::vector<terminal> source;
 //    std::vector<terminal> sink;
-    std::vector<terminal*> connections;
-    hashlib::pool<module*> connectedModules;
-    int netWidth;
-    std::vector<terminal*> getConnectedTerminals() const {return connections;}
+    terminalCollection connections;
 
-    //I need to attach const& here (which I should), but somehow it doesnt compile without
-    hashlib::pool<module*> const& getConnectedModules() const {return connectedModules;}
+    moduleTerminalMap connectedModuleTerminalMap;
+    int netWidth;
+    terminalCollection getConnectedTerminals() const {return connections;}
+
 public:
     net();
-
 };
 
 namespace std

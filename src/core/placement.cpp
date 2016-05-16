@@ -17,20 +17,36 @@ void placement::doPlacement() {
 
 void placement::initializeStructures() {
     //Setting up net connectivity
-    for(auto & n: internalNets) {
-        for(auto const& t: n->getConnectedTerminals()) {
-            //PUT A SETTER
-            n->connectedModules.insert(t->getParent());
+    for(net* n: internalNets) {
+        for(terminal * t: n->getConnectedTerminals()) {
+
+            moduleTerminalMap::iterator mapIterator = n->connectedModuleTerminalMap.find(t->getParent());
+            if(mapIterator == n->connectedModuleTerminalMap.end()) {
+                terminalCollection *newCollection = new terminalCollection();
+                newCollection->push_back(t);
+                n->connectedModuleTerminalMap.insert({t->getParent(),*newCollection});
+            }
+            else {
+                mapIterator->second.push_back(t);
+            }
         }
     }
 
     //Setting up module connectivity
-    for(auto const& m: subModules) {
-        for(auto const& t: m->getTerminals()) {
-              for(auto & otherModules: (t.getNet())->getConnectedModules()) {
-                if(otherModules != m)
-                    //PUT A SETTER
-                    m->connectedModules.insert(otherModules);
+    for(module* m: subModules) {
+        for(terminal* t: m->getTerminals()) {
+            for(moduleTerminalPair pair: (t->getNet())->connectedModuleTerminalMap) {
+                if(pair.first != m){
+                    moduleNetMap::iterator mapIterator = m->connectedModuleNetMap.find(pair.first);
+                    if(mapIterator == m->connectedModuleNetMap.end()) {
+                        netCollection *newCollection = new netCollection();
+                        newCollection->push_back(t->getNet());
+                        m->connectedModuleNetMap.insert({pair.first,*newCollection});
+                    }
+                    else {
+                        mapIterator->second.push_back(t->getNet());
+                    }
+                }
             }
         }
     }
