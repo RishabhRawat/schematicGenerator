@@ -11,9 +11,9 @@ class placement
 private:
 //    std::unordered_set<modules> subModules;
 //    std::unordered_set<nets> internalNets;
-    std::vector<module*> subModules;
-    std::vector<net*> internalNets;
-    std::vector<terminal*> systemTerminals;
+    std::vector<module> subModules;
+    std::vector<net> internalNets;
+    std::vector<terminal> systemTerminals;
 
     // Do not ask me why... just gut feel...
     // Instead give me a reason saying this is wrong
@@ -42,7 +42,10 @@ private:
 
 public:
     placement();
+    ~placement();
+
     void doPlacement();
+    void addModule();
 };
 
 #endif // PLACEMENT_H

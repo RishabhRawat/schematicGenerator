@@ -16,11 +16,18 @@ inline int countNets(netCollection nC) {
 }
 
 
-
-
 placement::placement()
 {
 
+}
+
+placement::~placement() {
+    for(partition *p: allPartitions) {
+        for(box *b: p->partitionBoxes){
+            delete b;
+        }
+        delete p;
+    }
 }
 
 void placement::doPlacement() {
@@ -35,14 +42,14 @@ void placement::doPlacement() {
 
 void placement::initializeStructures() {
     //Setting up net connectivity
-    for(net* n: internalNets) {
-        for(terminal * t: n->getConnectedTerminals()) {
+    for(net n: internalNets) {
+        for(terminal * t: n.getConnectedTerminals()) {
 
-            moduleTerminalMap::iterator mapIterator = n->connectedModuleTerminalMap.find(t->getParent());
-            if(mapIterator == n->connectedModuleTerminalMap.end()) {
+            moduleTerminalMap::iterator mapIterator = n.connectedModuleTerminalMap.find(t->getParent());
+            if(mapIterator == n.connectedModuleTerminalMap.end()) {
                 terminalCollection *newCollection = new terminalCollection();
                 newCollection->push_back(t);
-                n->connectedModuleTerminalMap.insert({t->getParent(),*newCollection});
+                n.connectedModuleTerminalMap.insert({t->getParent(),*newCollection});
             }
             else {
                 mapIterator->second.push_back(t);
@@ -51,18 +58,18 @@ void placement::initializeStructures() {
     }
 
     //Setting up module connectivity
-    for(module* m: subModules) {
-        for(terminal* t: m->getTerminals()) {
-            for(moduleTerminalPair pair: (t->getNet())->connectedModuleTerminalMap) {
-                if(pair.first != m){
-                    moduleNetMap::iterator mapIterator = m->connectedModuleNetMap.find(pair.first);
-                    if(mapIterator == m->connectedModuleNetMap.end()) {
+    for(module m: subModules) {
+        for(terminal t: m.getTerminals()) {
+            for(moduleTerminalPair pair: (t.getNet())->connectedModuleTerminalMap) {
+                if(pair.first != &m){
+                    moduleNetMap::iterator mapIterator = m.connectedModuleNetMap.find(pair.first);
+                    if(mapIterator == m.connectedModuleNetMap.end()) {
                         netCollection *newCollection = new netCollection();
-                        newCollection->push_back(t->getNet());
-                        m->connectedModuleNetMap.insert({pair.first,*newCollection});
+                        newCollection->push_back(t.getNet());
+                        m.connectedModuleNetMap.insert({pair.first,*newCollection});
                     }
                     else {
-                        mapIterator->second.push_back(t->getNet());
+                        mapIterator->second.push_back(t.getNet());
                     }
                 }
             }
@@ -75,8 +82,8 @@ void placement::partitionFormation() {
     partition * newPartition;
     hashlib::pool<module*> moduleSet;
 
-    for(module* m: subModules)
-        moduleSet.insert(m);
+    for(module m: subModules)
+        moduleSet.insert(&m);
 
     while(!moduleSet.empty()){
         seed = selectSeed(moduleSet);

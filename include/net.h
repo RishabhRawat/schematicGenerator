@@ -11,11 +11,11 @@ class net
 private:
 //    std::vector<terminal> source;
 //    std::vector<terminal> sink;
-    terminalCollection connections;
+    terminalCollection connectedTerminals;
 
     moduleTerminalMap connectedModuleTerminalMap;
     int netWidth;
-    terminalCollection getConnectedTerminals() const {return connections;}
+    terminalCollection getConnectedTerminals() const {return connectedTerminals;}
 
 public:
     net();
