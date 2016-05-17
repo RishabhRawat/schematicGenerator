@@ -3,6 +3,21 @@
 #include "box.h"
 #include <iostream>
 
+inline int countNets(netCollection nC) {
+    int connections = 0;
+    //If you want give weigtaget to net width
+    //    for(net* n:nC) {
+    //        connections+=n->getNetWidth();
+    //    }
+
+    //If you just want to count nets
+    connections = nC.size();
+    return connections;
+}
+
+
+
+
 placement::placement()
 {
 
@@ -56,62 +71,94 @@ void placement::initializeStructures() {
 }
 
 void placement::partitionFormation() {
+    module * seed;
+    partition * newPartition;
+    hashlib::pool<module*> moduleSet;
 
+    for(module* m: subModules)
+        moduleSet.insert(m);
 
+    while(!moduleSet.empty()){
+        seed = selectSeed(moduleSet);
+        moduleSet.erase(seed);
+        newPartition = createPartition(moduleSet,seed);
+        allPartitions.insert(newPartition);
+    }
 }
 
 module* placement::selectSeed(hashlib::pool<module*> moduleSet) {
-    int maxConnections = 0;
+    int maxConnectionsInFreeSet = -1;
+    int minConnectionsOutFreeSet = INT32_MAX;
     module * seed;
     for(module* m: moduleSet) {
-        int connections = 0;
+        int connectionsInFreeSet = 0;
+        int connectionsOutFreeSet = 0;
+        // The choice is either to iterate over all modules connected to m
+        // or to iterate over all elements in moduleSet and find those connected to m
         for(moduleNetPair pair: m->connectedModuleNetMap) {
-            for(net* n:pair.second) {
-                connections+=n->getNetWidth();
-            }
+            if(moduleSet.find(pair.first) != moduleSet.end())
+                connectionsInFreeSet += countNets(pair.second);
+            else
+                connectionsOutFreeSet += countNets(pair.second);
         }
-        if(connections>maxConnections) {
-            maxConnections = connections;
+
+        if((connectionsInFreeSet > maxConnectionsInFreeSet) ||
+                ((connectionsInFreeSet == maxConnectionsInFreeSet) &&
+                 (connectionsOutFreeSet <= minConnectionsOutFreeSet))){
             seed = m;
-        }
-        else if(connections == maxConnections) {
-            //TODO: Implement Tie Breaker
-            std::cerr<<"Uninmplemented Tie Breaker"<<std::endl;
+            maxConnectionsInFreeSet = connectionsInFreeSet;
+            minConnectionsOutFreeSet = connectionsOutFreeSet;
         }
     }
-    if(!seed)
+    if(!seed || maxConnectionsInFreeSet < 0 ||
+            minConnectionsOutFreeSet == INT32_MAX)
         throw "Bad moduleSet in placement::selectSeed";
     return seed;
 }
 
-void placement::createPartition(hashlib::pool<module*> moduleSet, module * seed) {
-    partition * newPartition = new partition();
+partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module * seed) {
     box * rootBox = new box();
+    rootBox->add(seed);
+    partition * newPartition = new partition();
     newPartition->add(rootBox);
     int connections = 0;
     int partitionEntries = 0;
-    while(!moduleSet.empty() && (partitionEntries < maxPartitionSize) && (connections < maxPartitionConnections)){
-        module * selectedModule;
-        //TODO: algo to select module
+    while(!moduleSet.empty() && (partitionEntries < maxPartitionSize)
+          && (connections < maxPartitionConnections)) {
 
+        module * selectedModule;
+        int maxConnectionsInPartition = -1;
+        int minConnectionsOutPartion = INT32_MAX;
+
+        //Algo to select module
+        for(module* m: moduleSet) {
+            int connectionsInPartition = 0;
+            int connectionsOutPartition = 0;
+            for(moduleNetPair pair: m->connectedModuleNetMap) {
+                if(pair.first->parentBox == rootBox)
+                    connectionsInPartition += countNets(pair.second);
+                else
+                    connectionsOutPartition += countNets(pair.second);
+            }
+
+            if((connectionsInPartition > maxConnectionsInPartition) ||
+                    ((connectionsInPartition == maxConnectionsInPartition) &&
+                     (connectionsOutPartition <= minConnectionsOutPartion))) {
+                selectedModule = m;
+                maxConnectionsInPartition = connectionsInPartition;
+                minConnectionsOutPartion = connectionsOutPartition;
+            }
+        }
+
+        if(!selectedModule || maxConnectionsInPartition < 0 ||
+                minConnectionsOutPartion == INT32_MAX)
+            throw "Bad selectedModule in placement::createPartition";
 
 
         moduleSet.erase(selectedModule);
         rootBox->add(selectedModule);
-        for(moduleNetPair pair:selectedModule->connectedModuleNetMap){
-            if(pair.first->parentBox != rootBox){
-                for(net* n:pair.second){
-                    connections+=n->getNetWidth();
-                }
-            }
-            else{
-                for(net* n:pair.second){
-                    connections-=n->getNetWidth();
-                }
-            }
-        }
+        connections -= maxConnectionsInPartition;
+        connections +=minConnectionsOutPartion;
     }
-    allPartitions.insert(newPartition);
+    return newPartition;
 }
-
-//int placement::connectionsToExistingPartitions(module *m) {}

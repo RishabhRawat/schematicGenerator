@@ -29,7 +29,7 @@ private:
     void partitionFormation();
     module* selectSeed(hashlib::pool<module*> moduleSet);
     int connectionsToExistingPartitions(module *m);
-    void createPartition(hashlib::pool<module*> moduleSet, module *seed);
+    partition *createPartition(hashlib::pool<module *> &moduleSet, module *seed);
 
     void boxFormation();
 
