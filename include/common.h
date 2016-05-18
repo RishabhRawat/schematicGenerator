@@ -32,14 +32,24 @@ template<> struct hash_ops<box*> : hash_ptr_ops {};
 template<> struct hash_ops<partition*> : hash_ptr_ops {};
 }
 
+struct ulink{
+    net* linkNet;
+    terminal * linksource;
+    std::vector<terminal*> * linksink; //This will come from moduleTerminalMap
+    //So the moment that gets deleted this pointer is invalid
+    //But that is a good thing i believe
+};
 
+
+typedef std::vector<module*> moduleCollection;
 typedef std::vector<terminal*> terminalCollection;
 typedef std::vector<net*> netCollection;
+typedef std::vector<ulink*> linkCollection;
 
-typedef hashlib::dict<module*,std::vector<net*>> moduleNetMap;
+typedef hashlib::dict<module*,std::vector<ulink*>> moduleLinkMap;
 typedef hashlib::dict<module*,std::vector<terminal*>> moduleTerminalMap;
 
-typedef std::pair<module*,std::vector<net*>> moduleNetPair;
+typedef std::pair<module*,std::vector<ulink*>> moduleLinkPair;
 typedef std::pair<module*,std::vector<terminal*>> moduleTerminalPair;
 
 

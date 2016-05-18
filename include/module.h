@@ -9,7 +9,7 @@ class module
 
 private:
     std::string moduleType;
-    const std::string moduleIdentifier;
+    std::string moduleIdentifier;
     intPair modulePosition;
 
     /* First along x-axis then along y-axis*/
@@ -17,7 +17,7 @@ private:
 
     std::vector<terminal> moduleTerminals;
 
-    moduleNetMap connectedModuleNetMap;
+    moduleLinkMap connectedModuleLinkMap;
 
     box* parentBox;
 

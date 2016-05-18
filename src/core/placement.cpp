@@ -14,6 +14,12 @@ inline int countNets(netCollection nC) {
     connections = nC.size();
     return connections;
 }
+//Same with this function
+inline int countNets(linkCollection lC) {
+    int connections = 0;
+    connections = lC.size();
+    return connections;
+}
 
 
 placement::placement()
@@ -42,14 +48,17 @@ void placement::doPlacement() {
 
 void placement::initializeStructures() {
     //Setting up net connectivity
-    for(net n: internalNets) {
+    for(net& n: internalNets) {
         for(terminal * t: n.getConnectedTerminals()) {
 
             moduleTerminalMap::iterator mapIterator = n.connectedModuleTerminalMap.find(t->getParent());
             if(mapIterator == n.connectedModuleTerminalMap.end()) {
-                terminalCollection *newCollection = new terminalCollection();
-                newCollection->push_back(t);
-                n.connectedModuleTerminalMap.insert({t->getParent(),*newCollection});
+                terminalCollection newCollection;
+                newCollection.push_back(t);
+                //NOTE: I presume that in insert we have a copy, so even when the lifetime
+                // of newCollection ends we wont have a problem
+                // need a better solution to this maybe
+                n.connectedModuleTerminalMap.insert({t->getParent(),newCollection});
             }
             else {
                 mapIterator->second.push_back(t);
@@ -58,18 +67,24 @@ void placement::initializeStructures() {
     }
 
     //Setting up module connectivity
-    for(module m: subModules) {
-        for(terminal t: m.getTerminals()) {
-            for(moduleTerminalPair pair: (t.getNet())->connectedModuleTerminalMap) {
+    for(module& m: subModules) {
+        for(terminal& t: m.getTerminals()) {
+            for(moduleTerminalPair& pair: (t.getNet())->connectedModuleTerminalMap) {
                 if(pair.first != &m){
-                    moduleNetMap::iterator mapIterator = m.connectedModuleNetMap.find(pair.first);
-                    if(mapIterator == m.connectedModuleNetMap.end()) {
-                        netCollection *newCollection = new netCollection();
-                        newCollection->push_back(t.getNet());
-                        m.connectedModuleNetMap.insert({pair.first,*newCollection});
+                    moduleLinkMap::iterator mapIterator = m.connectedModuleLinkMap.find(pair.first);
+
+                    ulink * newLink;
+                    newLink->linkNet = t.getNet();
+                    newLink->linksource = &t;
+                    newLink->linksink = &pair.second;
+
+                    if(mapIterator == m.connectedModuleLinkMap.end()) {
+                        linkCollection *newCollection = new linkCollection();
+                        newCollection->push_back(newLink);
+                        m.connectedModuleLinkMap.insert({pair.first,*newCollection});
                     }
                     else {
-                        mapIterator->second.push_back(t.getNet());
+                        mapIterator->second.push_back(newLink);
                     }
                 }
             }
@@ -82,7 +97,7 @@ void placement::partitionFormation() {
     partition * newPartition;
     hashlib::pool<module*> moduleSet;
 
-    for(module m: subModules)
+    for(module& m: subModules)
         moduleSet.insert(&m);
 
     while(!moduleSet.empty()){
@@ -102,7 +117,7 @@ module* placement::selectSeed(hashlib::pool<module*> moduleSet) {
         int connectionsOutFreeSet = 0;
         // The choice is either to iterate over all modules connected to m
         // or to iterate over all elements in moduleSet and find those connected to m
-        for(moduleNetPair pair: m->connectedModuleNetMap) {
+        for(moduleLinkPair& pair: m->connectedModuleLinkMap) {
             if(moduleSet.find(pair.first) != moduleSet.end())
                 connectionsInFreeSet += countNets(pair.second);
             else
@@ -141,7 +156,7 @@ partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module
         for(module* m: moduleSet) {
             int connectionsInPartition = 0;
             int connectionsOutPartition = 0;
-            for(moduleNetPair pair: m->connectedModuleNetMap) {
+            for(moduleLinkPair& pair: m->connectedModuleLinkMap) {
                 if(pair.first->parentBox == rootBox)
                     connectionsInPartition += countNets(pair.second);
                 else
@@ -169,3 +184,44 @@ partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module
     }
     return newPartition;
 }
+
+moduleCollection placement::selectRoots(partition *p) {
+    if(p->partitionBoxes.size()>1) throw "Invalid Partition Error: placment::selectRoots";
+
+    box * b = p->partitionBoxes.pop();
+    moduleCollection roots;
+    for(module *m:b->boxModules) {
+        bool seed = false;
+        for(moduleLinkPair pair: m->connectedModuleLinkMap) {
+            if(b->boxModules.find(pair.first) == b->boxModules.end() && pair.first != &systemModule){
+                seed = true;
+            }
+            else if(pair.first == &systemModule) {
+                for(ulink *l: pair.second){
+                    for(terminal* t: *(l->linksink)) {
+                        if (t->type == in || t->type == inout){
+                            seed = true;
+                            break;
+                        }
+                    }
+                    if(seed)
+                        break;
+                }
+            }
+            if(seed)
+                break;
+        }
+
+        int outGoingNets = 0;
+        for(terminal& t:m->getTerminals()) {
+            if(t.type == out)
+                outGoingNets++;
+            if(outGoingNets > 1)
+                break;
+        }
+        if(seed)
+            roots.push_back(m);
+    }
+    return roots;
+}
+
