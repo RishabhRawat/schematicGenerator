@@ -3,7 +3,7 @@
 #include "common.h"
 
 class box {
-    friend class partition;
+    friend class placement;
 private:
     partition *parentPartition;
     hashlib::pool<module*> boxModules;

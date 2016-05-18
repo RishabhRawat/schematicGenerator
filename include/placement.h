@@ -11,6 +11,7 @@ class placement
 private:
 //    std::unordered_set<modules> subModules;
 //    std::unordered_set<nets> internalNets;
+    module systemModule;
     std::vector<module> subModules;
     std::vector<net> internalNets;
     std::vector<terminal> systemTerminals;
@@ -32,6 +33,7 @@ private:
     partition *createPartition(hashlib::pool<module *> &moduleSet, module *seed);
 
     void boxFormation();
+    moduleCollection selectRoots(partition *p);
 
     void modulePlacement();
     void boxPlacement();
