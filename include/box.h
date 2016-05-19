@@ -9,7 +9,9 @@ private:
     hashlib::pool<module*> boxModules;
 public:
     void add(module *m);
+    void remove(module *m);
     void setParentPartition(partition *p){parentPartition=p;}
+    size_t size() { return boxModules.size();}
 };
 
 #endif // BOX_H

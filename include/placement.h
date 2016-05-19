@@ -21,9 +21,9 @@ private:
     hashlib::pool<partition*> allPartitions;
 
     //Important Layout Parameters
-    int maxPartitionSize;
-    int maxPartitionConnections;
-
+    unsigned int maxPartitionSize;
+    unsigned int maxPartitionConnections;
+    unsigned int maxPathLength;
 
     void initializeStructures();
 
@@ -34,6 +34,8 @@ private:
 
     void boxFormation();
     moduleCollection selectRoots(partition *p);
+    box * longestPath( box *rootBox, box *remainingModules);
+
 
     void modulePlacement();
     void boxPlacement();

@@ -9,6 +9,7 @@
 .*.swp
 schema.js
 scripts.js
+.vscode
 /*.files
 /*.includes
 /*.config
