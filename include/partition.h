@@ -3,11 +3,12 @@
 #include "common.h"
 
 class partition {
-    friend class placement;
+	friend class placement;
 private:
-    hashlib::pool<box*> partitionBoxes;
+	hashlib::pool<box*> partitionBoxes;
 public:
-    void add(box* b);
+	void add(box* b);
+	size_t size() {return partitionBoxes.size();};
 };
 
 #endif // PARTITION_H

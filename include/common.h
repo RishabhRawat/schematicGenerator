@@ -4,17 +4,28 @@
 #include <vector>
 #include <string>
 
+namespace schematic {
 enum terminalType {
-    in, out, inout
+	in, out, inout
 };
 
 enum terminalSide {
-    left, right, top, bottom, none
+	left, right, top, bottom, none
 };
 
+enum clockwiseRotation {
+	d_0 = 0,
+	d_90 = 1,
+	d_180 = 2,
+	d_270 = 3
+};
+
+
+}
+
 struct intPair {
-    int x;
-    int y;
+	int x;
+	int y;
 };
 
 
@@ -33,11 +44,11 @@ template<> struct hash_ops<partition*> : hash_ptr_ops {};
 }
 
 struct ulink{
-    net* linkNet;
-    terminal * linksource;
-    std::vector<terminal*> * linksink; //This will come from moduleTerminalMap
-    //So the moment that gets deleted this pointer is invalid
-    //But that is a good thing i believe
+	net* linkNet;
+	terminal * linksource;
+	std::vector<terminal*> * linksink; //This will come from moduleTerminalMap
+	//So the moment that gets deleted this pointer is invalid
+	//But that is a good thing i believe
 };
 
 

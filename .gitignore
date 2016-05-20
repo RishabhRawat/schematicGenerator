@@ -1,7 +1,6 @@
 *
 !/**/
 !*.*
-!.*
 *.o
 *.so
 *.a
@@ -10,9 +9,12 @@
 schema.js
 scripts.js
 .vscode
+.idea
 /*.files
 /*.includes
 /*.config
 /*.creator
 /*.creator.user
+cmake*
+CMake*
 /build
