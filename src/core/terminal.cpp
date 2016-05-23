@@ -2,8 +2,7 @@
 #include "module.h"
 
 void terminal::setRelativePosition(int x, int y){
-	terminalPosition.x=x;
-	terminalPosition.y=y;
+	terminalPosition = {x, y};
 	updateTerminalSide();
 }
 void terminal::updateTerminalSide(){

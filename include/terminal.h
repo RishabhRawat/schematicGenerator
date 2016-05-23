@@ -6,29 +6,42 @@ class terminal
 {
 	friend class placement;
 private:
-	std::string terminalIdentifier;
-	schematic::terminalType type;
+	const std::string terminalIdentifier;
+	const schematic::terminalType type;
 	schematic::terminalSide side;
 	intPair terminalPosition;
 	int terminalWidth;
-	module * parentModule;
-	bool systemTerminal;
+	module * const parentModule;
+	const bool systemTerminal;
 	net * attachedNet;
 
 	void updateTerminalSide();
-	module * getParent() const { return parentModule; }
+
+	module *getParent() const { return parentModule; }
+
+private:
 	net * getNet() const { return attachedNet; }
 
 public:
-	terminal(std::string name, module *parentPointer):terminalIdentifier(name),parentModule(parentPointer) {
-	}
 
-	/* sets position relative to the module which owns the terminal,
+
+//	terminal(const std::string &terminalIdentifier,  const schematic::terminalType type, module *const parentModule)
+//			: terminalIdentifier(terminalIdentifier), parentModule(parentModule),  type(type), systemTerminal(false){ }
+//
+
+	terminal(const std::string &terminalIdentifier, const schematic::terminalType type, module *const parentModule,
+	         const bool systemTerminal) : terminalIdentifier(terminalIdentifier), type(type),
+	                                      parentModule(parentModule), systemTerminal(systemTerminal) { }
+
+/* sets position relative to the module which owns the terminal,
 	 * relative to bottom left corner, must be set after the module size is set
 	 * has no meaning for systemTerminals
 	 */
 	void setRelativePosition(int x, int y);
+
 	bool isSystemTerminal() const { return systemTerminal; }
+
+	const std::string &getTerminalIdentifier() const { return terminalIdentifier; }
 
 
 };

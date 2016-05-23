@@ -22,11 +22,6 @@ inline int countNets(linkCollection lC) {
 }
 
 
-placement::placement()
-{
-
-}
-
 placement::~placement() {
 	for(partition *p: allPartitions) {
 		for(box *b: p->partitionBoxes){
@@ -48,17 +43,17 @@ void placement::doPlacement() {
 
 void placement::initializeStructures() {
 	//Setting up net connectivity
-	for(net& n: internalNets) {
-		for(terminal * t: n.getConnectedTerminals()) {
+	for(namedNetPair& n: internalNets) {
+		for(terminal * t: n.second.getConnectedTerminals()) {
 
-			moduleTerminalMap::iterator mapIterator = n.connectedModuleTerminalMap.find(t->getParent());
-			if(mapIterator == n.connectedModuleTerminalMap.end()) {
+			moduleTerminalMap::iterator mapIterator = n.second.connectedModuleTerminalMap.find(t->getParent());
+			if(mapIterator == n.second.connectedModuleTerminalMap.end()) {
 				terminalCollection newCollection;
 				newCollection.push_back(t);
 				//NOTE: I presume that in insert we have a copy, so even when the lifetime
 				// of newCollection ends we wont have a problem
 				// need a better solution to this maybe
-				n.connectedModuleTerminalMap.insert({t->getParent(),newCollection});
+				n.second.connectedModuleTerminalMap.insert({t->getParent(),newCollection});
 			}
 			else {
 				mapIterator->second.push_back(t);
@@ -67,24 +62,18 @@ void placement::initializeStructures() {
 	}
 
 	//Setting up module connectivity
-	for(module& m: subModules) {
-		for(terminal& t: m.getTerminals()) {
-			for(moduleTerminalPair& pair: (t.getNet())->connectedModuleTerminalMap) {
-				if(pair.first != &m){
-					moduleLinkMap::iterator mapIterator = m.connectedModuleLinkMap.find(pair.first);
-
-					ulink * newLink;
-					newLink->linkNet = t.getNet();
-					newLink->linksource = &t;
-					newLink->linksink = &pair.second;
-
-					if(mapIterator == m.connectedModuleLinkMap.end()) {
+	for(namedModulePair& m: subModules) {
+		for(namedTerminalPair &t: m.second.moduleTerminals) {
+			for(moduleTerminalPair& pair: (t.second.getNet())->connectedModuleTerminalMap) {
+				if(pair.first != &m.second){
+					moduleLinkMap::iterator mapIterator = m.second.connectedModuleLinkMap.find(pair.first);
+					if(mapIterator == m.second.connectedModuleLinkMap.end()) {
 						linkCollection *newCollection = new linkCollection();
-						newCollection->push_back(newLink);
-						m.connectedModuleLinkMap.insert({pair.first,*newCollection});
+						newCollection->push_back(new ulink(t.second.getNet(),&t.second,&pair.second));
+						m.second.connectedModuleLinkMap.insert({pair.first,*newCollection});
 					}
 					else {
-						mapIterator->second.push_back(newLink);
+						mapIterator->second.push_back(new ulink(t.second.getNet(),&t.second,&pair.second));
 					}
 				}
 			}
@@ -94,21 +83,19 @@ void placement::initializeStructures() {
 
 void placement::partitionFormation() {
 	module * seed;
-	partition * newPartition;
 	hashlib::pool<module*> moduleSet;
 
-	for(module& m: subModules)
-		moduleSet.insert(&m);
+	for(namedModulePair& m: subModules)
+		moduleSet.insert(&(m.second));
 
 	while(!moduleSet.empty()){
 		seed = selectSeed(moduleSet);
 		moduleSet.erase(seed);
-		newPartition = createPartition(moduleSet,seed);
-		allPartitions.insert(newPartition);
+		allPartitions.emplace_back(createPartition(moduleSet,seed));
 	}
 }
 
-module* placement::selectSeed(hashlib::pool<module*> moduleSet) {
+module* placement::selectSeed(hashlib::pool<module*> moduleSet) const{
 	int maxConnectionsInFreeSet = -1;
 	int minConnectionsOutFreeSet = INT32_MAX;
 	module * seed;
@@ -188,7 +175,7 @@ partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module
 moduleCollection placement::selectRoots(partition *p) {
 	if(p->partitionBoxes.size()>1) throw "Invalid Partition Error: placment::selectRoots";
 
-	box * b = p->partitionBoxes.pop();
+	box * b = p->partitionBoxes.back();
 	moduleCollection roots;
 	for(module *m:b->boxModules) {
 		bool seed = false;
@@ -198,8 +185,8 @@ moduleCollection placement::selectRoots(partition *p) {
 			}
 			else if(pair.first == &systemModule) {
 				for(ulink *l: pair.second){
-					for(terminal* t: *(l->linksink)) {
-						if (t->type == in || t->type == inout){
+					for(terminal* t: *(l->linkSink)) {
+						if (t->type == schematic::in || t->type == schematic::inout){
 							seed = true;
 							break;
 						}
@@ -213,8 +200,8 @@ moduleCollection placement::selectRoots(partition *p) {
 		}
 
 		int outGoingNets = 0;
-		for(terminal& t:m->getTerminals()) {
-			if(t.type == out)
+		for(namedTerminalPair &t:m->moduleTerminals) {
+			if(t.second.type == schematic::out)
 				outGoingNets++;
 			if(outGoingNets > 1)
 				break;
@@ -225,22 +212,22 @@ moduleCollection placement::selectRoots(partition *p) {
 	return roots;
 }
 
-box * placement::longestPath( box *rootBox, box *remainingModules) {
+box * placement::selectPath( box *path, box *remainingModules) {
 	bool searchSuccess = true;
 
-	while(searchSuccess && rootBox->size()<=maxPathLength) {
+	while(searchSuccess && path->size()<=maxPathLength) {
 		searchSuccess = false;
-		//FIXME: module * lastModule = rootBox->boxModules.back();
-		module * lastModule;
+		//FIXME: module * lastModule = path->boxModules.back();
+		module * lastModule = path->boxModules.back();
 		for(module *m: remainingModules->boxModules) {
 			moduleLinkMap::iterator mapIterator = lastModule->connectedModuleLinkMap.find(m);
 			if(mapIterator != lastModule->connectedModuleLinkMap.end()) {
 				for(ulink *l:mapIterator->second){
-					if(l->linksource->type == in || l->linksource->type == inout ){
-						for(terminal * t: *(l->linksink)){
-							if(t->type == out || t->type == inout){
+					if(l->linkSource->type == schematic::in || l->linkSource->type == schematic::inout ){
+						for(terminal * t: *(l->linkSink)){
+							if(t->type == schematic::out || t->type == schematic::inout){
 								remainingModules->remove(m);
-								rootBox->add(m);
+								path->add(m);
 								searchSuccess = true;
 								break;
 							}
@@ -254,5 +241,44 @@ box * placement::longestPath( box *rootBox, box *remainingModules) {
 				break;
 		}
 	}
-	return rootBox;
+	return path;
 }
+
+void placement::boxFormation() {
+
+	for(partition *p: allPartitions) {
+		moduleCollection roots = selectRoots(p);
+		box * elements = p->partitionBoxes.pop();
+		while(!elements->empty()) {
+			box * longestPath = nullptr;
+			for(module * root:roots) {
+				box * path = new box();
+				elements->remove(root);
+				//FIXME:This will be in two boxes at the same time?
+				//ParentBox is not required in selectPath
+				//so its value should be consistent at the end
+				path->add(root);
+				path = selectPath(path,elements);
+				elements->add(root);
+				if(longestPath->size() < path->size()) {
+					delete longestPath;
+					longestPath = path;
+				}
+				else
+					delete path;
+			}
+			//To take care of parentBox inconsistencies
+			for(module *m:longestPath->boxModules)
+				m->setParentBox(longestPath);
+		}
+	}
+
+}
+
+terminal & placement::addSystemTerminal(const std::string &terminalIdentifier, const schematic::terminalType type) {
+	//FIXME: I need to check whether the returned reference is correct
+	return systemModule.moduleTerminals.insert(std::make_pair(terminalIdentifier,terminal
+			(terminalIdentifier,type,&systemModule,true))).first->second;
+}
+
+

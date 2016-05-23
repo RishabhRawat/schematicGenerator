@@ -849,6 +849,18 @@ public:
 		return ret;
 	}
 
+	K& back()
+	{
+		iterator it = begin();
+		return *it;
+	}
+
+	K& front()
+	{
+		iterator it = iterator(this, 0);
+		return *it;
+	}
+
 	void swap(pool &other)
 	{
 		hashtable.swap(other.hashtable);

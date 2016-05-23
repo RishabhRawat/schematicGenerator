@@ -1,7 +1,7 @@
 #ifndef NETS_H
 #define NETS_H
-#include<common.h>
-#include<terminal.h>
+#include "common.h"
+#include "terminal.h"
 
 
 
