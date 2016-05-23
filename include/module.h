@@ -15,8 +15,8 @@ private:
     /* First along x-axis then along y-axis*/
     intPair moduleSize = {50,100}; //Default size
 
-//    std::vector<terminal> moduleTerminals;
 	namedTerminalCollection moduleTerminals;
+    
     moduleLinkMap connectedModuleLinkMap;
 
     box* parentBox;

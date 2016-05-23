@@ -50,40 +50,11 @@ public:
 	void addModule();
 	void parseJson(std::string jsonFile);
 
-	unsigned int getMaxPartitionSize() const {
-		return maxPartitionSize;
-	}
-
-	void setMaxPartitionSize(unsigned int maxPartitionSize) {
-		placement::maxPartitionSize = maxPartitionSize;
-	}
-
-	unsigned int getMaxPartitionConnections() const {
-		return maxPartitionConnections;
-	}
-
-	void setMaxPartitionConnections(unsigned int maxPartitionConnections) {
-		placement::maxPartitionConnections = maxPartitionConnections;
-	}
-
-	unsigned int getMaxPathLength() const {
-		return maxPathLength;
-	}
-
-	void setMaxPathLength(unsigned int maxPathLength) {
-		placement::maxPathLength = maxPathLength;
-	}
-
 	const std::string &Identifier() const {
 		return systemIdentifier;
 	}
 
-
 	terminal & addSystemTerminal(const std::string &terminalIdentifier, const schematic::terminalType type);
-
-//	void addSubModule(const )
-
-
 
 };
 

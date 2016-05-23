@@ -24,11 +24,6 @@ private:
 
 public:
 
-
-//	terminal(const std::string &terminalIdentifier,  const schematic::terminalType type, module *const parentModule)
-//			: terminalIdentifier(terminalIdentifier), parentModule(parentModule),  type(type), systemTerminal(false){ }
-//
-
 	terminal(const std::string &terminalIdentifier, const schematic::terminalType type, module *const parentModule,
 	         const bool systemTerminal) : terminalIdentifier(terminalIdentifier), type(type),
 	                                      parentModule(parentModule), systemTerminal(systemTerminal) { }
