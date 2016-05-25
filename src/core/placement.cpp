@@ -98,7 +98,7 @@ void placement::partitionFormation() {
 module* placement::selectSeed(hashlib::pool<module*> moduleSet) const{
 	int maxConnectionsInFreeSet = -1;
 	int minConnectionsOutFreeSet = INT32_MAX;
-	module * seed;
+	module * seed = nullptr;
 	for(module* m: moduleSet) {
 		int connectionsInFreeSet = 0;
 		int connectionsOutFreeSet = 0;
@@ -135,7 +135,7 @@ partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module
 	while(!moduleSet.empty() && (partitionEntries < maxPartitionSize)
 		  && (connections < maxPartitionConnections)) {
 
-		module * selectedModule;
+		module * selectedModule = nullptr;
 		int maxConnectionsInPartition = -1;
 		int minConnectionsOutPartion = INT32_MAX;
 
@@ -280,5 +280,33 @@ terminal & placement::addSystemTerminal(const std::string &terminalIdentifier, c
 	return systemModule.moduleTerminals.insert(std::make_pair(terminalIdentifier,terminal
 			(terminalIdentifier,type,&systemModule,true))).first->second;
 }
+
+terminal &placement::getSystemTerminal(const std::string &terminalIdentifier) {
+	return systemModule.getTerminal(terminalIdentifier);
+}
+
+module & placement::addModule(const std::string &moduleName) {
+	return subModules.insert(std::make_pair(moduleName,module(moduleName))).first->second;
+}
+
+
+module & placement::getModule(const std::string &moduleName) {
+	return subModules.find(moduleName)->second;
+}
+
+
+net & placement::addNet(const std::string &netName) {
+	return internalNets.insert(std::make_pair(netName,net(netName))).first->second;
+}
+
+net & placement::getNet(const std::string &netName) {
+	return internalNets.find(netName)->second;
+}
+
+
+
+
+
+
 
 

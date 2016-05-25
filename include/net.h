@@ -9,29 +9,23 @@ class net
 {
     friend class placement;
 private:
-//    std::vector<terminal> source;
-//    std::vector<terminal> sink;
-    terminalCollection connectedTerminals;
 
+	const std::string netIdentifier;
+	terminalCollection connectedTerminals;
     moduleTerminalMap connectedModuleTerminalMap;
     int netWidth;
-    terminalCollection getConnectedTerminals() const {return connectedTerminals;}
+
+	terminalCollection getConnectedTerminals() const {
+        return connectedTerminals;
+    }
 
 public:
-    net();
-    int getNetWidth() const { return netWidth;}
-};
 
-namespace std
-{
-    template <>
-    struct hash<net>
-    {
-        size_t operator()(const net& k) const
-        {
-            return ((size_t) &k) / sizeof(k);
-        }
-    };
-}
+	net(const std::string &netName) : netIdentifier(netName) { }
+
+	int getNetWidth() const {
+	    return netWidth;
+    }
+};
 
 #endif // NETS_H

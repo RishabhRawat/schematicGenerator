@@ -28,6 +28,14 @@ public:
 	         const bool systemTerminal) : terminalIdentifier(terminalIdentifier), type(type),
 	                                      parentModule(parentModule), systemTerminal(systemTerminal) { }
 
+
+	terminal &operator= (terminal) {
+		//FIXME: If this operator just throws stuff why doesnt the program compile without it!!
+		// This function will most probably never be called!!
+		throw std::runtime_error("should not copy assign terminal class");
+		return *this;
+	}
+
 /* sets position relative to the module which owns the terminal,
 	 * relative to bottom left corner, must be set after the module size is set
 	 * has no meaning for systemTerminals

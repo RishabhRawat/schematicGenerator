@@ -14,7 +14,7 @@ private:
 	namedNetCollection internalNets;
 	std::string systemIdentifier;
 
-	std::vector<partition*> allPartitions;
+	partitionCollection allPartitions;
 
 	//Important Layout Parameters
 	unsigned int maxPartitionSize;
@@ -42,12 +42,14 @@ private:
 
 public:
 
+	//API FUNCTIONS
+
 	placement() : systemModule("topModule") { }
 
 	~placement();
 
 	void doPlacement();
-	void addModule();
+
 	void parseJson(std::string jsonFile);
 
 	const std::string &Identifier() const {
@@ -56,6 +58,15 @@ public:
 
 	terminal & addSystemTerminal(const std::string &terminalIdentifier, const schematic::terminalType type);
 
+	terminal & getSystemTerminal(const std::string &terminalIdentifier);
+
+	module & addModule(const std::string &moduleName);
+
+	module & getModule(const std::string &moduleName) ;
+
+	net & addNet(const std::string &netName);
+
+	net & getNet(const std::string &netName);
 };
 
 #endif // PLACEMENT_H

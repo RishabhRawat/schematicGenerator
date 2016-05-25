@@ -6,7 +6,7 @@ class box {
 	friend class placement;
 private:
 	partition *parentPartition;
-	hashlib::pool<module*> boxModules;
+	hashlib::pool<module*> boxModules;  //NOTE: check if using vector is fine here
 public:
 	void add(module *m);
 	void remove(module *m);
