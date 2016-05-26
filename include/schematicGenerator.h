@@ -2,17 +2,17 @@
 #define PLACEMENT_H
 #include "module.h"
 #include "net.h"
-//#include <unordered_set>
 
-class placement
-{
+class schematicGenerator {
 
 private:
+
 
 	module systemModule;    //just a place holder
 	namedModuleCollection subModules;
 	namedNetCollection internalNets;
-	std::string systemIdentifier;
+
+	hashlib::pool<coalescedNet*> coalescedNetSet;
 
 	partitionCollection allPartitions;
 
@@ -44,19 +44,15 @@ public:
 
 	//API FUNCTIONS
 
-	placement() : systemModule("topModule") { }
+	schematicGenerator() : systemModule("topModule") { }
 
-	~placement();
+	~schematicGenerator();
 
 	void doPlacement();
 
 	void parseJson(std::string jsonFile);
 
-	const std::string &Identifier() const {
-		return systemIdentifier;
-	}
-
-	terminal & addSystemTerminal(const std::string &terminalIdentifier, const schematic::terminalType type);
+	terminal &addSystemTerminal(const std::string &terminalIdentifier, const schematic::terminalType type, const int width);
 
 	terminal & getSystemTerminal(const std::string &terminalIdentifier);
 
@@ -64,9 +60,11 @@ public:
 
 	module & getModule(const std::string &moduleName) ;
 
-	net & addNet(const std::string &netName);
+	net &addNet(const std::string &netName, const int netWidth);
 
 	net & getNet(const std::string &netName);
+
+
 };
 
 #endif // PLACEMENT_H

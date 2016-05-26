@@ -3,7 +3,7 @@
 #include "common.h"
 
 class partition {
-	friend class placement;
+	friend class schematicGenerator;
 private:
 	hashlib::pool<box*> partitionBoxes;
 public:

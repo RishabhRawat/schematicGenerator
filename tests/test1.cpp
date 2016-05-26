@@ -1,9 +1,9 @@
 #include <iostream>
-#include "placement.h"
+#include "schematicGenerator.h"
 
 int main(){
     std::string fileName = "tests/test.json";
-    placement myPlacementObject;
+    schematicGenerator myPlacementObject;
 	myPlacementObject.parseJson(fileName);
     return 0;
 }

@@ -1,52 +1,81 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
-#include <common.h>
 
-class terminal
-{
-	friend class placement;
-private:
-	const std::string terminalIdentifier;
-	const schematic::terminalType type;
-	schematic::terminalSide side;
-	intPair terminalPosition;
-	int terminalWidth;
-	module * const parentModule;
-	const bool systemTerminal;
-	net * attachedNet;
+#include "common.h"
 
-	void updateTerminalSide();
+struct bitTerminal {
+	terminal * const baseTerminal;
+	const int index;
+	std::vector<bitNet*> connectedBitNets;
+	bitTerminal(terminal *const baseTerminal, const int index) : baseTerminal(baseTerminal), index(index) { }
+};
 
-	module *getParent() const { return parentModule; }
 
-private:
-	net * getNet() const { return attachedNet; }
+class terminal {
+	friend class splicedTerminal;
+	friend class schematicGenerator;
 
 public:
 
-	terminal(const std::string &terminalIdentifier, const schematic::terminalType type, module *const parentModule,
-	         const bool systemTerminal) : terminalIdentifier(terminalIdentifier), type(type),
-	                                      parentModule(parentModule), systemTerminal(systemTerminal) { }
+	const std::string terminalIdentifier;
+	const schematic::terminalType type;
+	const int terminalWidth;
+	module *const parentModule;
 
 
-	terminal &operator= (terminal) {
-		//FIXME: If this operator just throws stuff why doesnt the program compile without it!!
-		// This function will most probably never be called!!
-		throw std::runtime_error("should not copy assign terminal class");
-		return *this;
-	}
+	terminal partialTerminal(int index1, int index2);
 
-/* sets position relative to the module which owns the terminal,
+	terminal(const std::string &terminalIdentifier, const schematic::terminalType type, const int terminalWidth,
+	         module *const parentModule, const bool systemTerminal);
+
+	~terminal();
+
+	/* sets position relative to the module which owns the terminal,
 	 * relative to bottom left corner, must be set after the module size is set
 	 * has no meaning for systemTerminals
 	 */
-	void setRelativePosition(int x, int y);
+//	void setRelativePosition(int x, int y);
 
-	bool isSystemTerminal() const { return systemTerminal; }
+private:
 
-	const std::string &getTerminalIdentifier() const { return terminalIdentifier; }
+	terminal(const terminal &baseTerminal, const int highIndex, const int lowIndex, const bool highToLow);
+
+	bitTerminal **internalBitTerminals;
+
+	const bool systemTerminal;
+	const int highIndex;
+	const int lowIndex;
+	const bool highToLow;
 
 
+	std::vector<splicedTerminal*> splices;
+
+	schematic::terminalSide side;
+	intPair terminalPositionHint;
+
+	terminal ( const terminal & ) = default;
+	terminal & operator= ( const terminal & ) = default;
+};
+
+class splicedTerminal {
+	friend class schematicGenerator;
+	friend class module;
+private:
+	const terminal * const baseTerminal;
+	const std::string terminalIdentifier;
+
+	intPair terminalPosition;
+	net *const attachedNet;
+
+	coalescedNet * getCoalescedNet();
+
+public:
+	module *getParent() const { return baseTerminal->parentModule; }
+	schematic::terminalType getType() const { return baseTerminal->type; }
+	bool isSystemTerminal() const { return baseTerminal->systemTerminal; }
+
+	splicedTerminal(const terminal *const baseTerminal, const std::string &terminalName, net *attachedNet)
+			: baseTerminal(baseTerminal), terminalIdentifier(terminalName), attachedNet(attachedNet) { }
 };
 
 #endif // TERMINAL_H

@@ -1,28 +1,11 @@
-#include "placement.h"
+#include "schematicGenerator.h"
 #include "partition.h"
 #include "box.h"
 #include <iostream>
+#include <sstream>
+#include <iterator>
 
-inline int countNets(netCollection nC) {
-	int connections = 0;
-	//If you want give weigtaget to net width
-	//    for(net* n:nC) {
-	//        connections+=n->getNetWidth();
-	//    }
-
-	//If you just want to count nets
-	connections = nC.size();
-	return connections;
-}
-//Same with this function
-inline int countNets(linkCollection lC) {
-	int connections = 0;
-	connections = lC.size();
-	return connections;
-}
-
-
-placement::~placement() {
+schematicGenerator::~schematicGenerator() {
 	for(partition *p: allPartitions) {
 		for(box *b: p->partitionBoxes){
 			delete b;
@@ -31,7 +14,7 @@ placement::~placement() {
 	}
 }
 
-void placement::doPlacement() {
+void schematicGenerator::doPlacement() {
 	initializeStructures();
 	partitionFormation();
 	boxFormation();
@@ -41,39 +24,68 @@ void placement::doPlacement() {
 	terminalPlacement();
 }
 
-void placement::initializeStructures() {
-	//Setting up net connectivity
-	for(namedNetPair& n: internalNets) {
-		for(terminal * t: n.second.getConnectedTerminals()) {
-
-			moduleTerminalMap::iterator mapIterator = n.second.connectedModuleTerminalMap.find(t->getParent());
-			if(mapIterator == n.second.connectedModuleTerminalMap.end()) {
-				terminalCollection newCollection;
-				newCollection.push_back(t);
-				//NOTE: I presume that in insert we have a copy, so even when the lifetime
-				// of newCollection ends we wont have a problem
-				// need a better solution to this maybe
-				n.second.connectedModuleTerminalMap.insert({t->getParent(),newCollection});
-			}
-			else {
-				mapIterator->second.push_back(t);
-			}
-		}
-	}
-
-	//Setting up module connectivity
-	for(namedModulePair& m: subModules) {
-		for(namedTerminalPair &t: m.second.moduleTerminals) {
-			for(moduleTerminalPair& pair: (t.second.getNet())->connectedModuleTerminalMap) {
-				if(pair.first != &m.second){
-					moduleLinkMap::iterator mapIterator = m.second.connectedModuleLinkMap.find(pair.first);
-					if(mapIterator == m.second.connectedModuleLinkMap.end()) {
-						linkCollection *newCollection = new linkCollection();
-						newCollection->push_back(new ulink(t.second.getNet(),&t.second,&pair.second));
-						m.second.connectedModuleLinkMap.insert({pair.first,*newCollection});
+void schematicGenerator::initializeStructures() {
+	/*
+	 * First Preprocessing Technique is no coelescing, and using standard nets themselves as
+	 * coelesced nets.
+	 * The terminals will be sliced and if a terminal is fanout to different nets,
+	 * then there will be two copies of that terminal
+	 */
+	{
+		//Iterates over all bitTerminals in the whole system
+		for(namedModulePair &m_pair:subModules) {
+			for (namedTerminalPair &t_pair:m_pair.second.moduleTerminals) {
+				hashlib::dict<net *, std::vector<int>> attachedNetIndexes;
+				for (int i = 0; i < t_pair.second->terminalWidth; ++i) {
+					for (bitNet *bN: t_pair.second->internalBitTerminals[i]->connectedBitNets) {
+						auto pair = attachedNetIndexes.find(bN->baseNet);
+						if (pair == attachedNetIndexes.end())
+							attachedNetIndexes.insert({bN->baseNet, {i}});
+						else
+							pair->second.push_back(i);
+					}
+				}
+				//Adding spliced Terminals
+				//TODO: Implement a more efficient string builder?
+				for(auto &&nI_pair:attachedNetIndexes) {
+					std::ostringstream imploded;
+					imploded<<t_pair.second->terminalIdentifier<<"_";
+					std::copy(nI_pair.second.begin(), nI_pair.second.end(), std::ostream_iterator<int>(imploded, "_"));
+					//Insertion into module
+					splicedTerminal *newST = m_pair.second.addSplicedTerminal(t_pair.second, imploded.str(), nI_pair.first);
+					//Insertion into coalesced List
+					if(nI_pair.first->coalesced == nullptr) {
+						coalescedNet * newCNet = new coalescedNet(nI_pair.first);
+						newCNet->connectedModuleSplicedTerminalMap.insert({&m_pair.second,{newST}});
+						nI_pair.first->coalesced = newCNet;
+						coalescedNetSet.insert(newCNet);
 					}
 					else {
-						mapIterator->second.push_back(new ulink(t.second.getNet(),&t.second,&pair.second));
+						auto cMST_iter = nI_pair.first->coalesced->connectedModuleSplicedTerminalMap
+								.find(&m_pair.second);
+						if(cMST_iter == nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.end())
+							nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.insert({&m_pair.second,{newST}});
+						else
+							cMST_iter->second.push_back(newST);
+
+					}
+				}
+			}
+		}
+		//Setting up module connectivity
+		for(namedModulePair& m: subModules) {
+			for(splicedTerminal *t: m.second.moduleSplicedTerminals) {
+				for(moduleSplicedTerminalPair& mST_pair: t->getCoalescedNet()->connectedModuleSplicedTerminalMap) {
+					if(mST_pair.first != &m.second){
+						moduleLinkMap::iterator mapIterator = m.second.connectedModuleLinkMap.find(mST_pair.first);
+						if(mapIterator == m.second.connectedModuleLinkMap.end()) {
+							linkCollection *newCollection = new linkCollection();
+							newCollection->push_back(new ulink(t->getCoalescedNet(),t,&mST_pair.second));
+							m.second.connectedModuleLinkMap.insert({mST_pair.first,*newCollection});
+						}
+						else {
+							mapIterator->second.push_back(new ulink(t->getCoalescedNet(),t,&mST_pair.second));
+						}
 					}
 				}
 			}
@@ -81,7 +93,7 @@ void placement::initializeStructures() {
 	}
 }
 
-void placement::partitionFormation() {
+void schematicGenerator::partitionFormation() {
 	module * seed;
 	hashlib::pool<module*> moduleSet;
 
@@ -95,7 +107,8 @@ void placement::partitionFormation() {
 	}
 }
 
-module* placement::selectSeed(hashlib::pool<module*> moduleSet) const{
+module* schematicGenerator::selectSeed(hashlib::pool<module*> moduleSet) const{
+	//TODO: Improve this bruteforce Algorithm
 	int maxConnectionsInFreeSet = -1;
 	int minConnectionsOutFreeSet = INT32_MAX;
 	module * seed = nullptr;
@@ -106,9 +119,9 @@ module* placement::selectSeed(hashlib::pool<module*> moduleSet) const{
 		// or to iterate over all elements in moduleSet and find those connected to m
 		for(moduleLinkPair& pair: m->connectedModuleLinkMap) {
 			if(moduleSet.find(pair.first) != moduleSet.end())
-				connectionsInFreeSet += countNets(pair.second);
+				connectionsInFreeSet += pair.second.size();
 			else
-				connectionsOutFreeSet += countNets(pair.second);
+				connectionsOutFreeSet += pair.second.size();
 		}
 
 		if((connectionsInFreeSet > maxConnectionsInFreeSet) ||
@@ -121,11 +134,11 @@ module* placement::selectSeed(hashlib::pool<module*> moduleSet) const{
 	}
 	if(!seed || maxConnectionsInFreeSet < 0 ||
 			minConnectionsOutFreeSet == INT32_MAX)
-		throw "Bad moduleSet in placement::selectSeed";
+		throw "Bad moduleSet in schematicGenerator::selectSeed";
 	return seed;
 }
 
-partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module * seed) {
+partition * schematicGenerator::createPartition(hashlib::pool<module*>& moduleSet, module * seed) {
 	box * rootBox = new box();
 	rootBox->add(seed);
 	partition * newPartition = new partition();
@@ -145,9 +158,9 @@ partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module
 			int connectionsOutPartition = 0;
 			for(moduleLinkPair& pair: m->connectedModuleLinkMap) {
 				if(pair.first->parentBox == rootBox)
-					connectionsInPartition += countNets(pair.second);
+					connectionsInPartition += pair.second.size();
 				else
-					connectionsOutPartition += countNets(pair.second);
+					connectionsOutPartition += pair.second.size();
 			}
 
 			if((connectionsInPartition > maxConnectionsInPartition) ||
@@ -161,7 +174,7 @@ partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module
 
 		if(!selectedModule || maxConnectionsInPartition < 0 ||
 				minConnectionsOutPartion == INT32_MAX)
-			throw "Bad selectedModule in placement::createPartition";
+			throw "Bad selectedModule in schematicGenerator::createPartition";
 
 
 		moduleSet.erase(selectedModule);
@@ -172,7 +185,7 @@ partition * placement::createPartition(hashlib::pool<module*>& moduleSet, module
 	return newPartition;
 }
 
-moduleCollection placement::selectRoots(partition *p) {
+moduleCollection schematicGenerator::selectRoots(partition *p) {
 	if(p->partitionBoxes.size()>1) throw "Invalid Partition Error: placment::selectRoots";
 
 	box * b = p->partitionBoxes.back();
@@ -185,8 +198,8 @@ moduleCollection placement::selectRoots(partition *p) {
 			}
 			else if(pair.first == &systemModule) {
 				for(ulink *l: pair.second){
-					for(terminal* t: *(l->linkSink)) {
-						if (t->type == schematic::in || t->type == schematic::inout){
+					for(splicedTerminal *t: *(l->linkSink)) {
+						if (t->getType() == schematic::inType || t->getType() == schematic::inoutType){
 							seed = true;
 							break;
 						}
@@ -201,7 +214,7 @@ moduleCollection placement::selectRoots(partition *p) {
 
 		int outGoingNets = 0;
 		for(namedTerminalPair &t:m->moduleTerminals) {
-			if(t.second.type == schematic::out)
+			if(t.second->type == schematic::outType)
 				outGoingNets++;
 			if(outGoingNets > 1)
 				break;
@@ -212,7 +225,7 @@ moduleCollection placement::selectRoots(partition *p) {
 	return roots;
 }
 
-box * placement::selectPath( box *path, box *remainingModules) {
+box * schematicGenerator::selectPath( box *path, box *remainingModules) {
 	bool searchSuccess = true;
 
 	while(searchSuccess && path->size()<=maxPathLength) {
@@ -223,9 +236,9 @@ box * placement::selectPath( box *path, box *remainingModules) {
 			moduleLinkMap::iterator mapIterator = lastModule->connectedModuleLinkMap.find(m);
 			if(mapIterator != lastModule->connectedModuleLinkMap.end()) {
 				for(ulink *l:mapIterator->second){
-					if(l->linkSource->type == schematic::in || l->linkSource->type == schematic::inout ){
-						for(terminal * t: *(l->linkSink)){
-							if(t->type == schematic::out || t->type == schematic::inout){
+					if(l->linkSource->getType() == schematic::inType || l->linkSource->getType() == schematic::inoutType ){
+						for(splicedTerminal *t: *(l->linkSink)){
+							if(t->getType() == schematic::outType || t->getType() == schematic::inoutType){
 								remainingModules->remove(m);
 								path->add(m);
 								searchSuccess = true;
@@ -244,7 +257,7 @@ box * placement::selectPath( box *path, box *remainingModules) {
 	return path;
 }
 
-void placement::boxFormation() {
+void schematicGenerator::boxFormation() {
 
 	for(partition *p: allPartitions) {
 		moduleCollection roots = selectRoots(p);
@@ -275,31 +288,32 @@ void placement::boxFormation() {
 
 }
 
-terminal & placement::addSystemTerminal(const std::string &terminalIdentifier, const schematic::terminalType type) {
+terminal & schematicGenerator::addSystemTerminal(
+		const std::string &terminalName, const schematic::terminalType type, const int width) {
 	//FIXME: I need to check whether the returned reference is correct
-	return systemModule.moduleTerminals.insert(std::make_pair(terminalIdentifier,terminal
-			(terminalIdentifier,type,&systemModule,true))).first->second;
+	return *systemModule.moduleTerminals.insert(
+			{terminalName,new terminal(terminalName, type, width, &systemModule, true)}).first->second;
 }
 
-terminal &placement::getSystemTerminal(const std::string &terminalIdentifier) {
+terminal &schematicGenerator::getSystemTerminal(const std::string &terminalIdentifier) {
 	return systemModule.getTerminal(terminalIdentifier);
 }
 
-module & placement::addModule(const std::string &moduleName) {
+module & schematicGenerator::addModule(const std::string &moduleName) {
 	return subModules.insert(std::make_pair(moduleName,module(moduleName))).first->second;
 }
 
 
-module & placement::getModule(const std::string &moduleName) {
+module & schematicGenerator::getModule(const std::string &moduleName) {
 	return subModules.find(moduleName)->second;
 }
 
 
-net & placement::addNet(const std::string &netName) {
-	return internalNets.insert(std::make_pair(netName,net(netName))).first->second;
+net & schematicGenerator::addNet(const std::string &netName, const int netWidth) {
+	return internalNets.insert({netName,net(netName,netWidth)}).first->second;
 }
 
-net & placement::getNet(const std::string &netName) {
+net & schematicGenerator::getNet(const std::string &netName) {
 	return internalNets.find(netName)->second;
 }
 

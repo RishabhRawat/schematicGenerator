@@ -1,21 +1,21 @@
 #include <fstream>
-#include "placement.h"
+#include "schematicGenerator.h"
 #include "json/json.hpp"
 namespace schematic{
 	schematic::terminalType parseTerminalType(std::string t) {
 		if(t =="in" || t == "input")
-			return schematic::in;
+			return schematic::inType;
 		else if(t == "output" || t == "out")
-			return schematic::out;
-		else if(t == "inout")
-			return schematic::inout;
+			return schematic::outType;
+		else if(t == "inoutType")
+			return schematic::inoutType;
 		else
 			throw std::invalid_argument("unknown port direction");
 	}
 }
 
 
-void placement::parseJson(std::string fName) {
+void schematicGenerator::parseJson(std::string fName) {
 
 
     std::ifstream jsonFile(fName);
@@ -34,7 +34,7 @@ void placement::parseJson(std::string fName) {
 
 		for (nlohmann::json::iterator sysT_iter = m_iter.value()["ports"].begin();
 		     sysT_iter != m_iter.value()["ports"].end(); ++sysT_iter) {
-			addSystemTerminal(sysT_iter.key(),schematic::parseTerminalType(sysT_iter.value()["direction"]));
+			addSystemTerminal(sysT_iter.key(),schematic::parseTerminalType(sysT_iter.value()["direction"]),sysT_iter.value()["bits"].size());
 		}
 
 	}

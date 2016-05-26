@@ -3,7 +3,7 @@
 #include "common.h"
 
 class box {
-	friend class placement;
+	friend class schematicGenerator;
 private:
 	partition *parentPartition;
 	hashlib::pool<module*> boxModules;  //NOTE: check if using vector is fine here

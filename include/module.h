@@ -3,12 +3,14 @@
 #include "common.h"
 #include "terminal.h" //for terminal vector
 
+
 class module
 {
-    friend class placement;
+    friend class schematicGenerator;
 
 private:
-    std::string moduleType;
+
+	std::string moduleType;
     const std::string moduleIdentifier;
     intPair modulePosition;
 
@@ -16,10 +18,15 @@ private:
     intPair moduleSize = {50,100}; //Default size
 
 	namedTerminalCollection moduleTerminals;
+
+	splicedTerminalSet moduleSplicedTerminals;
     
     moduleLinkMap connectedModuleLinkMap;
 
     box* parentBox;
+
+	splicedTerminal * addSplicedTerminal(const terminal *const baseTerminal, const std::string &terminalName,
+	                                     net *const attachedNet);
 
 
 public:
@@ -38,9 +45,10 @@ public:
 	    parentBox = b;
     }
 
-    terminal & addTerminal(const std::string &terminalName, const schematic::terminalType type);
-
+    terminal &addTerminal(const std::string &terminalName, const schematic::terminalType type, const int width);
 
 	terminal & getTerminal(const std::string &basic_string);
+
+
 };
 #endif // MODULES_H
