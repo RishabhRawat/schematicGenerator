@@ -36,6 +36,11 @@ void schematicGenerator::parseJson(std::string fName) {
 		     sysT_iter != m_iter.value()["ports"].end(); ++sysT_iter) {
 			addSystemTerminal(sysT_iter.key(),schematic::parseTerminalType(sysT_iter.value()["direction"]),sysT_iter.value()["bits"].size());
 		}
+		for (nlohmann::json::iterator cell_iter = m_iter.value()["cells"].begin();
+		     cell_iter != m_iter.value()["cells"].end(); ++cell_iter) {
+			std::cout<<cell_iter.key()<<" "<<cell_iter.value()<<std::endl;
+		}
+
 
 	}
 
