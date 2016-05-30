@@ -60,13 +60,13 @@ struct ulink{
 };
 
 
-typedef hashlib::dict<std::string,module> namedModuleCollection;
+typedef hashlib::dict<std::string,module*> namedModuleCollection;
 typedef hashlib::dict<std::string,terminal*> namedTerminalCollection;
-typedef hashlib::dict<std::string,net> namedNetCollection;
+typedef hashlib::dict<std::string,net*> namedNetCollection;
 
-typedef std::pair<std::string,module> namedModulePair;
+typedef std::pair<std::string,module*> namedModulePair;
 typedef std::pair<std::string,terminal*> namedTerminalPair;
-typedef std::pair<std::string,net> namedNetPair;
+typedef std::pair<std::string,net*> namedNetPair;
 
 
 typedef std::vector<module*> moduleCollection;

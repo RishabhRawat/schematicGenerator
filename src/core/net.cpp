@@ -31,6 +31,12 @@ net::~net() {
 net net::partialNet(int index1, int index2) {
 	if(index1 < lowIndex || index2 < lowIndex || index1 > highIndex || index2 > highIndex)
 		throw std::invalid_argument("Index value out of range");
-	return net(*this,index1,index2,index1>index2);
+	return net(*this,index1,index2,index1>=index2);
+}
+
+net net::operator[](int index) {
+	if(index < lowIndex || index > highIndex)
+		throw std::invalid_argument("Index value out of range");
+	return net(*this,index,index,true);
 }
 

@@ -23,6 +23,7 @@ public:
 	net(const std::string &netName, const int netWidth);
 
 	net partialNet(int index1, int index2);
+	net operator[](int index);
 	~net();
 
 private:
@@ -35,6 +36,9 @@ private:
 	coalescedNet * coalesced;
 
 	net(const net &baseNet, const int highIndex, const int lowIndex, const bool highToLow);
+	net ( const net & ) = default;
+	net & operator= ( const net & ) = default;
+
 };
 
 class coalescedNet {
