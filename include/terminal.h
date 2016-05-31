@@ -24,11 +24,15 @@ public:
 
 
 	terminal partialTerminal(int index1, int index2);
+	terminal operator[](int index);
 
 	terminal(const std::string &terminalIdentifier, const schematic::terminalType type, const int terminalWidth,
 	         module *const parentModule, const bool systemTerminal);
 
 	~terminal();
+
+	void connect(std::initializer_list<std::reference_wrapper<net>> netV);
+	void connect(const net &n);
 
 	/* sets position relative to the module which owns the terminal,
 	 * relative to bottom left corner, must be set after the module size is set
@@ -55,6 +59,7 @@ private:
 
 	terminal ( const terminal & ) = default;
 	terminal & operator= ( const terminal & ) = default;
+
 };
 
 class splicedTerminal {

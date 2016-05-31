@@ -19,7 +19,7 @@ net::net(const net &baseNet, const int highIndex, const int lowIndex, const bool
 }
 
 net::~net() {
-	if(internalBitNets[lowIndex]->baseNet == this) {
+	if(internalBitNets[0]->baseNet == this) {
 		for (int i = 0; i < netWidth; ++i) {
 			delete internalBitNets[i];
 		}

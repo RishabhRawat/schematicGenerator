@@ -13,6 +13,7 @@ struct bitNet {
 
 
 class net {
+	friend class terminal;
 	friend class splicedTerminal;
 	friend class schematicGenerator;
 
