@@ -15,7 +15,9 @@ schematicGenerator::~schematicGenerator() {
 }
 
 void schematicGenerator::doPlacement() {
+	printInitialStructures();
 	initializeStructures();
+	printDerivedStructures();
 	partitionFormation();
 	boxFormation();
 	modulePlacement();
@@ -186,12 +188,14 @@ partition * schematicGenerator::createPartition(hashlib::pool<module*>& moduleSe
 }
 
 moduleCollection schematicGenerator::selectRoots(partition *p) {
-	if(p->partitionBoxes.size()>1) throw "Invalid Partition Error: placment::selectRoots";
+	if(p->partitionBoxes.size()>1) throw std::runtime_error("Invalid Partition Error: placment::selectRoots");
 
 	box * b = p->partitionBoxes.back();
 	moduleCollection roots;
 	for(module *m:b->boxModules) {
 		bool seed = false;
+		std::cout<<m->connectedModuleLinkMap.size()<<std::endl;
+		//FIXME: what about when there are no connectedModuleLinkMap entries ??
 		for(moduleLinkPair pair: m->connectedModuleLinkMap) {
 			if(b->boxModules.find(pair.first) == b->boxModules.end() && pair.first != &systemModule){
 				seed = true;
@@ -261,28 +265,34 @@ void schematicGenerator::boxFormation() {
 
 	for(partition *p: allPartitions) {
 		moduleCollection roots = selectRoots(p);
+		if(roots.empty())
+			throw "too less roots";
 		box * elements = p->partitionBoxes.pop();
 		while(!elements->empty()) {
 			box * longestPath = nullptr;
 			for(module * root:roots) {
 				box * path = new box();
 				elements->remove(root);
-				//FIXME:This will be in two boxes at the same time?
-				//ParentBox is not required in selectPath
-				//so its value should be consistent at the end
 				path->add(root);
-				path = selectPath(path,elements);
-				elements->add(root);
+				path = selectPath(path,elements); //This will cause all the elements in the path box
+
+				for (module* m:path->boxModules)
+					m->setParentBox(elements);
+
 				if(longestPath->size() < path->size()) {
 					delete longestPath;
 					longestPath = path;
 				}
 				else
 					delete path;
+
 			}
 			//To take care of parentBox inconsistencies
 			for(module *m:longestPath->boxModules)
 				m->setParentBox(longestPath);
+
+
+
 		}
 	}
 

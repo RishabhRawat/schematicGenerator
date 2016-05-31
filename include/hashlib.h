@@ -851,14 +851,12 @@ public:
 
 	K& back()
 	{
-		iterator it = begin();
-		return *it;
+		return entries.back().udata;
 	}
 
 	K& front()
 	{
-		iterator it = iterator(this, 0);
-		return *it;
+		return entries.front().udata;
 	}
 
 	void swap(pool &other)

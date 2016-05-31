@@ -16,10 +16,10 @@ private:
 
 	partitionCollection allPartitions;
 
-	//Important Layout Parameters
-	unsigned int maxPartitionSize;
-	unsigned int maxPartitionConnections;
-	unsigned int maxPathLength;
+	//Important Layout Parameters, just guesses for now
+	unsigned int maxPartitionSize = 20;
+	unsigned int maxPartitionConnections = 20;
+	unsigned int maxPathLength = 10;
 
 	void initializeStructures();
 
@@ -38,6 +38,8 @@ private:
 	void partitionPlacement() {};
 	void terminalPlacement() {};
 
+	void printInitialStructures();
+	void printDerivedStructures();
 
 
 public:
