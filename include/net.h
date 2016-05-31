@@ -34,7 +34,7 @@ private:
 	const int lowIndex;
 	const bool highToLow;
 
-	coalescedNet * coalesced;
+	coalescedNet * coalesced = nullptr;
 
 	net(const net &baseNet, const int highIndex, const int lowIndex, const bool highToLow);
 	net ( const net & ) = default;

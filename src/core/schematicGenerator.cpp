@@ -19,6 +19,7 @@ void schematicGenerator::doPlacement() {
 	initializeStructures();
 	printDerivedStructures();
 	partitionFormation();
+	printPartitions();
 	boxFormation();
 	modulePlacement();
 	boxPlacement();
@@ -194,7 +195,6 @@ moduleCollection schematicGenerator::selectRoots(partition *p) {
 	moduleCollection roots;
 	for(module *m:b->boxModules) {
 		bool seed = false;
-		std::cout<<m->connectedModuleLinkMap.size()<<std::endl;
 		//FIXME: what about when there are no connectedModuleLinkMap entries ??
 		for(moduleLinkPair pair: m->connectedModuleLinkMap) {
 			if(b->boxModules.find(pair.first) == b->boxModules.end() && pair.first != &systemModule){

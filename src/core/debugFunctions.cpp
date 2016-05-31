@@ -3,9 +3,12 @@
 //
 #include "schematicGenerator.h"
 #include <iostream>
+#include "partition.h"
+#include "box.h"
+
 
 void schematicGenerator::printDerivedStructures() {
-	std::cout<<std::endl<<"Printing All net-net connectivities"<<std::endl;
+	std::cout<<std::endl<<"Printing All coalescedNet connections to modules and their splicedTerminal"<<std::endl;
 	for (coalescedNet *n: coalescedNetSet){
 		std::cout<<n->sourceNet->netIdentifier<<" : "<<std::endl;
 		for(moduleSplicedTerminalPair mt: n->connectedModuleSplicedTerminalMap) {
@@ -15,21 +18,23 @@ void schematicGenerator::printDerivedStructures() {
 		}
 
 	}
-	std::cout<<std::endl<<"Printing All module-module connectivities"<<std::endl;
+
+	std::cout<<std::endl<<"Printing All module-coalescedNet connectivities"<<std::endl;
+	for (namedModulePair nm: subModules){
+		std::cout<<nm.first<<" : "<<std::endl;
+		for(splicedTerminal *t: nm.second->moduleSplicedTerminals) {
+			std::cout<<"\t"<<t->attachedNet->netIdentifier<<std::endl;
+		}
+
+	}
+
+	std::cout<<std::endl<<"Printing All module connections to other modules and the coalesced nets connecting them"<<std::endl;
 	for (namedModulePair nm: subModules){
 		std::cout<<nm.first<<" : "<<std::endl;
 		for(moduleLinkPair ml: nm.second->connectedModuleLinkMap) {
 			std::cout<<"\t"<<ml.first->moduleIdentifier<<std::endl;
 			for(ulink *ul: ml.second)
 				std::cout<<"\t\t"<<ul->linkNet->sourceNet->netIdentifier<<std::endl;
-		}
-
-	}
-	std::cout<<std::endl<<"Printing All module-net connectivities"<<std::endl;
-	for (namedModulePair nm: subModules){
-		std::cout<<nm.first<<" : "<<std::endl;
-		for(splicedTerminal *t: nm.second->moduleSplicedTerminals) {
-				std::cout<<"\t"<<t->attachedNet->netIdentifier<<std::endl;
 		}
 
 	}
@@ -47,4 +52,17 @@ void schematicGenerator::printInitialStructures() {
 
 	}
 	std::cout<<"Debug Print Initial Structures Finished"<<std::endl;
+}
+
+void schematicGenerator::printPartitions() {
+	std::cout<<std::endl<<"Printing all partitions"<<std::endl;
+	int i = 0;
+	for (partition *p: allPartitions){
+		std::cout<<i++<<" : "<<std::endl;
+		for(module *m: p->partitionBoxes.front()->boxModules) {
+			std::cout<<"\t"<<m->moduleIdentifier<<std::endl;
+		}
+
+	}
+	std::cout<<"Debug Print Partitions Finished"<<std::endl;
 }

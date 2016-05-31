@@ -40,6 +40,7 @@ private:
 
 	void printInitialStructures();
 	void printDerivedStructures();
+	void printPartitions();
 
 
 public:

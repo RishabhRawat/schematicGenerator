@@ -72,11 +72,11 @@ void schematicGenerator::parseJson(std::string fName) {
 
 		for (nlohmann::json::iterator cell_iter = m_iter.value()["cells"].begin();
 		     cell_iter != m_iter.value()["cells"].end(); ++cell_iter) {
-			module m = addModule(cell_iter.key());
+			module &m = addModule(cell_iter.key());
 
 			for (nlohmann::json::iterator t_iter = cell_iter.value()["port_directions"].begin();
 			     t_iter != cell_iter.value()["port_directions"].end(); ++t_iter) {
-				terminal t = m.addTerminal(t_iter.key(), schematic::parseTerminalType
+				terminal &t = m.addTerminal(t_iter.key(), schematic::parseTerminalType
 						(cell_iter.value()["port_directions"][t_iter.key()]), cell_iter.value()["connections"][t_iter.key()].size());
 
 				for (int i = 0; i < t.terminalWidth; ++i) {
