@@ -34,66 +34,69 @@ void schematicGenerator::initializeStructures() {
 	 * The terminals will be sliced and if a terminal is fanout to different nets,
 	 * then there will be two copies of that terminal
 	 */
-	{
-		//Iterates over all bitTerminals in the whole system
-		for(namedModulePair &m_pair:subModules) {
-			for (namedTerminalPair &t_pair:m_pair.second->moduleTerminals) {
-				hashlib::dict<net *, std::vector<int>> attachedNetIndexes;
-				for (int i = 0; i < t_pair.second->terminalWidth; ++i) {
-					for (bitNet *bN: t_pair.second->internalBitTerminals[i]->connectedBitNets) {
-						auto pair = attachedNetIndexes.find(bN->baseNet);
-						if (pair == attachedNetIndexes.end())
-							attachedNetIndexes.insert({bN->baseNet, {i}});
-						else
-							pair->second.push_back(i);
-					}
-				}
-				//Adding spliced Terminals
-				//TODO: Implement a more efficient string builder?
-				for(auto &&nI_pair:attachedNetIndexes) {
-					std::ostringstream imploded;
-					imploded<<t_pair.second->terminalIdentifier<<"_";
-					std::copy(nI_pair.second.begin(), nI_pair.second.end(), std::ostream_iterator<int>(imploded, "_"));
-					//Insertion into module
-					splicedTerminal *newST = m_pair.second->addSplicedTerminal(t_pair.second, imploded.str(), nI_pair.first);
-					//Insertion into coalesced List
-					if(nI_pair.first->coalesced == nullptr) {
-						coalescedNet * newCNet = new coalescedNet(nI_pair.first);
-						newCNet->connectedModuleSplicedTerminalMap.insert({m_pair.second,{newST}});
-						nI_pair.first->coalesced = newCNet;
-						coalescedNetSet.insert(newCNet);
-					}
-					else {
-						auto cMST_iter = nI_pair.first->coalesced->connectedModuleSplicedTerminalMap
-								.find(m_pair.second);
-						if(cMST_iter == nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.end())
-							nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.insert({m_pair.second,{newST}});
-						else
-							cMST_iter->second.push_back(newST);
 
-					}
+	subModules.insert({systemModule.moduleIdentifier,&systemModule});
+	//Iterates over all bitTerminals in the whole system
+	for(namedModulePair &m_pair:subModules) {
+		for (namedTerminalPair &t_pair:m_pair.second->moduleTerminals) {
+			hashlib::dict<net *, std::vector<int>> attachedNetIndexes;
+			for (int i = 0; i < t_pair.second->terminalWidth; ++i) {
+				for (bitNet *bN: t_pair.second->internalBitTerminals[i]->connectedBitNets) {
+					auto pair = attachedNetIndexes.find(bN->baseNet);
+					if (pair == attachedNetIndexes.end())
+						attachedNetIndexes.insert({bN->baseNet, {i}});
+					else
+						pair->second.push_back(i);
+				}
+			}
+			//Adding spliced Terminals
+			//TODO: Implement a more efficient string builder?
+			for(auto &&nI_pair:attachedNetIndexes) {
+				std::ostringstream imploded;
+				imploded<<t_pair.second->terminalIdentifier<<"_";
+				std::copy(nI_pair.second.begin(), nI_pair.second.end(), std::ostream_iterator<int>(imploded, "_"));
+				//Insertion into module
+				splicedTerminal *newST = m_pair.second->addSplicedTerminal(t_pair.second, imploded.str(), nI_pair.first);
+				//Insertion into coalesced List
+				if(nI_pair.first->coalesced == nullptr) {
+					coalescedNet * newCNet = new coalescedNet(nI_pair.first);
+					newCNet->connectedModuleSplicedTerminalMap.insert({m_pair.second,{newST}});
+					nI_pair.first->coalesced = newCNet;
+					coalescedNetSet.insert(newCNet);
+				}
+				else {
+					auto cMST_iter = nI_pair.first->coalesced->connectedModuleSplicedTerminalMap
+							.find(m_pair.second);
+					if(cMST_iter == nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.end())
+						nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.insert({m_pair.second,{newST}});
+					else
+						cMST_iter->second.push_back(newST);
+
 				}
 			}
 		}
-		//Setting up module connectivity
-		for(namedModulePair& m: subModules) {
-			for(splicedTerminal *t: m.second->moduleSplicedTerminals) {
-				for(moduleSplicedTerminalPair& mST_pair: t->getCoalescedNet()->connectedModuleSplicedTerminalMap) {
-					if(mST_pair.first != m.second){
-						moduleLinkMap::iterator mapIterator = m.second->connectedModuleLinkMap.find(mST_pair.first);
-						if(mapIterator == m.second->connectedModuleLinkMap.end()) {
-							linkCollection *newCollection = new linkCollection();
-							newCollection->push_back(new ulink(t->getCoalescedNet(),t,&mST_pair.second));
-							m.second->connectedModuleLinkMap.insert({mST_pair.first,*newCollection});
-						}
-						else {
-							mapIterator->second.push_back(new ulink(t->getCoalescedNet(),t,&mST_pair.second));
-						}
+	}
+
+
+	//Setting up module connectivity
+	for(namedModulePair& m: subModules) {
+		for(splicedTerminal *t: m.second->moduleSplicedTerminals) {
+			for(moduleSplicedTerminalPair& mST_pair: t->getCoalescedNet()->connectedModuleSplicedTerminalMap) {
+				if(mST_pair.first != m.second){
+					moduleLinkMap::iterator mapIterator = m.second->connectedModuleLinkMap.find(mST_pair.first);
+					if(mapIterator == m.second->connectedModuleLinkMap.end()) {
+						linkCollection *newCollection = new linkCollection();
+						newCollection->push_back(new ulink(t->getCoalescedNet(),t,&mST_pair.second));
+						m.second->connectedModuleLinkMap.insert({mST_pair.first,*newCollection});
+					}
+					else {
+						mapIterator->second.push_back(new ulink(t->getCoalescedNet(),t,&mST_pair.second));
 					}
 				}
 			}
 		}
 	}
+	subModules.erase(systemModule.moduleIdentifier);
 }
 
 void schematicGenerator::partitionFormation() {
@@ -128,15 +131,15 @@ module* schematicGenerator::selectSeed(hashlib::pool<module*> moduleSet) const{
 		}
 
 		if((connectionsInFreeSet > maxConnectionsInFreeSet) ||
-				((connectionsInFreeSet == maxConnectionsInFreeSet) &&
-				 (connectionsOutFreeSet <= minConnectionsOutFreeSet))){
+		   ((connectionsInFreeSet == maxConnectionsInFreeSet) &&
+		    (connectionsOutFreeSet <= minConnectionsOutFreeSet))){
 			seed = m;
 			maxConnectionsInFreeSet = connectionsInFreeSet;
 			minConnectionsOutFreeSet = connectionsOutFreeSet;
 		}
 	}
 	if(!seed || maxConnectionsInFreeSet < 0 ||
-			minConnectionsOutFreeSet == INT32_MAX)
+	   minConnectionsOutFreeSet == INT32_MAX)
 		throw "Bad moduleSet in schematicGenerator::selectSeed";
 	return seed;
 }
@@ -149,7 +152,7 @@ partition * schematicGenerator::createPartition(hashlib::pool<module*>& moduleSe
 	unsigned int connections = 0;
 	unsigned int partitionEntries = 0;
 	while(!moduleSet.empty() && (partitionEntries < maxPartitionSize)
-		  && (connections < maxPartitionConnections)) {
+	      && (connections < maxPartitionConnections)) {
 
 		module * selectedModule = nullptr;
 		int maxConnectionsInPartition = -1;
@@ -167,8 +170,8 @@ partition * schematicGenerator::createPartition(hashlib::pool<module*>& moduleSe
 			}
 
 			if((connectionsInPartition > maxConnectionsInPartition) ||
-					((connectionsInPartition == maxConnectionsInPartition) &&
-					 (connectionsOutPartition <= minConnectionsOutPartion))) {
+			   ((connectionsInPartition == maxConnectionsInPartition) &&
+			    (connectionsOutPartition <= minConnectionsOutPartion))) {
 				selectedModule = m;
 				maxConnectionsInPartition = connectionsInPartition;
 				minConnectionsOutPartion = connectionsOutPartition;
@@ -176,7 +179,7 @@ partition * schematicGenerator::createPartition(hashlib::pool<module*>& moduleSe
 		}
 
 		if(!selectedModule || maxConnectionsInPartition < 0 ||
-				minConnectionsOutPartion == INT32_MAX)
+		   minConnectionsOutPartion == INT32_MAX)
 			throw "Bad selectedModule in schematicGenerator::createPartition";
 
 
@@ -196,6 +199,7 @@ moduleCollection schematicGenerator::selectRoots(partition *p) {
 	for(module *m:b->boxModules) {
 		bool seed = false;
 		//FIXME: what about when there are no connectedModuleLinkMap entries ??
+		//TODO: Fix bug relating to not adding systemroots as terminals
 		for(moduleLinkPair pair: m->connectedModuleLinkMap) {
 			if(b->boxModules.find(pair.first) == b->boxModules.end() && pair.first != &systemModule){
 				seed = true;
@@ -279,7 +283,7 @@ void schematicGenerator::boxFormation() {
 				for (module* m:path->boxModules)
 					m->setParentBox(elements);
 
-				if(longestPath->size() < path->size()) {
+				if(longestPath == nullptr || longestPath->size() < path->size()) {
 					delete longestPath;
 					longestPath = path;
 				}
@@ -290,9 +294,6 @@ void schematicGenerator::boxFormation() {
 			//To take care of parentBox inconsistencies
 			for(module *m:longestPath->boxModules)
 				m->setParentBox(longestPath);
-
-
-
 		}
 	}
 

@@ -41,11 +41,6 @@ void schematicGenerator::parseJson(std::string fName) {
 	for (nlohmann::json::iterator m_iter = parsedJson["modules"].begin();
 	     m_iter != parsedJson["modules"].end(); ++m_iter) {
 
-		for (nlohmann::json::iterator sysT_iter = m_iter.value()["ports"].begin();
-		     sysT_iter != m_iter.value()["ports"].end(); ++sysT_iter) {
-			addSystemTerminal(sysT_iter.key(),schematic::parseTerminalType(sysT_iter.value()["direction"]),sysT_iter.value()["bits"].size());
-		}
-
 		for (nlohmann::json::iterator n_iter = m_iter.value()["netnames"].begin();
 		     n_iter != m_iter.value()["netnames"].end(); ++n_iter) {
 			net &n = addNet(n_iter.key(), n_iter.value()["bits"].size());
@@ -93,10 +88,26 @@ void schematicGenerator::parseJson(std::string fName) {
 				}
 
 			}
-//			std::cout<<cell_iter.key()<<" "<<cell_iter.value()<<std::endl;
 		}
 
+		for (nlohmann::json::iterator sysT_iter = m_iter.value()["ports"].begin();
+		     sysT_iter != m_iter.value()["ports"].end(); ++sysT_iter) {
+			terminal &t = addSystemTerminal(sysT_iter.key(),schematic::parseTerminalType(sysT_iter.value()["direction"]),sysT_iter.value()["bits"].size());
 
+			for (int i = 0; i < t.terminalWidth; ++i) {
+				unsigned int bit;
+				try {
+					bit = sysT_iter.value()["bits"][i].get<int>();
+					t[i].connect((*netData[bit].baseNet)[netData[bit].index]);
+				}
+				catch (std::domain_error ex) {
+					//FIXME: Take care of the constants :/
+					bit = (unsigned) std::stoi(sysT_iter.value()["bits"][i].get<std::string>());
+				}
+
+			}
+
+		}
 	}
 }
 
