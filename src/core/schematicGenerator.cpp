@@ -191,15 +191,14 @@ partition * schematicGenerator::createPartition(hashlib::pool<module*>& moduleSe
 	return newPartition;
 }
 
-moduleCollection schematicGenerator::selectRoots(partition *p) {
+moduleSet * schematicGenerator::selectRoots(partition *p) {
 	if(p->partitionBoxes.size()>1) throw std::runtime_error("Invalid Partition Error: placment::selectRoots");
 
 	box * b = p->partitionBoxes.back();
-	moduleCollection roots;
+	hashlib::pool<module*> * roots = new hashlib::pool<module*>();
 	for(module *m:b->boxModules) {
 		bool seed = false;
 		//FIXME: what about when there are no connectedModuleLinkMap entries ??
-		//TODO: Fix bug relating to not adding systemroots as terminals
 		for(moduleLinkPair pair: m->connectedModuleLinkMap) {
 			if(b->boxModules.find(pair.first) == b->boxModules.end() && pair.first != &systemModule){
 				seed = true;
@@ -228,7 +227,7 @@ moduleCollection schematicGenerator::selectRoots(partition *p) {
 				break;
 		}
 		if(seed)
-			roots.push_back(m);
+			roots->insert(m);
 	}
 	return roots;
 }
@@ -238,7 +237,6 @@ box * schematicGenerator::selectPath( box *path, box *remainingModules) {
 
 	while(searchSuccess && path->size()<=maxPathLength) {
 		searchSuccess = false;
-		//FIXME: module * lastModule = path->boxModules.back();
 		module * lastModule = path->boxModules.back();
 		for(module *m: remainingModules->boxModules) {
 			moduleLinkMap::iterator mapIterator = lastModule->connectedModuleLinkMap.find(m);
@@ -268,13 +266,13 @@ box * schematicGenerator::selectPath( box *path, box *remainingModules) {
 void schematicGenerator::boxFormation() {
 
 	for(partition *p: allPartitions) {
-		moduleCollection roots = selectRoots(p);
-		if(roots.empty())
+		moduleSet * roots = selectRoots(p);
+		if(roots->empty())
 			throw "too less roots";
 		box * elements = p->partitionBoxes.pop();
 		while(!elements->empty()) {
 			box * longestPath = nullptr;
-			for(module * root:roots) {
+			for(module * root: *roots) {
 				box * path = new box();
 				elements->remove(root);
 				path->add(root);
@@ -292,8 +290,12 @@ void schematicGenerator::boxFormation() {
 
 			}
 			//To take care of parentBox inconsistencies
-			for(module *m:longestPath->boxModules)
+			for(module *m:longestPath->boxModules) {
+				elements->remove(m);
 				m->setParentBox(longestPath);
+			}
+			roots->erase(longestPath->boxModules.front());
+			p->add(longestPath);
 		}
 	}
 

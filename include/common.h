@@ -82,6 +82,7 @@ typedef std::pair<module*,std::vector<ulink*>> moduleLinkPair;
 typedef std::pair<module*,std::vector<splicedTerminal*>> moduleSplicedTerminalPair;
 
 typedef hashlib::pool<splicedTerminal*> splicedTerminalSet;
+typedef hashlib::pool<module*> moduleSet;
 
 
 #endif // COMMON_H

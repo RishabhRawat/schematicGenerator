@@ -29,7 +29,7 @@ private:
 	partition *createPartition(hashlib::pool<module *> &moduleSet, module *seed);
 
 	void boxFormation();
-	moduleCollection selectRoots(partition *p);
+	moduleSet * selectRoots(partition *p);
 	box * selectPath( box *rootBox, box *remainingModules);
 
 
