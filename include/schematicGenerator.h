@@ -24,16 +24,18 @@ private:
 	void initializeStructures();
 
 	void partitionFormation();
-	module *selectSeed(hashlib::pool<module *> moduleSet) const;
+	module *selectPartitionSeed(hashlib::pool<module *> moduleSet) const;
 //	int connectionsToExistingPartitions(module *m);
 	partition *createPartition(hashlib::pool<module *> &moduleSet, module *seed);
 
 	void boxFormation();
-	moduleSet * selectRoots(partition *p);
-	box * selectPath( box *rootBox, box *remainingModules);
+	moduleSet * selectBoxSeeds(partition *p);
+	box * selectPath(box *rootBox, moduleSet remainingModules);
 
 
-	void modulePlacement() {};
+	void modulePlacement();
+	unsigned int calculatePadding(module *m);
+	void initModulePlacement(box *b);
 	void boxPlacement() {};
 	void partitionPlacement() {};
 	void terminalPlacement() {};

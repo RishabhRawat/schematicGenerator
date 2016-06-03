@@ -23,6 +23,18 @@ namespace schematic {
 struct intPair {
 	int x;
 	int y;
+	intPair operator+(const intPair &rhs) {
+		return {x+rhs.x,y+rhs.y};
+	}
+	intPair operator-(const intPair &rhs) {
+		return {x+rhs.x,y+rhs.y};
+	}
+	intPair operator/(int a) {
+		return {x/a,y/a};
+	}
+	intPair operator*(int a) {
+		return {x*a,y*a};
+	}
 };
 
 

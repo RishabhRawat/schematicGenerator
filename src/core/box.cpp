@@ -1,12 +1,8 @@
 #include "box.h"
 #include "module.h"
 
-void box::add(module *m) {
+void box::add(module *m, splicedTerminal *src, splicedTerminal *sink) {
     m->setParentBox(this);
-    boxModules.insert(m);
-}
-
-void box::remove(module *m) {
-    m->setParentBox(nullptr);
-    boxModules.erase(m);
+    boxModules.emplace_back(m);
+    boxLink.emplace_back(src,sink);
 }

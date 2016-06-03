@@ -69,7 +69,8 @@ private:
 	const terminal * const baseTerminal;
 	const std::string terminalIdentifier;
 
-	intPair terminalPosition;
+	intPair originalPosition;
+	intPair placedPosition;
 	net *const attachedNet;
 
 	coalescedNet * getCoalescedNet();

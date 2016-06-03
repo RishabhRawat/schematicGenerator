@@ -338,7 +338,7 @@ class dict
 	}
 
 public:
-	class const_iterator : public std::iterator<std::forward_iterator_tag, std::pair<K, T>>
+	class const_iterator : public std::iterator<std::bidirectional_iterator_tag, std::pair<K, T>>
 	{
 		friend class dict;
 	protected:
@@ -348,6 +348,7 @@ public:
 	public:
 		const_iterator() { }
 		const_iterator operator++() { index--; return *this; }
+		const_iterator operator--() { index++; return *this; }
 		bool operator<(const const_iterator &other) const { return index > other.index; }
 		bool operator==(const const_iterator &other) const { return index == other.index; }
 		bool operator!=(const const_iterator &other) const { return index != other.index; }
@@ -355,7 +356,7 @@ public:
 		const std::pair<K, T> *operator->() const { return &ptr->entries[index].udata; }
 	};
 
-	class iterator : public std::iterator<std::forward_iterator_tag, std::pair<K, T>>
+	class iterator : public std::iterator<std::bidirectional_iterator_tag, std::pair<K, T>>
 	{
 		friend class dict;
 	protected:
@@ -365,6 +366,7 @@ public:
 	public:
 		iterator() { }
 		iterator operator++() { index--; return *this; }
+		iterator operator--() { index++; return *this; }
 		bool operator<(const iterator &other) const { return index > other.index; }
 		bool operator==(const iterator &other) const { return index == other.index; }
 		bool operator!=(const iterator &other) const { return index != other.index; }
@@ -557,10 +559,10 @@ public:
 	void clear() { hashtable.clear(); entries.clear(); }
 
 	iterator begin() { return iterator(this, int(entries.size())-1); }
-	iterator end() { return iterator(nullptr, -1); }
+	iterator end() { return iterator(this, -1); }
 
 	const_iterator begin() const { return const_iterator(this, int(entries.size())-1); }
-	const_iterator end() const { return const_iterator(nullptr, -1); }
+	const_iterator end() const { return const_iterator(this, -1); }
 };
 
 template<typename K, typename OPS>
@@ -690,7 +692,7 @@ protected:
 	}
 
 public:
-	class const_iterator : public std::iterator<std::forward_iterator_tag, K>
+	class const_iterator : public std::iterator<std::bidirectional_iterator_tag, K>
 	{
 		friend class pool;
 	protected:
@@ -700,13 +702,14 @@ public:
 	public:
 		const_iterator() { }
 		const_iterator operator++() { index--; return *this; }
+		const_iterator operator--() { index++; return *this; }
 		bool operator==(const const_iterator &other) const { return index == other.index; }
 		bool operator!=(const const_iterator &other) const { return index != other.index; }
 		const K &operator*() const { return ptr->entries[index].udata; }
 		const K *operator->() const { return &ptr->entries[index].udata; }
 	};
 
-	class iterator : public std::iterator<std::forward_iterator_tag, K>
+	class iterator : public std::iterator<std::bidirectional_iterator_tag, K>
 	{
 		friend class pool;
 	protected:
@@ -716,6 +719,7 @@ public:
 	public:
 		iterator() { }
 		iterator operator++() { index--; return *this; }
+		iterator operator--() { index++; return *this; }
 		bool operator==(const iterator &other) const { return index == other.index; }
 		bool operator!=(const iterator &other) const { return index != other.index; }
 		K &operator*() { return ptr->entries[index].udata; }
@@ -884,10 +888,10 @@ public:
 	void clear() { hashtable.clear(); entries.clear(); }
 
 	iterator begin() { return iterator(this, int(entries.size())-1); }
-	iterator end() { return iterator(nullptr, -1); }
+	iterator end() { return iterator(this, -1); }
 
 	const_iterator begin() const { return const_iterator(this, int(entries.size())-1); }
-	const_iterator end() const { return const_iterator(nullptr, -1); }
+	const_iterator end() const { return const_iterator(this, -1); }
 };
 
 template<typename K, int offset, typename OPS>

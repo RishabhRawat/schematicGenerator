@@ -1,15 +1,20 @@
 #ifndef BOX_H
 #define BOX_H
 #include "common.h"
+#include "module.h"
 
 class box {
 	friend class schematicGenerator;
 private:
 	partition *parentPartition;
-	hashlib::pool<module*> boxModules;  //NOTE: check if using vector is fine here
+	std::vector<module*> boxModules;  //NOTE: check if using vector is fine here
+	std::vector<std::pair<splicedTerminal*,splicedTerminal*>> boxLink;
 public:
-	void add(module *m);
-	void remove(module *m);
+	box(module * m) {
+		m->setParentBox(this);
+		boxModules.emplace_back(m);
+	}
+	void add(module *m, splicedTerminal *src, splicedTerminal *sink);
 	void setParentPartition(partition *p){parentPartition=p;}
 	size_t size() { return boxModules.size();}
 	bool empty() { return boxModules.empty();}
