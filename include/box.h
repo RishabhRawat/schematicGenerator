@@ -9,6 +9,7 @@ private:
 	partition *parentPartition;
 	std::vector<module*> boxModules;  //NOTE: check if using vector is fine here
 	std::vector<std::pair<splicedTerminal*,splicedTerminal*>> boxLink;
+	intPair moduleOffset, boxPosition, boxSize;
 public:
 	box(module * m) {
 		m->setParentBox(this);
@@ -16,7 +17,7 @@ public:
 	}
 	void add(module *m, splicedTerminal *src, splicedTerminal *sink);
 	void setParentPartition(partition *p){parentPartition=p;}
-	size_t size() { return boxModules.size();}
+	unsigned int length() { return static_cast<unsigned int>(boxModules.size());}
 	bool empty() { return boxModules.empty();}
 };
 

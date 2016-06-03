@@ -8,6 +8,16 @@
 
 
 void schematicGenerator::printDerivedStructures() {
+
+	std::cout<<std::endl<<"Printing All modules"<<std::endl;
+	for (namedModulePair nm: subModules){
+		std::cout<<nm.first<<" : "<<std::endl;
+		for(splicedTerminal *t: nm.second->moduleSplicedTerminals) {
+			std::cout<<"\t"<<t->terminalIdentifier<<" : {"
+			<<t->originalPosition.x<<","<<t->originalPosition.y<<"}"<<std::endl;
+		}
+
+	}
 	std::cout<<std::endl<<"Printing All coalescedNet connections to modules and their splicedTerminal"<<std::endl;
 	for (coalescedNet *n: coalescedNetSet){
 		std::cout<<n->sourceNet->netIdentifier<<" : "<<std::endl;
@@ -41,7 +51,6 @@ void schematicGenerator::printDerivedStructures() {
 	std::cout<<"Debug Print Derived Structures Finished"<<std::endl;
 }
 
-
 void schematicGenerator::printInitialStructures() {
 	std::cout<<std::endl<<"Printing All modules"<<std::endl;
 	for (namedModulePair nm: subModules){
@@ -59,7 +68,7 @@ void schematicGenerator::printPartitions() {
 	int i = 0;
 	for (partition *p: allPartitions){
 		std::cout<<i++<<" : "<<std::endl;
-		for(module *m: p->partitionBoxes.front()->boxModules) {
+		for(auto &&m: p->partitionModules) {
 			std::cout<<"\t"<<m->moduleIdentifier<<std::endl;
 		}
 

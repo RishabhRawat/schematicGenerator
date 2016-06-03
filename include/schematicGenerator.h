@@ -7,6 +7,14 @@ class schematicGenerator {
 
 private:
 
+	struct schematicParameters {
+		/*
+		 * This is the distance used in placing modules reserved for string wires
+		 */
+		unsigned int wireModuleDistance = 5;
+
+	} designParameters;
+
 
 	module systemModule;    //just a place holder
 	namedModuleCollection subModules;
@@ -34,8 +42,9 @@ private:
 
 
 	void modulePlacement();
-	unsigned int calculatePadding(module *m);
-	void initModulePlacement(box *b);
+	void initModulePlacement(box *b, intPair &leftBottom, intPair &rightTop);
+	void placeModule(box *b, unsigned int index, intPair &pair, intPair &intPair);
+	unsigned int calculatePadding(unsigned int n);
 	void boxPlacement() {};
 	void partitionPlacement() {};
 	void terminalPlacement() {};
@@ -68,7 +77,6 @@ public:
 	net &addNet(const std::string &netName, const int netWidth);
 
 	net & getNet(const std::string &netName);
-
 
 };
 

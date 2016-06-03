@@ -7,6 +7,7 @@
 class module
 {
     friend class schematicGenerator;
+	friend class box;
 
 private:
 
@@ -17,16 +18,24 @@ private:
     /* First along x-axis then along y-axis*/
     intPair moduleSize = {50,100}; //Default size
 
+	mutable schematic::clockwiseRotation moduleRotation = schematic::d_0;
+
 	namedTerminalCollection moduleTerminals;
 
 	splicedTerminalSet moduleSplicedTerminals;
     
     moduleLinkMap connectedModuleLinkMap;
 
-    box* parentBox;
+    mutable box* parentBox;
 
 	splicedTerminal * addSplicedTerminal(const terminal *const baseTerminal, const std::string &terminalName,
 	                                     net *const attachedNet);
+
+	void setParentBox(box *b) const {
+		parentBox = b;
+	}
+
+	void rotateModule(schematic::clockwiseRotation newRotValue);
 
 
 public:
@@ -39,10 +48,6 @@ public:
 	}
     intPair getModuleSize() const {
 	    return moduleSize;
-    }
-
-    void setParentBox(box *b) {
-	    parentBox = b;
     }
 
     terminal &addTerminal(const std::string &terminalName, const schematic::terminalType type, const int width);
