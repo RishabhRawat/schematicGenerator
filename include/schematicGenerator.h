@@ -44,15 +44,21 @@ private:
 	void modulePlacement();
 	void initModulePlacement(box *b, intPair &leftBottom, intPair &rightTop);
 	void placeModule(box *b, unsigned int index, intPair &pair, intPair &intPair);
-	unsigned int calculatePadding(unsigned int n);
-	void boxPlacement() {};
+	int calculatePadding(unsigned int n);
+	void boxPlacement();
+	box *selectNextBox(const hashlib::pool<box *, hashlib::hash_ops<box *>> &remainingBoxes,
+	                   const hashlib::pool<box *, hashlib::hash_ops<box *>> &placedBoxes);
+	intPair placeBox(const box* b);
+
 	void partitionPlacement() {};
+
 	void terminalPlacement() {};
 
 	void printInitialStructures();
-	void printDerivedStructures();
-	void printPartitions();
 
+	void printDerivedStructures();
+
+	void printPartitions();
 
 public:
 
@@ -77,7 +83,6 @@ public:
 	net &addNet(const std::string &netName, const int netWidth);
 
 	net & getNet(const std::string &netName);
-
 };
 
 #endif // PLACEMENT_H

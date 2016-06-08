@@ -18,3 +18,4 @@ scripts.js
 cmake*
 CMake*
 /build
+.clang-format
