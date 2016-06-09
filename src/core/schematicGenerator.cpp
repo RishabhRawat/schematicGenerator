@@ -114,9 +114,9 @@ void schematicGenerator::initializeStructures() {
 		int maxin = input + 1;
 		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
 			if (t->getType() == schematic::outType)
-				t->originalPosition = {m.second->moduleSize.x, (output-- * m.second->moduleSize.y) / maxout};
+				t->originalPosition = {m.second->size.x, (output-- * m.second->size.y) / maxout};
 			else
-				t->originalPosition = {0, (input-- * m.second->moduleSize.y) / maxin};
+				t->originalPosition = {0, (input-- * m.second->size.y) / maxin};
 		}
 	}
 }
@@ -323,11 +323,11 @@ void schematicGenerator::modulePlacement() {
 	for (partition* p : allPartitions) {
 		for (box* b : p->partitionBoxes) {
 			intPair rightTop;
-			initModulePlacement(b, b->moduleOffset, rightTop);
+			initModulePlacement(b, b->offset, rightTop);
 			for (unsigned int i = 1; i < b->length(); ++i) {
-				placeModule(b, i, b->moduleOffset, rightTop);
+				placeModule(b, i, b->offset, rightTop);
 			}
-			b->boxSize = rightTop - b->moduleOffset;
+			b->size = rightTop - b->offset;
 		}
 	}
 }
@@ -378,9 +378,9 @@ void schematicGenerator::initModulePlacement(box* b, intPair& leftBottom, intPai
 		}
 	}
 
-	root->modulePosition = {static_cast<int>(calculatePadding(lT)), static_cast<int>(calculatePadding(bT))};
+	root->position = {static_cast<int>(calculatePadding(lT)), static_cast<int>(calculatePadding(bT))};
 	leftBottom = {0, 0};
-	rightTop = root->modulePosition + root->moduleSize + intPair{calculatePadding(rT), calculatePadding(tT)};
+	rightTop = root->position + root->size + intPair{calculatePadding(rT), calculatePadding(tT)};
 }
 
 void schematicGenerator::placeModule(box* b, unsigned int index, intPair& leftBottom, intPair& rightTop) {
@@ -410,23 +410,23 @@ void schematicGenerator::placeModule(box* b, unsigned int index, intPair& leftBo
 
 	switch (source->baseTerminal->side) {
 		case schematic::rightSide:
-			m->modulePosition.y = m_prev->modulePosition.y + source->placedPosition.y - sink->placedPosition.y;
+			m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y;
 			break;
 		case schematic::topSide:
-			m->modulePosition.y = m_prev->modulePosition.y + source->placedPosition.y - sink->placedPosition.y +
-								  designParameters.wireModuleDistance;
+			m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y +
+							designParameters.wireModuleDistance;
 			break;
 		case schematic::leftSide:
-			if (source->placedPosition.y > m_prev->moduleSize.y / 2)
-				m->modulePosition.y = m_prev->modulePosition.y + source->placedPosition.y - sink->placedPosition.y +
-									  designParameters.wireModuleDistance;
+			if (source->placedPosition.y > m_prev->size.y / 2)
+				m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y +
+								designParameters.wireModuleDistance;
 			else
-				m->modulePosition.y = m_prev->modulePosition.y + source->placedPosition.y - sink->placedPosition.y -
-									  designParameters.wireModuleDistance;
+				m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y -
+								designParameters.wireModuleDistance;
 			break;
 		case schematic::bottomSide:
-			m->modulePosition.y = m_prev->modulePosition.y + source->placedPosition.y - sink->placedPosition.y -
-								  designParameters.wireModuleDistance;
+			m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y -
+							designParameters.wireModuleDistance;
 			break;
 		case schematic::noneSide:
 			throw std::runtime_error(
@@ -456,14 +456,14 @@ void schematicGenerator::placeModule(box* b, unsigned int index, intPair& leftBo
 		}
 	}
 
-	m->modulePosition.x = rightTop.x + calculatePadding(lT);
+	m->position.x = rightTop.x + calculatePadding(lT);
 
-	intPair temp = m->modulePosition + m->moduleSize + intPair{calculatePadding(rT), calculatePadding(tT)};
+	intPair temp = m->position + m->size + intPair{calculatePadding(rT), calculatePadding(tT)};
 	rightTop.x = temp.x;
 	if (temp.y > rightTop.y)
 		rightTop.y = temp.y;
 
-	int newBottom = m->modulePosition.y - calculatePadding(bT);
+	int newBottom = m->position.y - calculatePadding(bT);
 	if (newBottom > leftBottom.y)
 		leftBottom.y = newBottom;
 }
@@ -474,12 +474,14 @@ int schematicGenerator::calculatePadding(unsigned int n) {
 
 void schematicGenerator::boxPlacement() {
 	for (partition* p : allPartitions) {
+		hashlib::dict<box*, positionalStructure<box>> layoutData;
 		box* largestBox = *std::max_element(p->partitionBoxes.begin(), p->partitionBoxes.end(),
 				[](const box* x, const box* y) { return x->length() < y->length(); });
 
-		largestBox->boxPosition = {0, 0};
+		largestBox->position = {0, 0};
+		layoutData.insert(std::make_pair(largestBox, positionalStructure<box>()));
 		intPair leftBottom;
-		intPair rightTop = largestBox->boxSize;
+		intPair rightTop = largestBox->size;
 
 		hashlib::pool<box *> remainingBoxes, placedBoxes;
 
@@ -492,9 +494,20 @@ void schematicGenerator::boxPlacement() {
 			box* b = selectNextBox(remainingBoxes, placedBoxes);
 			remainingBoxes.erase(b);
 			// NOTE: can these two be merged??
-			intPair g0 = placeBox(b);
-			intPair g1 = gravityRest(b);
+			intPair optimumPosition = calculateOptimumBoxPosition(b);
+			b->position = calculateActualPosition(b->size, optimumPosition, layoutData);
+
+			auto&& pS = layoutData.insert(std::make_pair(b, positionalStructure<box>()));
+			for (auto&& p : layoutData) {
+				p.second.add(b);
+				pS.first->second.add(p.first);
+			}
+			leftBottom = {std::min(leftBottom.x, b->position.x), std::min(leftBottom.y, b->position.y)};
+			rightTop = {std::min(leftBottom.x, b->position.x + b->size.x),
+					std::min(leftBottom.y, b->position.y + b->size.y)};
 		}
+		p->size = rightTop - leftBottom;
+		p->offset = leftBottom;
 	}
 }
 
@@ -518,7 +531,7 @@ box* schematicGenerator::selectNextBox(
 	});
 }
 
-intPair schematicGenerator::placeBox(const box* b) {
+intPair schematicGenerator::calculateOptimumBoxPosition(const box* b) {
 	// The number of terminals of modules in box b which have connections which
 	// connect to the other boxes
 	// ie. terminals crossing the boundary
@@ -534,23 +547,118 @@ intPair schematicGenerator::placeBox(const box* b) {
 					m_pair.first->parentBox->parentPartition == b->parentPartition) {
 				boxCount += m_pair.second.size();
 				for (ulink* ul : m_pair.second) {
-					boxGrav = boxGrav + boxModule->modulePosition + b->moduleOffset + b->boxPosition +
-							  ul->linkSource->placedPosition;
+					boxGrav = boxGrav + boxModule->position + b->offset + b->position + ul->linkSource->placedPosition;
 					restCount += ul->linkSink->size();
 					for (splicedTerminal* otherT : *ul->linkSink) {
-						restGrav = boxGrav + boxModule->modulePosition + b->moduleOffset + b->boxPosition +
+						restGrav = boxGrav + boxModule->position + b->offset + b->position +
 								   ul->linkSource->placedPosition;
 					}
 				}
 			}
 		}
 	}
-	boxGrav = boxGrav / boxCount;
-	restGrav = restGrav / restCount;
-
-	// minimize ||(x + boxGrav.x - restGrav.x ), (y + boxGrav.y - restGrav.y )||
+	// Minimize ||(x + boxGrav.x - restGrav.x ), (y + boxGrav.y - restGrav.y )||
+	return (restGrav / restCount - boxGrav / boxCount);  // For x0,y0 (lower bottom)
 }
 
+template <typename T>
+intPair schematicGenerator::calculateActualPosition(
+		const intPair size, const intPair optimumPosition, hashlib::dict<T*, positionalStructure<T>>& layoutData) {
+	// TODO: This algorithm needs a lot of testing!!!!!!!!!!!!!!!!!!!!! yeah that many exclaimations :/
+	intPair bestPosition = {INT32_MAX, INT32_MAX};
+	unsigned int bestDistance = UINT32_MAX;
+
+	enum direction { top = 0, right = 1, bottom = 2, left = 3 };
+
+	auto insideObstacle = [&](const T* const obstacle, const intPair point) {
+		return (point > obstacle->position && point < obstacle->position + obstacle->size);
+	};
+
+	auto obstructionPointer = [&](const intPair point, T* const attachedRect, const direction d) {
+		for (T* const obst : layoutData.find(attachedRect)[d]) {
+			if (!insideObstacle(obst, point))
+				return obst;
+		}
+		return nullptr;
+	};
+
+	auto scanEdge = [&](const intPair p0, const intPair p1, T* const rectangle, const int orientation) {
+		if (p0[orientation] > optimumPosition[orientation]) {
+			intPair point = p0;
+			do {
+				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+					return;
+				T* ptr = obstructionPointer(point, rectangle, top);
+				if (ptr)
+					point[orientation] = ptr->size[orientation] + ptr->position[orientation];
+				else {
+					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestPosition = point;
+					return;
+				}
+			} while (point[orientation] <= p1[orientation]);
+		} else if (p1[orientation] > optimumPosition[orientation]) {
+			intPair point = {optimumPosition[orientation], p0[1 - orientation]};
+			do {
+				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+					break;
+				T* ptr = obstructionPointer(point, rectangle, top);
+				if (ptr)
+					point[orientation] = ptr->size[orientation] + ptr->position[orientation];
+				else {
+					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestPosition = point;
+					break;
+				}
+			} while (point[orientation] <= p1[orientation]);
+			point = {optimumPosition[orientation], p0[1 - orientation]};
+			do {
+				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+					return;
+				T* ptr = obstructionPointer(point, rectangle, top);
+				if (ptr)
+					point[orientation] = ptr->position[orientation];
+				else {
+					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestPosition = point;
+					return;
+				}
+			} while (point[orientation] <= p1[orientation]);
+		} else {
+			intPair point = p1;
+			do {
+				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+					return;
+				T* ptr = obstructionPointer(point, rectangle, top);
+				if (ptr)
+					point[orientation] = ptr->position[orientation];
+				else {
+					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestPosition = point;
+					return;
+				}
+			} while (point[orientation] >= p0[orientation]);
+		}
+	};
+
+	auto minimizeFunction = [&](T* const obstacle) {
+		if (obstacle->position.x < optimumPosition.x)  // left
+			scanEdge(obstacle->getVertex(0), obstacle->getVertex(1), obstacle, 1);
+		if (obstacle->position.y + obstacle->size.y > optimumPosition.y)  // top
+			scanEdge(obstacle->getVertex(1), obstacle->getVertex(2), obstacle, 0);
+		if (obstacle->position.x + obstacle->size.x > optimumPosition.x)  // right
+			scanEdge(obstacle->getVertex(2), obstacle->getVertex(3), obstacle, 1);
+		if (obstacle->position.y < optimumPosition.y)  // bottom
+			scanEdge(obstacle->getVertex(3), obstacle->getVertex(0), obstacle, 1);
+	};
+
+	for (std::pair<T*, positionalStructure<T>> p : layoutData)
+		minimizeFunction(p.first);
+
+	if (bestDistance == INT32_MAX)
+		throw std::runtime_error("Some error in algorithm");
+	return bestPosition;
+}
 terminal& schematicGenerator::getSystemTerminal(const std::string& terminalIdentifier) {
 	return systemModule.getTerminal(terminalIdentifier);
 }

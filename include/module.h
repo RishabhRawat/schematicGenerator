@@ -13,10 +13,10 @@ private:
 
 	std::string moduleType;
     const std::string moduleIdentifier;
-    intPair modulePosition;
+    intPair position;
 
     /* First along x-axis then along y-axis*/
-    intPair moduleSize = {50,100}; //Default size
+    intPair size = {50,100}; //Default size
 
 	mutable schematic::clockwiseRotation moduleRotation = schematic::d_0;
 
@@ -46,13 +46,30 @@ public:
 	std::string getIdentifier() const {
 		return moduleIdentifier;
 	}
-    intPair getModuleSize() const {
-	    return moduleSize;
+    intPair getSize() const {
+	    return size;
     }
 
     terminal &addTerminal(const std::string &terminalName, const schematic::terminalType type, const int width);
 
 	terminal & getTerminal(const std::string &basic_string);
+
+	// Clockwise from bottom left
+	intPair getVertex(const int index) {
+		switch (index) {
+		case 0:
+			return position;
+		case 1:
+			return position + size.component(1);
+		case 2:
+			return position + size;
+		case 3:
+			return position + size.component(0);
+		default:
+			throw std::invalid_argument("Invalid index");
+		}
+	};
+
 
 
 };

@@ -10,7 +10,7 @@ private:
 	partition* parentPartition;
 	std::vector<module*> boxModules;  // NOTE: check if using vector is fine here
 	std::vector<std::pair<splicedTerminal*, splicedTerminal*>> boxLink;
-	intPair moduleOffset, boxPosition, boxSize;
+	intPair offset, position, size;
 
 public:
 	box(module* m) {
@@ -27,6 +27,20 @@ public:
 	bool empty() {
 		return boxModules.empty();
 	}
+	intPair getVertex(const int index) {
+		switch (index) {
+		case 0:
+			return position;
+		case 1:
+			return position + size.component(1);
+		case 2:
+			return position + size;
+		case 3:
+			return position + size.component(0);
+		default:
+			throw std::invalid_argument("Invalid index");
+		}
+	};
 };
 
 #endif  // BOX_H

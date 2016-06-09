@@ -23,15 +23,15 @@ void module::rotateModule(schematic::clockwiseRotation newRotValue) {
 				t->placedPosition = t->originalPosition;
 				break;
 			case schematic::d_90:
-				temp = (t->placedPosition - moduleSize / 2);
-				t->placedPosition = intPair{-temp.y, temp.x} + moduleSize / 2;
+				temp = (t->placedPosition - size / 2);
+				t->placedPosition = intPair{-temp.y, temp.x} + size / 2;
 				break;
 			case schematic::d_180:
-				t->placedPosition = moduleSize - t->placedPosition;
+				t->placedPosition = size - t->placedPosition;
 				break;
 			case schematic::d_270:
-				temp = (t->placedPosition - moduleSize / 2);
-				t->placedPosition = intPair{temp.y, -temp.x} + moduleSize / 2;
+				temp = (t->placedPosition - size / 2);
+				t->placedPosition = intPair{temp.y, -temp.x} + size / 2;
 				break;
 		}
 	}

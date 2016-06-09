@@ -10,16 +10,16 @@
 // void terminal::updateTerminalSide(){
 //	if(isSystemTerminal()){
 //		if(terminalPosition.x == 0 && 0 <=  terminalPosition.y &&  terminalPosition.y <=
-//parentModule->getModuleSize().y)
+// parentModule->getSize().y)
 //			side = schematic::leftSide;
 //		else if(terminalPosition.y == 0 && 0 <  terminalPosition.x &&  terminalPosition.x <
-//parentModule->getModuleSize().x)
+// parentModule->getSize().x)
 //			side = schematic::bottomSide;
-//		else if(terminalPosition.y == parentModule->getModuleSize().y && 0 < terminalPosition.x && terminalPosition.x <
-//parentModule->getModuleSize().x)
+//		else if(terminalPosition.y == parentModule->getSize().y && 0 < terminalPosition.x && terminalPosition.x <
+// parentModule->getSize().x)
 //			side = schematic::topSide;
-//		else if(terminalPosition.x == parentModule->getModuleSize().x && 0 <= terminalPosition.y && terminalPosition.y <=
-//parentModule->getModuleSize().y)
+//		else if(terminalPosition.x == parentModule->getSize().x && 0 <= terminalPosition.y && terminalPosition.y <=
+// parentModule->getSize().y)
 //			side = schematic::rightSide;
 //		else
 //			throw "INVALID TERMINAL POSITION: terminals can only be placed at module edges";

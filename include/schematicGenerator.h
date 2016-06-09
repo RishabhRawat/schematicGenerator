@@ -4,9 +4,7 @@
 #include "net.h"
 
 class schematicGenerator {
-
 private:
-
 	struct schematicParameters {
 		/*
 		 * This is the distance used in placing modules reserved for string wires
@@ -15,8 +13,25 @@ private:
 
 	} designParameters;
 
+	template <typename T>
+	struct positionalStructure {
+		T* item;
+		std::vector<const T*> side[4];  // clockwise from top
+		void add(const T* const newItem) {
+			if (item == newItem)
+				return;
+			if (item->position.x > newItem->position.x)
+				side[3].push_back(newItem);
+			if (item->position.y > newItem->position.y)
+				side[2].push_back(newItem);
+			if (item->position.x + item->size.x < newItem->position.x + newItem->size.x)
+				side[1].push_back(newItem);
+			if (item->position.x + item->size.y > newItem->position.x + newItem->size.y)
+				side[0].push_back(newItem);
+		}
+	};
 
-	module systemModule;    //just a place holder
+	module systemModule;  // just a place holder
 	namedModuleCollection subModules;
 	namedNetCollection internalNets;
 
@@ -24,7 +39,7 @@ private:
 
 	partitionCollection allPartitions;
 
-	//Important Layout Parameters, just guesses for now
+	// Important Layout Parameters, just guesses for now
 	unsigned int maxPartitionSize = 20;
 	unsigned int maxPartitionConnections = 20;
 	unsigned int maxPathLength = 10;
@@ -32,27 +47,30 @@ private:
 	void initializeStructures();
 
 	void partitionFormation();
-	module *selectPartitionSeed(hashlib::pool<module *> moduleSet) const;
-//	int connectionsToExistingPartitions(module *m);
-	partition *createPartition(hashlib::pool<module *> &moduleSet, module *seed);
+	module* selectPartitionSeed(hashlib::pool<module*> moduleSet) const;
+	//	int connectionsToExistingPartitions(module *m);
+	partition* createPartition(hashlib::pool<module*>& moduleSet, module* seed);
 
 	void boxFormation();
-	moduleSet * selectBoxSeeds(partition *p);
-	box * selectPath(box *rootBox, moduleSet remainingModules);
-
+	moduleSet* selectBoxSeeds(partition* p);
+	box* selectPath(box* rootBox, moduleSet remainingModules);
 
 	void modulePlacement();
-	void initModulePlacement(box *b, intPair &leftBottom, intPair &rightTop);
-	void placeModule(box *b, unsigned int index, intPair &pair, intPair &intPair);
+	void initModulePlacement(box* b, intPair& leftBottom, intPair& rightTop);
+	void placeModule(box* b, unsigned int index, intPair& pair, intPair& intPair);
 	int calculatePadding(unsigned int n);
-	void boxPlacement();
-	box *selectNextBox(const hashlib::pool<box *, hashlib::hash_ops<box *>> &remainingBoxes,
-	                   const hashlib::pool<box *, hashlib::hash_ops<box *>> &placedBoxes);
-	intPair placeBox(const box* b);
 
-	void partitionPlacement() {};
+	void boxPlacement();  // SHARING BOUNDARIES IS PERFECTLY LEGAL
+	box* selectNextBox(const hashlib::pool<box*, hashlib::hash_ops<box*>>& remainingBoxes,
+			const hashlib::pool<box*, hashlib::hash_ops<box*>>& placedBoxes);
+	intPair calculateOptimumBoxPosition(const box* b);
+	template <typename T>
+	intPair calculateActualPosition(
+			const intPair size, const intPair optimumPosition, hashlib::dict<T*, positionalStructure<T>>& layoutData);
 
-	void terminalPlacement() {};
+	void partitionPlacement(){};  // SHARING BOUNDARIES IS PERFECTLY LEGAL
+
+	void terminalPlacement(){};
 
 	void printInitialStructures();
 
@@ -61,10 +79,9 @@ private:
 	void printPartitions();
 
 public:
+	// API FUNCTIONS
 
-	//API FUNCTIONS
-
-	schematicGenerator() : systemModule("topModule") { }
+	schematicGenerator() : systemModule("topModule") {}
 
 	~schematicGenerator();
 
@@ -72,17 +89,18 @@ public:
 
 	void parseJson(std::string jsonFile);
 
-	terminal &addSystemTerminal(const std::string &terminalIdentifier, const schematic::terminalType type, const int width);
+	terminal& addSystemTerminal(
+			const std::string& terminalIdentifier, const schematic::terminalType type, const int width);
 
-	terminal & getSystemTerminal(const std::string &terminalIdentifier);
+	terminal& getSystemTerminal(const std::string& terminalIdentifier);
 
-	module & addModule(const std::string &moduleName);
+	module& addModule(const std::string& moduleName);
 
-	module & getModule(const std::string &moduleName) ;
+	module& getModule(const std::string& moduleName);
 
-	net &addNet(const std::string &netName, const int netWidth);
+	net& addNet(const std::string& netName, const int netWidth);
 
-	net & getNet(const std::string &netName);
+	net& getNet(const std::string& netName);
 };
 
-#endif // PLACEMENT_H
+#endif  // PLACEMENT_H
