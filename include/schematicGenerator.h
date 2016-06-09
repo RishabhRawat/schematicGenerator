@@ -86,7 +86,7 @@ private:
 
 	intPair calculateOptimumPartitionPosition(partition* p, hashlib::pool<partition*>& placedPartition);
 
-	void terminalPlacement(){};
+	void systemTerminalPlacement();
 
 	void printInitialStructures();
 

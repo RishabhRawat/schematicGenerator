@@ -22,7 +22,7 @@ void schematicGenerator::doPlacement() {
 	modulePlacement();
 	boxPlacement();
 	partitionPlacement();
-	terminalPlacement();
+	systemTerminalPlacement();
 }
 
 void schematicGenerator::initializeStructures() {
@@ -686,7 +686,7 @@ void schematicGenerator::partitionPlacement() {
 	while (!remainingPartitions.empty()) {
 		partition* p = selectNextParition(remainingPartitions, placedPartitions);
 		remainingPartitions.erase(p);
-		intPair optimumPosition = calculateOptimumPartitionPosition(p,remainingPartitions);
+		intPair optimumPosition = calculateOptimumPartitionPosition(p, remainingPartitions);
 		p->position = calculateActualPosition(p->size, optimumPosition, layoutData);
 
 		auto&& pS = layoutData.insert(std::make_pair(p, positionalStructure<partition>()));
@@ -756,6 +756,42 @@ intPair schematicGenerator::calculateOptimumPartitionPosition(
 	}
 	// Minimize ||(x + boxGrav.x - restGrav.x ), (y + boxGrav.y - restGrav.y )||
 	return (restGrav / restCount - partitionGrav / partitionCount);  // For x0,y0 (lower bottom)
+}
+
+void schematicGenerator::systemTerminalPlacement() {
+	auto calculateTerminalGravity = [&](std::vector<splicedTerminal*>* sinkT) {
+		intPair grav{0, 0};
+		int count = 0;
+		for (splicedTerminal* sT : *sinkT) {
+			grav += sT->placedPosition + sT->getParent()->position + sT->getParent()->parentBox->offset +
+					sT->getParent()->parentBox->position + sT->getParent()->parentBox->parentPartition->offset +
+					sT->getParent()->parentBox->parentPartition->position + offset;
+			count++;
+		}
+		return grav / count;
+	};
+
+	for (moduleLinkPair& pair : systemModule.connectedModuleLinkMap) {
+		for (ulink* ul : pair.second) {
+			// NOTE: ASSUMING ONLY ONE LINK PER TERMINAL
+			intPair gravity = calculateTerminalGravity(ul->linkSink);
+			// Currently only terminal directions are left and right, this can be easily changed here
+			switch (ul->linkSource->getType()) {
+				case schematic::inType:
+					ul->linkSource->placedPosition = {offset.x, gravity.y};
+					break;
+				case schematic::outType:
+					ul->linkSource->placedPosition = {offset.x + size.x, gravity.y};
+					break;
+				case schematic::inoutType:
+					if (gravity.x > offset.x + size.x / 2)
+						ul->linkSource->placedPosition = {offset.x + size.x, gravity.y};
+					else
+						ul->linkSource->placedPosition = {offset.x, gravity.y};
+					break;
+			}
+		}
+	}
 }
 
 terminal& schematicGenerator::getSystemTerminal(const std::string& terminalIdentifier) {
