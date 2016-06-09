@@ -485,7 +485,6 @@ void schematicGenerator::boxPlacement() {
 
 		hashlib::pool<box *> remainingBoxes, placedBoxes;
 
-		std::cout << p->length();
 		for_each(p->partitionBoxes.begin(), p->partitionBoxes.end(), [&](box* b) {
 			if (b != largestBox)
 				remainingBoxes.insert(b);
@@ -494,7 +493,7 @@ void schematicGenerator::boxPlacement() {
 			box* b = selectNextBox(remainingBoxes, placedBoxes);
 			remainingBoxes.erase(b);
 			// NOTE: can these two be merged??
-			intPair optimumPosition = calculateOptimumBoxPosition(b);
+			intPair optimumPosition = calculateOptimumBoxPosition(b, placedBoxes);
 			b->position = calculateActualPosition(b->size, optimumPosition, layoutData);
 
 			auto&& pS = layoutData.insert(std::make_pair(b, positionalStructure<box>()));
@@ -531,7 +530,7 @@ box* schematicGenerator::selectNextBox(
 	});
 }
 
-intPair schematicGenerator::calculateOptimumBoxPosition(const box* b) {
+intPair schematicGenerator::calculateOptimumBoxPosition(const box* b, hashlib::pool<box*>& placedBoxes) {
 	// The number of terminals of modules in box b which have connections which
 	// connect to the other boxes
 	// ie. terminals crossing the boundary
@@ -542,15 +541,15 @@ intPair schematicGenerator::calculateOptimumBoxPosition(const box* b) {
 
 	for (module* boxModule : b->boxModules) {
 		for (moduleLinkPair& m_pair : boxModule->connectedModuleLinkMap) {
-			// TODO: Why same parent partition
 			if (m_pair.first->parentBox != b && m_pair.first != &systemModule &&
-					m_pair.first->parentBox->parentPartition == b->parentPartition) {
+					placedBoxes.find(m_pair.first->parentBox) != placedBoxes.end()) {
 				boxCount += m_pair.second.size();
 				for (ulink* ul : m_pair.second) {
-					boxGrav = boxGrav + boxModule->position + b->offset + b->position + ul->linkSource->placedPosition;
+					boxGrav += boxModule->position + b->offset + ul->linkSource->placedPosition;
 					restCount += ul->linkSink->size();
 					for (splicedTerminal* otherT : *ul->linkSink) {
-						restGrav = boxGrav + boxModule->position + b->offset + b->position + otherT->placedPosition;
+						restGrav += m_pair.first->position + m_pair.first->parentBox->offset +
+									m_pair.first->parentBox->position + otherT->placedPosition;
 					}
 				}
 			}
@@ -570,7 +569,7 @@ intPair schematicGenerator::calculateActualPosition(
 	enum direction { top = 0, right = 1, bottom = 2, left = 3 };
 
 	auto obstructionPointer = [&](const intPair point, T* const attachedRect, const direction d) -> const T* {
-		//Check all rectangles in that direction for overlaps
+		// Check all rectangles in that direction for overlaps
 		for (const T* const obst : layoutData.find(attachedRect)->second.side[d]) {
 			// If one rectangle is on left side of other
 			if (obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x)
@@ -659,6 +658,106 @@ intPair schematicGenerator::calculateActualPosition(
 		throw std::runtime_error("Some error in algorithm");
 	return bestPosition;
 }
+void schematicGenerator::partitionPlacement() {
+	unsigned int maxModules = 0;
+	partition* largestPartition = nullptr;
+	hashlib::dict<partition*, positionalStructure<partition>> layoutData;
+	for (partition* p : allPartitions) {
+		unsigned int m = std::accumulate(p->partitionBoxes.begin(), p->partitionBoxes.end(),
+				static_cast<unsigned int>(0), [](unsigned int sum, box* b) { return sum + b->length(); });
+		if (m > maxModules) {
+			maxModules = m;
+			largestPartition = p;
+		}
+	}
+	if (largestPartition == nullptr)
+		throw std::runtime_error("Check partitions, all partitions are empty!!!");
+
+	largestPartition->position = {0, 0};
+	intPair leftBottom = {0, 0};
+	intPair rightTop = largestPartition->size;
+
+	hashlib::pool<partition *> remainingPartitions, placedPartitions;
+
+	for_each(allPartitions.begin(), allPartitions.end(), [&](partition* p) {
+		if (p != largestPartition)
+			remainingPartitions.insert(p);
+	});
+	while (!remainingPartitions.empty()) {
+		partition* p = selectNextParition(remainingPartitions, placedPartitions);
+		remainingPartitions.erase(p);
+		intPair optimumPosition = calculateOptimumPartitionPosition(p,remainingPartitions);
+		p->position = calculateActualPosition(p->size, optimumPosition, layoutData);
+
+		auto&& pS = layoutData.insert(std::make_pair(p, positionalStructure<partition>()));
+		for (auto&& pair : layoutData) {
+			pair.second.add(p);
+			pS.first->second.add(pair.first);
+		}
+		leftBottom = {std::min(leftBottom.x, p->position.x), std::min(leftBottom.y, p->position.y)};
+		rightTop = {
+				std::min(leftBottom.x, p->position.x + p->size.x), std::min(leftBottom.y, p->position.y + p->size.y)};
+	}
+	size = rightTop - leftBottom;
+	offset = leftBottom;
+}
+partition* schematicGenerator::selectNextParition(
+		hashlib::pool<partition*> remainingPartition, hashlib::pool<partition*> placedPartition) {
+	unsigned int max = 0;
+	partition* maxConnectedPartition = nullptr;
+	for (partition* p : remainingPartition) {
+		unsigned int conn = 0;
+		for (box* b : p->partitionBoxes) {
+			for (module* m : b->boxModules) {
+				for (moduleLinkPair& otherM : m->connectedModuleLinkMap) {
+					partition* pP = otherM.first->parentBox->parentPartition;
+					if (pP != p && placedPartition.find(pP) != placedPartition.end())
+						conn += otherM.second.size();
+				}
+			}
+		}
+		if (max < conn) {
+			max = conn;
+			maxConnectedPartition = p;
+		}
+	}
+	if (maxConnectedPartition == nullptr)
+		throw std::runtime_error("Something wrong, multiple isolated partitions??");
+
+	return maxConnectedPartition;
+}
+
+intPair schematicGenerator::calculateOptimumPartitionPosition(
+		partition* p, hashlib::pool<partition*>& placedPartition) {
+	intPair partitionGrav = {0, 0};
+	intPair restGrav = {0, 0};
+	int partitionCount = 0;
+	int restCount = 0;
+	for (box* b : p->partitionBoxes) {
+		for (module* boxModule : b->boxModules) {
+			for (moduleLinkPair& m_pair : boxModule->connectedModuleLinkMap) {
+				if (m_pair.first->parentBox->parentPartition != p && m_pair.first != &systemModule &&
+						placedPartition.find(m_pair.first->parentBox->parentPartition) != placedPartition.end()) {
+					partitionCount += m_pair.second.size();
+					for (ulink* ul : m_pair.second) {
+						partitionGrav += boxModule->position + b->offset + b->position + p->offset +
+										 ul->linkSource->placedPosition;
+						restCount += ul->linkSink->size();
+						for (splicedTerminal* otherT : *ul->linkSink) {
+							restGrav += m_pair.first->position + m_pair.first->parentBox->offset +
+										m_pair.first->parentBox->position +
+										m_pair.first->parentBox->parentPartition->offset +
+										m_pair.first->parentBox->parentPartition->position + otherT->placedPosition;
+						}
+					}
+				}
+			}
+		}
+	}
+	// Minimize ||(x + boxGrav.x - restGrav.x ), (y + boxGrav.y - restGrav.y )||
+	return (restGrav / restCount - partitionGrav / partitionCount);  // For x0,y0 (lower bottom)
+}
+
 terminal& schematicGenerator::getSystemTerminal(const std::string& terminalIdentifier) {
 	return systemModule.getTerminal(terminalIdentifier);
 }

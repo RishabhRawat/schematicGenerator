@@ -35,6 +35,7 @@ private:
 	namedModuleCollection subModules;
 	namedNetCollection internalNets;
 
+	intPair size, offset;
 	hashlib::pool<coalescedNet*> coalescedNetSet;
 
 	partitionCollection allPartitions;
@@ -47,28 +48,43 @@ private:
 	void initializeStructures();
 
 	void partitionFormation();
+
 	module* selectPartitionSeed(hashlib::pool<module*> moduleSet) const;
+
 	//	int connectionsToExistingPartitions(module *m);
 	partition* createPartition(hashlib::pool<module*>& moduleSet, module* seed);
 
 	void boxFormation();
+
 	moduleSet* selectBoxSeeds(partition* p);
+
 	box* selectPath(box* rootBox, moduleSet remainingModules);
 
 	void modulePlacement();
+
 	void initModulePlacement(box* b, intPair& leftBottom, intPair& rightTop);
+
 	void placeModule(box* b, unsigned int index, intPair& pair, intPair& intPair);
+
 	int calculatePadding(unsigned int n);
 
 	void boxPlacement();  // SHARING BOUNDARIES IS PERFECTLY LEGAL
+
 	box* selectNextBox(const hashlib::pool<box*, hashlib::hash_ops<box*>>& remainingBoxes,
 			const hashlib::pool<box*, hashlib::hash_ops<box*>>& placedBoxes);
-	intPair calculateOptimumBoxPosition(const box* b);
+
+	intPair calculateOptimumBoxPosition(const box* b, hashlib::pool<box*>& placedBoxes);
+
 	template <typename T>
 	intPair calculateActualPosition(
 			const intPair size, const intPair optimumPosition, hashlib::dict<T*, positionalStructure<T>>& layoutData);
 
-	void partitionPlacement(){};  // SHARING BOUNDARIES IS PERFECTLY LEGAL
+	void partitionPlacement();  // SHARING BOUNDARIES IS PERFECTLY LEGAL
+
+	partition* selectNextParition(
+			hashlib::pool<partition*> remainingPartition, hashlib::pool<partition*> placedPartition);
+
+	intPair calculateOptimumPartitionPosition(partition* p, hashlib::pool<partition*>& placedPartition);
 
 	void terminalPlacement(){};
 

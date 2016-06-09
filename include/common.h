@@ -17,6 +17,9 @@ struct intPair {
 	intPair operator+(const intPair& rhs) const {
 		return {x + rhs.x, y + rhs.y};
 	}
+	intPair& operator+=(const intPair& rhs) {
+		return *this=*this+rhs;
+	}
 	intPair operator-(const intPair& rhs) const {
 		return {x + rhs.x, y + rhs.y};
 	}
