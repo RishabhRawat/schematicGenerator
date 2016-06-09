@@ -14,22 +14,22 @@ enum clockwiseRotation { d_0 = 0, d_90 = 1, d_180 = 2, d_270 = 3 };
 struct intPair {
 	int x;
 	int y;
-	intPair operator+(const intPair& rhs) {
+	intPair operator+(const intPair& rhs) const {
 		return {x + rhs.x, y + rhs.y};
 	}
-	intPair operator-(const intPair& rhs) {
+	intPair operator-(const intPair& rhs) const {
 		return {x + rhs.x, y + rhs.y};
 	}
-	intPair operator/(int a) {
+	intPair operator/(int a) const {
 		return {x / a, y / a};
 	}
-	intPair operator*(int a) {
+	intPair operator*(int a) const {
 		return {x * a, y * a};
 	}
-	bool operator<(const intPair& rhs) {
+	bool operator<(const intPair& rhs) const {
 		return (x < rhs.x && y < rhs.y);
 	}
-	bool operator>(const intPair& rhs) {
+	bool operator>(const intPair& rhs) const {
 		return (x > rhs.x && y > rhs.y);
 	}
 	int& operator[](const int a) {
@@ -38,7 +38,7 @@ struct intPair {
 	int operator[](const int a) const {
 		return a ? y : x;
 	}
-	const intPair component(const int a) {
+	const intPair component(const int a) const {
 		// returns y component of evaluating true
 		return a ? intPair{0, y} : intPair{x, 0};
 	}

@@ -516,12 +516,12 @@ box* schematicGenerator::selectNextBox(
 	// TODO: Verify that this works
 	return *std::max_element(remainingBoxes.begin(), remainingBoxes.end(), [&](box* lhs, box* rhs) {
 		int sumLHS = std::accumulate(lhs->boxModules.begin(), lhs->boxModules.end(), 0, [&](int sum, module* m) {
-			return sum + std::accumulate(m->connectedModuleLinkMap.begin(), m->connectedModuleLinkMap.end(), 0,
-								 [&](int sum_2, moduleLinkPair& pair) {
+			return sum + std::count_if(m->connectedModuleLinkMap.begin(), m->connectedModuleLinkMap.end(),
+								 [&](moduleLinkPair& pair) {
 									 return placedBoxes.find(pair.first->parentBox) != placedBoxes.end();
 								 });
 		});
-		int sumRHS = std::accumulate(lhs->boxModules.begin(), lhs->boxModules.end(), 0, [&](int sum, module* m) {
+		int sumRHS = std::accumulate(rhs->boxModules.begin(), rhs->boxModules.end(), 0, [&](int sum, module* m) {
 			return sum + std::count_if(m->connectedModuleLinkMap.begin(), m->connectedModuleLinkMap.end(),
 								 [&](moduleLinkPair& pair) {
 									 return placedBoxes.find(pair.first->parentBox) != placedBoxes.end();
@@ -550,8 +550,7 @@ intPair schematicGenerator::calculateOptimumBoxPosition(const box* b) {
 					boxGrav = boxGrav + boxModule->position + b->offset + b->position + ul->linkSource->placedPosition;
 					restCount += ul->linkSink->size();
 					for (splicedTerminal* otherT : *ul->linkSink) {
-						restGrav = boxGrav + boxModule->position + b->offset + b->position +
-								   ul->linkSource->placedPosition;
+						restGrav = boxGrav + boxModule->position + b->offset + b->position + otherT->placedPosition;
 					}
 				}
 			}
@@ -570,14 +569,18 @@ intPair schematicGenerator::calculateActualPosition(
 
 	enum direction { top = 0, right = 1, bottom = 2, left = 3 };
 
-	auto insideObstacle = [&](const T* const obstacle, const intPair point) {
-		return (point > obstacle->position && point < obstacle->position + obstacle->size);
-	};
+	auto obstructionPointer = [&](const intPair point, T* const attachedRect, const direction d) -> const T* {
+		//Check all rectangles in that direction for overlaps
+		for (const T* const obst : layoutData.find(attachedRect)->second.side[d]) {
+			// If one rectangle is on left side of other
+			if (obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x)
+				continue;
 
-	auto obstructionPointer = [&](const intPair point, T* const attachedRect, const direction d) {
-		for (T* const obst : layoutData.find(attachedRect)[d]) {
-			if (!insideObstacle(obst, point))
-				return obst;
+			// If one rectangle is above other
+			if (obst->position.y > point.y + size.y || point.y > obst->position.y + obst->size.y)
+				continue;
+
+			return obst;
 		}
 		return nullptr;
 	};
@@ -588,7 +591,7 @@ intPair schematicGenerator::calculateActualPosition(
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					return;
-				T* ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, rectangle, top);
 				if (ptr)
 					point[orientation] = ptr->size[orientation] + ptr->position[orientation];
 				else {
@@ -602,7 +605,7 @@ intPair schematicGenerator::calculateActualPosition(
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					break;
-				T* ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, rectangle, top);
 				if (ptr)
 					point[orientation] = ptr->size[orientation] + ptr->position[orientation];
 				else {
@@ -615,7 +618,7 @@ intPair schematicGenerator::calculateActualPosition(
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					return;
-				T* ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, rectangle, top);
 				if (ptr)
 					point[orientation] = ptr->position[orientation];
 				else {
@@ -629,7 +632,7 @@ intPair schematicGenerator::calculateActualPosition(
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					return;
-				T* ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, rectangle, top);
 				if (ptr)
 					point[orientation] = ptr->position[orientation];
 				else {
@@ -641,19 +644,16 @@ intPair schematicGenerator::calculateActualPosition(
 		}
 	};
 
-	auto minimizeFunction = [&](T* const obstacle) {
-		if (obstacle->position.x < optimumPosition.x)  // left
-			scanEdge(obstacle->getVertex(0), obstacle->getVertex(1), obstacle, 1);
-		if (obstacle->position.y + obstacle->size.y > optimumPosition.y)  // top
-			scanEdge(obstacle->getVertex(1), obstacle->getVertex(2), obstacle, 0);
-		if (obstacle->position.x + obstacle->size.x > optimumPosition.x)  // right
-			scanEdge(obstacle->getVertex(2), obstacle->getVertex(3), obstacle, 1);
-		if (obstacle->position.y < optimumPosition.y)  // bottom
-			scanEdge(obstacle->getVertex(3), obstacle->getVertex(0), obstacle, 1);
+	for (std::pair<T*, positionalStructure<T>> p : layoutData) {
+		if (p.first->position.x < optimumPosition.x)  // left
+			scanEdge(p.first->getVertex(0), p.first->getVertex(1), p.first, 1);
+		if (p.first->position.y + p.first->size.y > optimumPosition.y)  // top
+			scanEdge(p.first->getVertex(1), p.first->getVertex(2), p.first, 0);
+		if (p.first->position.x + p.first->size.x > optimumPosition.x)  // right
+			scanEdge(p.first->getVertex(2), p.first->getVertex(3), p.first, 1);
+		if (p.first->position.y < optimumPosition.y)  // bottom
+			scanEdge(p.first->getVertex(3), p.first->getVertex(0), p.first, 1);
 	};
-
-	for (std::pair<T*, positionalStructure<T>> p : layoutData)
-		minimizeFunction(p.first);
 
 	if (bestDistance == INT32_MAX)
 		throw std::runtime_error("Some error in algorithm");
