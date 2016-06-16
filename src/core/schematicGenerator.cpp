@@ -1,5 +1,4 @@
 #include "schematicGenerator.h"
-#include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <sstream>
@@ -513,21 +512,27 @@ void schematicGenerator::boxPlacement() {
 box* schematicGenerator::selectNextBox(
 		const hashlib::pool<box*>& remainingBoxes, const hashlib::pool<box*>& placedBoxes) {
 	// TODO: Verify that this works
-	return *std::max_element(remainingBoxes.begin(), remainingBoxes.end(), [&](box* lhs, box* rhs) {
-		int sumLHS = std::accumulate(lhs->boxModules.begin(), lhs->boxModules.end(), 0, [&](int sum, module* m) {
-			return sum + std::count_if(m->connectedModuleLinkMap.begin(), m->connectedModuleLinkMap.end(),
-								 [&](moduleLinkPair& pair) {
-									 return placedBoxes.find(pair.first->parentBox) != placedBoxes.end();
-								 });
-		});
-		int sumRHS = std::accumulate(rhs->boxModules.begin(), rhs->boxModules.end(), 0, [&](int sum, module* m) {
-			return sum + std::count_if(m->connectedModuleLinkMap.begin(), m->connectedModuleLinkMap.end(),
-								 [&](moduleLinkPair& pair) {
-									 return placedBoxes.find(pair.first->parentBox) != placedBoxes.end();
-								 });
-		});
-		return sumLHS < sumRHS;
-	});
+	box* nextBox = nullptr;
+	unsigned int maxCount = 0;
+
+	for (box* b : remainingBoxes) {
+		unsigned int count = 0;
+		for (module* m : b->boxModules) {
+			for (moduleLinkPair& connectedPair : m->connectedModuleLinkMap) {
+				if (placedBoxes.find(connectedPair.first->parentBox) != placedBoxes.end())
+					count++;
+			}
+		}
+		if (count > maxCount) {
+			maxCount = count;
+			nextBox = b;
+		}
+	}
+
+	if (maxCount == 0)
+		throw std::runtime_error("no good next box found??");
+
+	return nextBox;
 }
 
 intPair schematicGenerator::calculateOptimumBoxPosition(const box* b, hashlib::pool<box*>& placedBoxes) {
@@ -663,10 +668,13 @@ void schematicGenerator::partitionPlacement() {
 	partition* largestPartition = nullptr;
 	hashlib::dict<partition*, positionalStructure<partition>> layoutData;
 	for (partition* p : allPartitions) {
-		unsigned int m = std::accumulate(p->partitionBoxes.begin(), p->partitionBoxes.end(),
-				static_cast<unsigned int>(0), [](unsigned int sum, box* b) { return sum + b->length(); });
-		if (m > maxModules) {
-			maxModules = m;
+		unsigned int mCount = 0;
+		for (box* b : p->partitionBoxes) {
+			mCount += b->length();
+		}
+
+		if (mCount > maxModules) {
+			maxModules = mCount;
 			largestPartition = p;
 		}
 	}
