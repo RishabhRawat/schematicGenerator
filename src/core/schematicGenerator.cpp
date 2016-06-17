@@ -4,21 +4,25 @@
 #include <sstream>
 #include "box.h"
 #include "partition.h"
+#ifdef WEB_COMPILATION
+#include <emscripten/bind.h>
+#endif
+
 
 schematicGenerator::~schematicGenerator() {
 	for (partition* p : allPartitions) {
 		delete p;
 	}
 
-	for (auto &&item: internalNets) {
+	for (auto&& item : internalNets) {
 		delete item.second;
 	}
 
-	for (auto &&item: internalCoalescedNet) {
+	for (auto&& item : internalCoalescedNet) {
 		delete item;
 	}
 
-	for (auto &&item: subModules) {
+	for (auto&& item : subModules) {
 		delete item.second;
 	}
 }
@@ -97,10 +101,10 @@ void schematicGenerator::initializeStructures() {
 		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
 			for (moduleSplicedTerminalPair& mST_pair : t->getCoalescedNet()->connectedModuleSplicedTerminalMap) {
 				if (mST_pair.first != m.second) {
-					//FIXME: Possible bug in implementation
+					// FIXME: Possible bug in implementation
 					moduleLinkMap::iterator mapIterator = m.second->connectedModuleLinkMap.find(mST_pair.first);
 					if (mapIterator == m.second->connectedModuleLinkMap.end()) {
-						linkCollection newCollection {new ulink(t->getCoalescedNet(), t, &mST_pair.second)};
+						linkCollection newCollection{new ulink(t->getCoalescedNet(), t, &mST_pair.second)};
 						m.second->connectedModuleLinkMap.insert(
 								std::pair<module*, linkCollection>(mST_pair.first, newCollection));
 					} else {
@@ -183,7 +187,8 @@ partition* schematicGenerator::createPartition(hashlib::pool<module*>& moduleSet
 	newPartition->addModule(seed);
 	unsigned int connections = 0;
 	unsigned int partitionEntries = 0;
-	while (!moduleSet.empty() && (partitionEntries < maxPartitionSize) && (connections < maxPartitionConnections)) {
+	while (!moduleSet.empty() && (partitionEntries < designParameters.maxPartitionSize) && (connections <
+			designParameters.maxPartitionConnections)) {
 		module* selectedModule = nullptr;
 		int maxConnectionsInPartition = -1;
 		int minConnectionsOutPartion = INT32_MAX;
@@ -265,7 +270,7 @@ moduleSet* schematicGenerator::selectBoxSeeds(partition* p) {
 box* schematicGenerator::selectPath(box* path, moduleSet remainingModules) {
 	bool searchSuccess = true;
 
-	while (searchSuccess && path->length() <= maxPathLength) {
+	while (searchSuccess && path->length() <= designParameters.maxPathLength) {
 		searchSuccess = false;
 		module* lastModule = path->boxModules.back();
 		for (auto&& m : remainingModules) {
@@ -835,3 +840,15 @@ net& schematicGenerator::addNet(const std::string& netName, const int netWidth) 
 net& schematicGenerator::getNet(const std::string& netName) {
 	return *(internalNets.find(netName)->second);
 }
+
+#ifdef WEB_COMPILATION
+EMSCRIPTEN_BINDINGS(tomato_why) {
+		emscripten::class_<schematicGenerator>("schematicGenerator")
+				.constructor<>()
+				.function("parseJson", &schematicGenerator::parseJson)
+//				.function("addModule", &schematicGenerator::addModule)
+//				.function("addNet", &schematicGenerator::addNet)
+//				.function("addSystemTerminal", &schematicGenerator::addSystemTerminal)
+				.function("doPlacement", &schematicGenerator::doPlacement);
+}
+#endif

@@ -54,6 +54,11 @@ private:
 	schematic::terminalSide side;
 	intPair terminalPositionHint;
 
+#ifdef WEB_COMPILATION
+public:
+// A get around for emscripten
+#endif
+
 	terminal(const terminal&) = default;
 	terminal& operator=(const terminal&) = default;
 };

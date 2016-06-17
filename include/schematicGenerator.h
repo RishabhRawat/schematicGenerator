@@ -10,6 +10,10 @@ private:
 		 * This is the distance used in placing modules reserved for string wires
 		 */
 		unsigned int wireModuleDistance = 5;
+		// Important Layout Parameters, just guesses for now
+		unsigned int maxPartitionSize = 20;
+		unsigned int maxPartitionConnections = 20;
+		unsigned int maxPathLength = 10;
 
 	} designParameters;
 
@@ -40,10 +44,7 @@ private:
 
 	partitionCollection allPartitions;
 
-	// Important Layout Parameters, just guesses for now
-	unsigned int maxPartitionSize = 20;
-	unsigned int maxPartitionConnections = 20;
-	unsigned int maxPathLength = 10;
+
 
 	void initializeStructures();
 
@@ -118,6 +119,5 @@ public:
 
 	net& getNet(const std::string& netName);
 };
-
 
 #endif  // PLACEMENT_H
