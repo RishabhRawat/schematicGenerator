@@ -36,7 +36,7 @@ private:
 	namedNetCollection internalNets;
 
 	intPair size, offset;
-	hashlib::pool<coalescedNet*> coalescedNetSet;
+	hashlib::pool<coalescedNet*> internalCoalescedNet;
 
 	partitionCollection allPartitions;
 
@@ -118,5 +118,6 @@ public:
 
 	net& getNet(const std::string& netName);
 };
+
 
 #endif  // PLACEMENT_H

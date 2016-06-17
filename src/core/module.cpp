@@ -36,3 +36,14 @@ void module::rotateModule(schematic::clockwiseRotation newRotValue) {
 		}
 	}
 }
+
+module::~module() {
+	// FIXME: DO YOU DELETE THE ULINKS HERE?? for connectedModuleLinkMap;
+	for (auto&& item : moduleTerminals) {
+		delete item.second;
+	}
+
+	for (auto&& item : moduleSplicedTerminals) {
+		delete item;
+	}
+}

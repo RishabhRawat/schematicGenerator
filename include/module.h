@@ -39,7 +39,7 @@ private:
 
 
 public:
-
+	virtual ~module();
 
 	module(const std::string &moduleIdentifier) : moduleIdentifier(moduleIdentifier) { }
 

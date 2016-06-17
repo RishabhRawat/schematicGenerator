@@ -13,7 +13,7 @@ void schematicGenerator::printDerivedStructures() {
 		}
 	}
 	std::cout << std::endl << "Printing All coalescedNet connections to modules and their splicedTerminal" << std::endl;
-	for (coalescedNet* n : coalescedNetSet) {
+	for (coalescedNet* n : internalCoalescedNet) {
 		std::cout << n->sourceNet->netIdentifier << " : " << std::endl;
 		for (moduleSplicedTerminalPair mt : n->connectedModuleSplicedTerminalMap) {
 			std::cout << "\t" << mt.first->moduleIdentifier << std::endl;

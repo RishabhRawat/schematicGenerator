@@ -9,6 +9,18 @@ schematicGenerator::~schematicGenerator() {
 	for (partition* p : allPartitions) {
 		delete p;
 	}
+
+	for (auto &&item: internalNets) {
+		delete item.second;
+	}
+
+	for (auto &&item: internalCoalescedNet) {
+		delete item;
+	}
+
+	for (auto &&item: subModules) {
+		delete item.second;
+	}
 }
 
 void schematicGenerator::doPlacement() {
@@ -68,7 +80,7 @@ void schematicGenerator::initializeStructures() {
 					coalescedNet* newCNet = new coalescedNet(nI_pair.first);
 					newCNet->connectedModuleSplicedTerminalMap.insert({m_pair.second, {newST}});
 					nI_pair.first->coalesced = newCNet;
-					coalescedNetSet.insert(newCNet);
+					internalCoalescedNet.insert(newCNet);
 				} else {
 					auto cMST_iter = nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.find(m_pair.second);
 					if (cMST_iter == nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.end())
@@ -85,11 +97,12 @@ void schematicGenerator::initializeStructures() {
 		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
 			for (moduleSplicedTerminalPair& mST_pair : t->getCoalescedNet()->connectedModuleSplicedTerminalMap) {
 				if (mST_pair.first != m.second) {
+					//FIXME: Possible bug in implementation
 					moduleLinkMap::iterator mapIterator = m.second->connectedModuleLinkMap.find(mST_pair.first);
 					if (mapIterator == m.second->connectedModuleLinkMap.end()) {
-						linkCollection* newCollection = new linkCollection();
-						newCollection->push_back(new ulink(t->getCoalescedNet(), t, &mST_pair.second));
-						m.second->connectedModuleLinkMap.insert({mST_pair.first, *newCollection});
+						linkCollection newCollection {new ulink(t->getCoalescedNet(), t, &mST_pair.second)};
+						m.second->connectedModuleLinkMap.insert(
+								std::pair<module*, linkCollection>(mST_pair.first, newCollection));
 					} else {
 						mapIterator->second.push_back(new ulink(t->getCoalescedNet(), t, &mST_pair.second));
 					}
@@ -308,6 +321,7 @@ void schematicGenerator::boxFormation() {
 			seeds->erase(longestPath->boxModules.front());
 			p->add(longestPath);
 		}
+		delete seeds;
 	}
 }
 

@@ -9,6 +9,8 @@ struct bitNet {
 	const int index;
 	std::vector<bitTerminal*> connectedBitTerminals;
 	bitNet(net *const baseNet, const int index) : baseNet(baseNet), index(index) { }
+	bitNet(const bitNet&) = delete;
+	bitNet& operator=(const bitNet&) = delete;
 };
 
 
@@ -38,7 +40,7 @@ private:
 
 	net(const net &baseNet, const int highIndex, const int lowIndex, const bool highToLow);
 	net ( const net & ) = default;
-	net & operator= ( const net & ) = default;
+	net & operator= ( const net & ) = delete;
 
 };
 
