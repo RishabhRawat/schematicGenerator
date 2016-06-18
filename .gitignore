@@ -15,7 +15,6 @@ scripts.js
 /*.config
 /*.creator
 /*.creator.user
-cmake*
-CMake*
 /build
+Makefile
 .clang-format
