@@ -124,6 +124,10 @@ public:
 	void parseJson(nlohmann::json parsedJson);
 
 	void parseJsonString(std::string jsonText);
+
+	exportStructure createSchematicFromJson(std::string jsonData);
+
+	std::string createJsonSchematicFromJson(std::string jsonData);
 };
 
 #endif  // PLACEMENT_H

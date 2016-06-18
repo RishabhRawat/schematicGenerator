@@ -33,9 +33,9 @@ struct partitionStructure : positionData {
 	std::vector<boxStructure> boxList;
 };
 
-struct exportStructure {
+struct exportStructure : positionData{
 	std::string name;
-	std::vector<boxStructure> boxList;
+	std::vector<partitionStructure> partitionList;
 	std::vector<terminalStructure> systemTerminalList;
 };
 

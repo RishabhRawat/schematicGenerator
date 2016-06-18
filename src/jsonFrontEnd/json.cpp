@@ -1,9 +1,6 @@
 #include "json/json.hpp"
 #include <fstream>
 #include "schematicGenerator.h"
-#ifdef WEB_COMPILATION
-#include <emscripten/bind.h>
-#endif
 namespace schematic {
 schematic::terminalType parseTerminalType(std::string t) {
 	if (t == "in" || t == "input")
@@ -110,15 +107,3 @@ void schematicGenerator::parseJson(nlohmann::json parsedJson) {
 		}
 	}
 }
-
-#ifdef WEB_COMPILATION
-EMSCRIPTEN_BINDINGS(schematicGenerator) {
-		emscripten::class_<schematicGenerator>("schematicGenerator")
-				.constructor<>()
-				.function("parseJsonString", &schematicGenerator::parseJsonString)
-//				.function("addModule", &schematicGenerator::addModule)
-//				.function("addNet", &schematicGenerator::addNet)
-//				.function("addSystemTerminal", &schematicGenerator::addSystemTerminal)
-				.function("doPlacement", &schematicGenerator::doPlacement);
-}
-#endif

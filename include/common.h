@@ -112,4 +112,6 @@ typedef std::pair<module*, std::vector<splicedTerminal*>> moduleSplicedTerminalP
 typedef hashlib::pool<splicedTerminal*> splicedTerminalSet;
 typedef hashlib::pool<module*> moduleSet;
 
+struct exportStructure;
+
 #endif  // COMMON_H
