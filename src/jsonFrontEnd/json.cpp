@@ -1,6 +1,9 @@
 #include "json/json.hpp"
 #include <fstream>
 #include "schematicGenerator.h"
+#ifdef WEB_COMPILATION
+#include <emscripten/bind.h>
+#endif
 namespace schematic {
 schematic::terminalType parseTerminalType(std::string t) {
 	if (t == "in" || t == "input")
@@ -14,16 +17,23 @@ schematic::terminalType parseTerminalType(std::string t) {
 }
 }
 
-void schematicGenerator::parseJson(std::string fName) {
-	unsigned int netNumberGuess = 50;
-	unsigned int netIncrementNumberGuess = 10;
-
+void schematicGenerator::parseJsonFile(std::string fName) {
 	std::ifstream jsonFile(fName);
 	if (!jsonFile)
 		throw std::system_error(errno, std::system_category());
 
 	nlohmann::json parsedJson;
 	jsonFile >> parsedJson;
+	parseJson(parsedJson);
+
+}
+void schematicGenerator::parseJsonString(std::string jsonText) {
+	parseJson(nlohmann::json::parse(jsonText));
+}
+void schematicGenerator::parseJson(nlohmann::json parsedJson) {
+	unsigned int netNumberGuess = 50;
+	unsigned int netIncrementNumberGuess = 10;
+
 
 	if (parsedJson["modules"].size() > 1)
 		// FIXME: better message?
@@ -100,3 +110,15 @@ void schematicGenerator::parseJson(std::string fName) {
 		}
 	}
 }
+
+#ifdef WEB_COMPILATION
+EMSCRIPTEN_BINDINGS(schematicGenerator) {
+		emscripten::class_<schematicGenerator>("schematicGenerator")
+				.constructor<>()
+				.function("parseJsonString", &schematicGenerator::parseJsonString)
+//				.function("addModule", &schematicGenerator::addModule)
+//				.function("addNet", &schematicGenerator::addNet)
+//				.function("addSystemTerminal", &schematicGenerator::addSystemTerminal)
+				.function("doPlacement", &schematicGenerator::doPlacement);
+}
+#endif

@@ -4,10 +4,6 @@
 #include <sstream>
 #include "box.h"
 #include "partition.h"
-#ifdef WEB_COMPILATION
-#include <emscripten/bind.h>
-#endif
-
 
 schematicGenerator::~schematicGenerator() {
 	for (partition* p : allPartitions) {
@@ -187,8 +183,8 @@ partition* schematicGenerator::createPartition(hashlib::pool<module*>& moduleSet
 	newPartition->addModule(seed);
 	unsigned int connections = 0;
 	unsigned int partitionEntries = 0;
-	while (!moduleSet.empty() && (partitionEntries < designParameters.maxPartitionSize) && (connections <
-			designParameters.maxPartitionConnections)) {
+	while (!moduleSet.empty() && (partitionEntries < designParameters.maxPartitionSize) &&
+			(connections < designParameters.maxPartitionConnections)) {
 		module* selectedModule = nullptr;
 		int maxConnectionsInPartition = -1;
 		int minConnectionsOutPartion = INT32_MAX;
@@ -840,15 +836,3 @@ net& schematicGenerator::addNet(const std::string& netName, const int netWidth) 
 net& schematicGenerator::getNet(const std::string& netName) {
 	return *(internalNets.find(netName)->second);
 }
-
-#ifdef WEB_COMPILATION
-EMSCRIPTEN_BINDINGS(tomato_why) {
-		emscripten::class_<schematicGenerator>("schematicGenerator")
-				.constructor<>()
-				.function("parseJson", &schematicGenerator::parseJson)
-//				.function("addModule", &schematicGenerator::addModule)
-//				.function("addNet", &schematicGenerator::addNet)
-//				.function("addSystemTerminal", &schematicGenerator::addSystemTerminal)
-				.function("doPlacement", &schematicGenerator::doPlacement);
-}
-#endif

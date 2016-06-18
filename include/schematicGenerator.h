@@ -1,5 +1,7 @@
 #ifndef PLACEMENT_H
 #define PLACEMENT_H
+
+#include <json/json.hpp>
 #include "module.h"
 #include "net.h"
 
@@ -104,7 +106,7 @@ public:
 
 	void doPlacement();
 
-	void parseJson(std::string jsonFile);
+	void parseJsonFile(std::string jsonFile);
 
 	terminal& addSystemTerminal(
 			const std::string& terminalIdentifier, const schematic::terminalType type, const int width);
@@ -118,6 +120,10 @@ public:
 	net& addNet(const std::string& netName, const int netWidth);
 
 	net& getNet(const std::string& netName);
+
+	void parseJson(nlohmann::json parsedJson);
+
+	void parseJsonString(std::string jsonText);
 };
 
 #endif  // PLACEMENT_H
