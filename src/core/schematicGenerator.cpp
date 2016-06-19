@@ -494,7 +494,7 @@ void schematicGenerator::boxPlacement() {
 
 		largestBox->position = {0, 0};
 		layoutData.insert(std::make_pair(largestBox, positionalStructure<box>()));
-		intPair leftBottom;
+		intPair leftBottom = {0, 0};
 		intPair rightTop = largestBox->size;
 
 		hashlib::pool<box *> remainingBoxes, placedBoxes;

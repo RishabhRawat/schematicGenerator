@@ -1,7 +1,9 @@
 #include "exportStructure.h"
 #include <box.h>
 #include <partition.h>
+#ifdef WEB_COMPILATION
 #include "emscripten/bind.h"
+#endif
 #include "json/json.hpp"
 #include "schematicGenerator.h"
 
@@ -71,14 +73,14 @@ exportStructure schematicGenerator::createSchematicFromJson(std::string jsonData
 	}
 	return designData;
 }
-
+#ifdef WEB_COMPILATION
 EMSCRIPTEN_BINDINGS(schematicGenerator) {
 	emscripten::class_<schematicGenerator>("schematicGenerator")
 			.constructor<>()
 			//.function("createSchematicFromJson", &schematicGenerator::createSchematicFromJson)
 			.function("createJsonSchematicFromJson", &schematicGenerator::createJsonSchematicFromJson);
 }
-
+#endif // WEB_COMPILATION
 //	emscripten::register_vector<partitionStructure>("partitionVector");
 //	emscripten::register_vector<boxStructure>("boxVector");
 //	emscripten::register_vector<moduleStructure>("moduleVector");
@@ -191,5 +193,5 @@ std::string schematicGenerator::createJsonSchematicFromJson(std::string jsonData
 		}
 		outputJson["partitions"].push_back(pS);
 	}
-	return outputJson.dump();
+	return outputJson.dump(2);
 }

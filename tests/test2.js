@@ -115,6 +115,7 @@ jsonData = {
 
 string = JSON.stringify(jsonData)
 console.log(string);
-var data = JSON.parse(sch.createJsonSchematicFromJson(string));
-console.log(data);
+var structure = sch.createJsonSchematicFromJson(string);
+var data = JSON.parse(structure);
+console.log(structure);
 
