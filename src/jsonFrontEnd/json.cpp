@@ -1,5 +1,6 @@
 #include "json/json.hpp"
 #include <fstream>
+#include <system_error>
 #include "schematicGenerator.h"
 namespace schematic {
 schematic::terminalType parseTerminalType(std::string t) {

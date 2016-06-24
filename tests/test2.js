@@ -114,8 +114,31 @@ jsonData = {
 }
 
 string = JSON.stringify(jsonData)
-console.log(string);
+// console.log(string);
 var structure = sch.createJsonSchematicFromJson(string);
 var data = JSON.parse(structure);
 console.log(structure);
 
+var createRectChild = function (svgElem, x, y, size_x, size_y, strokeWidth) {
+  svgElem.rect(size_x,size_y).attr({x: x, y: y, fill: '#fff'}).stroke({ width: 1 });
+  return svgElem.nested().size(size_x,size_y).attr({x: x, y: y});
+}
+
+
+var draw = SVG('drawing').size(data.size_x+6,data.size_y+6);
+var tRect = createRectChild(draw, 0, 0, data.size_x, data.size_y, 1); 
+
+for( i = 0; i < data.partitions.length; i++ ) {
+  var partition = data.partitions[i];
+  var pRect = createRectChild(tRect, data.offset_x + partition.pos_x, data.offset_y + partition.pos_y, partition.size_x, partition.size_y, 1);
+  for( j = 0; j < partition.boxes.length; j++ ) {
+    var box = partition.boxes[j];
+    var bRect = createRectChild(pRect, partition.offset_x + box.pos_x, partition.offset_y + box.pos_y, box.size_x, box.size_y, 1);
+    for( k = 0; k < box.modules.length; k++ ) {
+      var mod = box.modules[k];
+      var mRect = createRectChild(bRect, box.offset_x + mod.pos_x, box.offset_y + mod.pos_y, mod.size_x, mod.size_y, 1);
+      console.log(box.offset_x + mod.pos_x, box.offset_y + mod.pos_y, mod.size_x, mod.size_y);
+      console.log(mod.pos_x, mod.pos_y, mod.size_x, mod.size_y);
+    }
+  }
+}
