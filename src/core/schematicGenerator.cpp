@@ -24,11 +24,11 @@ schematicGenerator::~schematicGenerator() {
 }
 
 void schematicGenerator::doPlacement() {
-	printInitialStructures();
+//	printInitialStructures();
 	initializeStructures();
-	printDerivedStructures();
+//	printDerivedStructures();
 	partitionFormation();
-	printPartitions();
+//	printPartitions();
 	boxFormation();
 	modulePlacement();
 	boxPlacement();
@@ -264,8 +264,12 @@ moduleSet* schematicGenerator::selectBoxSeeds(partition* p) {
 }
 
 box* schematicGenerator::selectPath(box* path, moduleSet remainingModules) {
-	bool searchSuccess = true;
 
+	for(module *m: remainingModules) {
+		remainingModules.erase(m);
+	}
+
+	bool searchSuccess = true;
 	while (searchSuccess && path->length() <= designParameters.maxPathLength) {
 		searchSuccess = false;
 		module* lastModule = path->boxModules.back();
@@ -303,7 +307,6 @@ void schematicGenerator::boxFormation() {
 		while (!p->partitionModules.empty()) {  // FIXME: What if stuck in this loop
 			box* longestPath = nullptr;
 			for (module* seed : *seeds) {
-				p->partitionModules.erase(seed);
 				box* path = new box(seed);
 				path = selectPath(path, p->partitionModules);  // Call by Value
 

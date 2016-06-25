@@ -499,11 +499,12 @@ for( i = 0; i < data.partitions.length; i++ ) {
   for( j = 0; j < partition.boxes.length; j++ ) {
     var box = partition.boxes[j];
     var bRect = createRectChild(pRect, partition.offset_x + box.pos_x, partition.offset_y + box.pos_y, box.size_x, box.size_y, 1);
+    console.log("box: ", partition.offset_x + box.pos_x, partition.offset_y + box.pos_y, box.size_x, box.size_y);
     for( k = 0; k < box.modules.length; k++ ) {
       var mod = box.modules[k];
       var mRect = createRectChild(bRect, box.offset_x + mod.pos_x, box.offset_y + mod.pos_y, mod.size_x, mod.size_y, 1);
-      console.log(box.offset_x + mod.pos_x, box.offset_y + mod.pos_y, mod.size_x, mod.size_y);
-      console.log(mod.pos_x, mod.pos_y, mod.size_x, mod.size_y);
+      console.log("module: ", box.offset_x + mod.pos_x, box.offset_y + mod.pos_y, mod.size_x, mod.size_y);
+      // console.log(mod.pos_x, mod.pos_y, mod.size_x, mod.size_y);
     }
   }
 }
