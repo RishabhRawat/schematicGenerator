@@ -21,7 +21,7 @@ struct intPair {
 		return *this=*this+rhs;
 	}
 	intPair operator-(const intPair& rhs) const {
-		return {x + rhs.x, y + rhs.y};
+		return {x - rhs.x, y - rhs.y};
 	}
 	intPair operator/(int a) const {
 		return {x / a, y / a};
