@@ -23,7 +23,6 @@ void schematicGenerator::parseJsonFile(std::string fName) {
 	nlohmann::json parsedJson;
 	jsonFile >> parsedJson;
 	parseJson(parsedJson);
-
 }
 void schematicGenerator::parseJsonString(std::string jsonText) {
 	parseJson(nlohmann::json::parse(jsonText));
@@ -31,7 +30,6 @@ void schematicGenerator::parseJsonString(std::string jsonText) {
 void schematicGenerator::parseJson(nlohmann::json parsedJson) {
 	unsigned int netNumberGuess = 50;
 	unsigned int netIncrementNumberGuess = 10;
-
 
 	if (parsedJson["modules"].size() > 1)
 		// FIXME: better message?
@@ -84,7 +82,11 @@ void schematicGenerator::parseJson(nlohmann::json parsedJson) {
 						t[i].connect((*netData[bit].baseNet)[netData[bit].index]);
 					} catch (std::domain_error ex) {
 						// FIXME: Take care of the constants :/
-						bit = (unsigned)std::stoi(cell_iter.value()["connections"][t_iter.key()][i].get<std::string>());
+						std::string temp = cell_iter.value()["connections"][t_iter.key()][i].get<std::string>();
+						if (temp == "0" || temp == "x" || temp == "z" )
+							bit = 0;
+						else
+							bit = 1;
 					}
 				}
 			}

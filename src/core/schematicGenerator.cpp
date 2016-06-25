@@ -348,8 +348,8 @@ void schematicGenerator::modulePlacement() {
 
 void schematicGenerator::initModulePlacement(box* b, intPair& leftBottom, intPair& rightTop) {
 	module* root = b->boxModules.front();
-	splicedTerminal* out = b->boxLink.front().first;
 	if (b->length() > 1) {
+		splicedTerminal* out = b->boxLink.front().first;
 		switch (out->baseTerminal->side) {
 			case schematic::rightSide:
 				root->rotateModule(schematic::d_0);
@@ -392,7 +392,7 @@ void schematicGenerator::initModulePlacement(box* b, intPair& leftBottom, intPai
 		}
 	}
 
-	root->position = {static_cast<int>(calculatePadding(lT)), static_cast<int>(calculatePadding(bT))};
+	root->position = {calculatePadding(lT), calculatePadding(bT)};
 	leftBottom = {0, 0};
 	rightTop = root->position + root->size + intPair{calculatePadding(rT), calculatePadding(tT)};
 }
@@ -733,6 +733,8 @@ partition* schematicGenerator::selectNextParition(
 		for (box* b : p->partitionBoxes) {
 			for (module* m : b->boxModules) {
 				for (moduleLinkPair& otherM : m->connectedModuleLinkMap) {
+					if (otherM.first == &systemModule)
+						continue;
 					partition* pP = otherM.first->parentBox->parentPartition;
 					if (pP != p && placedPartition.find(pP) != placedPartition.end())
 						conn += otherM.second.size();
