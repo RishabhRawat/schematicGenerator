@@ -35,6 +35,9 @@ private:
 			if (item->position.x + item->size.y > newItem->position.x + newItem->size.y)
 				side[0].push_back(newItem);
 		}
+		positionalStructure(T* firstItem) {
+			item = firstItem;
+		}
 	};
 
 	module systemModule;  // just a place holder

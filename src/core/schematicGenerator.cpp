@@ -24,11 +24,11 @@ schematicGenerator::~schematicGenerator() {
 }
 
 void schematicGenerator::doPlacement() {
-//	printInitialStructures();
+	//	printInitialStructures();
 	initializeStructures();
-//	printDerivedStructures();
+	//	printDerivedStructures();
 	partitionFormation();
-//	printPartitions();
+	//	printPartitions();
 	boxFormation();
 	modulePlacement();
 	boxPlacement();
@@ -264,8 +264,7 @@ moduleSet* schematicGenerator::selectBoxSeeds(partition* p) {
 }
 
 box* schematicGenerator::selectPath(box* path, moduleSet remainingModules) {
-
-	for(module *m: remainingModules) {
+	for (module* m : remainingModules) {
 		remainingModules.erase(m);
 	}
 
@@ -496,11 +495,12 @@ void schematicGenerator::boxPlacement() {
 				[](const box* x, const box* y) { return x->length() < y->length(); });
 
 		largestBox->position = {0, 0};
-		layoutData.insert(std::make_pair(largestBox, positionalStructure<box>()));
+		layoutData.insert(std::make_pair(largestBox, positionalStructure<box>(largestBox)));
 		intPair leftBottom = {0, 0};
 		intPair rightTop = largestBox->size;
 
 		hashlib::pool<box *> remainingBoxes, placedBoxes;
+		placedBoxes.insert(largestBox);
 
 		for_each(p->partitionBoxes.begin(), p->partitionBoxes.end(), [&](box* b) {
 			if (b != largestBox)
@@ -513,7 +513,7 @@ void schematicGenerator::boxPlacement() {
 			intPair optimumPosition = calculateOptimumBoxPosition(b, placedBoxes);
 			b->position = calculateActualPosition(b->size, optimumPosition, layoutData);
 
-			auto&& pS = layoutData.insert(std::make_pair(b, positionalStructure<box>()));
+			auto&& pS = layoutData.insert(std::make_pair(b, positionalStructure<box>(b)));
 			for (auto&& p : layoutData) {
 				p.second.add(b);
 				pS.first->second.add(p.first);
@@ -700,6 +700,7 @@ void schematicGenerator::partitionPlacement() {
 		throw std::runtime_error("Check partitions, all partitions are empty!!!");
 
 	largestPartition->position = {0, 0};
+	layoutData.insert(std::make_pair(largestPartition, positionalStructure<partition>(largestPartition)));
 	intPair leftBottom = {0, 0};
 	intPair rightTop = largestPartition->size;
 
@@ -709,13 +710,15 @@ void schematicGenerator::partitionPlacement() {
 		if (p != largestPartition)
 			remainingPartitions.insert(p);
 	});
+	placedPartitions.insert(largestPartition);
+
 	while (!remainingPartitions.empty()) {
 		partition* p = selectNextParition(remainingPartitions, placedPartitions);
 		remainingPartitions.erase(p);
 		intPair optimumPosition = calculateOptimumPartitionPosition(p, remainingPartitions);
 		p->position = calculateActualPosition(p->size, optimumPosition, layoutData);
 
-		auto&& pS = layoutData.insert(std::make_pair(p, positionalStructure<partition>()));
+		auto&& pS = layoutData.insert(std::make_pair(p, positionalStructure<partition>(p)));
 		for (auto&& pair : layoutData) {
 			pair.second.add(p);
 			pS.first->second.add(pair.first);
