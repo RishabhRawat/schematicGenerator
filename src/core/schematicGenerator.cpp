@@ -521,8 +521,8 @@ void schematicGenerator::boxPlacement() {
 				pS.first->second.add(p.first);
 			}
 			leftBottom = {std::min(leftBottom.x, b->position.x), std::min(leftBottom.y, b->position.y)};
-			rightTop = {std::min(leftBottom.x, b->position.x + b->size.x),
-					std::min(leftBottom.y, b->position.y + b->size.y)};
+			rightTop = {std::max(leftBottom.x, b->position.x + b->size.x),
+					std::max(leftBottom.y, b->position.y + b->size.y)};
 		}
 		p->size = rightTop - leftBottom;
 		p->offset = leftBottom;
@@ -733,7 +733,7 @@ void schematicGenerator::partitionPlacement() {
 		}
 		leftBottom = {std::min(leftBottom.x, p->position.x), std::min(leftBottom.y, p->position.y)};
 		rightTop = {
-				std::min(leftBottom.x, p->position.x + p->size.x), std::min(leftBottom.y, p->position.y + p->size.y)};
+				std::max(leftBottom.x, p->position.x + p->size.x), std::max(leftBottom.y, p->position.y + p->size.y)};
 	}
 	size = rightTop - leftBottom;
 	offset = leftBottom;
