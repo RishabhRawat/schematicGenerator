@@ -537,6 +537,7 @@ box* schematicGenerator::selectNextBox(
 		unsigned int count = 0;
 		for (module* m : b->boxModules) {
 			for (moduleLinkPair& connectedPair : m->connectedModuleLinkMap) {
+				std::cout<<connectedPair.first<<std::endl;
 				if (placedBoxes.find(connectedPair.first->parentBox) != placedBoxes.end())
 					count++;
 			}
@@ -591,90 +592,94 @@ intPair schematicGenerator::calculateActualPosition(
 
 	enum direction { top = 0, right = 1, bottom = 2, left = 3 };
 
-	auto obstructionPointer = [&](const intPair point, T* const attachedRect, const direction d) -> const T* {
+	auto obstructionPointer = [&](
+			const intPair point, const positionalStructure<T>& posStruct, const direction d) -> const T* {
 		// Check all rectangles in that direction for overlaps
-		for (const T* const obst : layoutData.find(attachedRect)->second.side[d]) {
+		for (const T* const obst : posStruct.side[d]) {
 			// If one rectangle is on left side of other
-			if (obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x)
-				continue;
-
-			// If one rectangle is above other
-			if (obst->position.y > point.y + size.y || point.y > obst->position.y + obst->size.y)
-				continue;
-
-			return obst;
+			if ((obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x) &&
+					// If one rectangle is above other
+					(obst->position.y > point.y + size.y || point.y > obst->position.y + obst->size.y))
+				return obst;
 		}
 		return nullptr;
 	};
 
-	auto scanEdge = [&](const intPair p0, const intPair p1, T* const rectangle, const int orientation) {
-		if (p0[orientation] > optimumPosition[orientation]) {
+	auto scanEdge = [&](
+			const intPair p0, const intPair p1, const positionalStructure<T>& posStruct, const direction orientation) {
+		// index == 0 implies horizontal movement, while index == 1 implies vertical movement
+		const unsigned int index = static_cast<unsigned int>(orientation % 2);
+		if (p0[index] > optimumPosition[index]) {
 			intPair point = p0;
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					return;
-				const T* const ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[orientation] = ptr->size[orientation] + ptr->position[orientation];
+					point[index] = ptr->size[index] + ptr->position[index];
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
 					return;
 				}
-			} while (point[orientation] <= p1[orientation]);
-		} else if (p1[orientation] > optimumPosition[orientation]) {
-			intPair point = {optimumPosition[orientation], p0[1 - orientation]};
+			} while (point[index] <= p1[index]);
+		} else if (p1[index] > optimumPosition[index]) {
+			intPair point = {optimumPosition[index], p0[1 - orientation]};
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					break;
-				const T* const ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[orientation] = ptr->size[orientation] + ptr->position[orientation];
+					point[index] = ptr->size[index] + ptr->position[index];
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
 					break;
 				}
-			} while (point[orientation] <= p1[orientation]);
-			point = {optimumPosition[orientation], p0[1 - orientation]};
+			} while (point[index] <= p1[index]);
+			point = {optimumPosition[index], p0[1 - orientation]};
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					return;
-				const T* const ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[orientation] = ptr->position[orientation];
+					point[index] = ptr->position[index];
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
 					return;
 				}
-			} while (point[orientation] <= p1[orientation]);
+			} while (point[index] <= p1[index]);
 		} else {
 			intPair point = p1;
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					return;
-				const T* const ptr = obstructionPointer(point, rectangle, top);
+				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[orientation] = ptr->position[orientation];
+					point[index] = ptr->position[index];
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
 					return;
 				}
-			} while (point[orientation] >= p0[orientation]);
+			} while (point[index] >= p0[index]);
 		}
 	};
 
 	for (std::pair<T*, positionalStructure<T>> p : layoutData) {
 		if (p.first->position.x < optimumPosition.x)  // left
-			scanEdge(p.first->getVertex(0), p.first->getVertex(1), p.first, 1);
+			scanEdge(p.first->getVertex(0) - size.component(1), p.first->getVertex(1) + size.component(1), p.second,
+					left);
 		if (p.first->position.y + p.first->size.y > optimumPosition.y)  // top
-			scanEdge(p.first->getVertex(1), p.first->getVertex(2), p.first, 0);
+			scanEdge(p.first->getVertex(1) - size.component(0), p.first->getVertex(2) - size.component(0), p.second,
+					top);
 		if (p.first->position.x + p.first->size.x > optimumPosition.x)  // right
-			scanEdge(p.first->getVertex(2), p.first->getVertex(3), p.first, 1);
+			scanEdge(p.first->getVertex(3) - size.component(1), p.first->getVertex(2) - size.component(1), p.second,
+					right);
 		if (p.first->position.y < optimumPosition.y)  // bottom
-			scanEdge(p.first->getVertex(3), p.first->getVertex(0), p.first, 1);
+			scanEdge(p.first->getVertex(0) - size.component(0), p.first->getVertex(3) - size.component(0), p.second,
+					bottom);
 	};
 
 	if (bestDistance == INT32_MAX)
