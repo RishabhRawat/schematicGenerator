@@ -514,6 +514,7 @@ void schematicGenerator::boxPlacement() {
 			intPair optimumPosition = calculateOptimumBoxPosition(b, placedBoxes);
 			b->position = calculateActualPosition(b->size, optimumPosition, layoutData);
 
+			placedBoxes.insert(b);
 			auto&& pS = layoutData.insert(std::make_pair(b, positionalStructure<box>(b)));
 			for (auto&& p : layoutData) {
 				p.second.add(b);
@@ -598,8 +599,8 @@ intPair schematicGenerator::calculateActualPosition(
 		for (const T* const obst : posStruct.side[d]) {
 			// If one rectangle is on left side of other
 			if (!(obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x ||
-					// If one rectangle is above other
-					obst->position.y > point.y + size.y || point.y > obst->position.y + obst->size.y))
+						// If one rectangle is above other
+						obst->position.y > point.y + size.y || point.y > obst->position.y + obst->size.y))
 				return obst;
 		}
 		return nullptr;
@@ -616,7 +617,7 @@ intPair schematicGenerator::calculateActualPosition(
 					return;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[index] = ptr->size[index] + ptr->position[index];
+					point[index] = ptr->size[index] + ptr->position[index] + 1;
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
@@ -630,7 +631,7 @@ intPair schematicGenerator::calculateActualPosition(
 					break;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[index] = ptr->size[index] + ptr->position[index];
+					point[index] = ptr->size[index] + ptr->position[index] + 1;
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
@@ -643,12 +644,13 @@ intPair schematicGenerator::calculateActualPosition(
 					return;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[index] = ptr->position[index];
+					point[index] = ptr->position[index] - size[index] - 1;
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
 					return;
 				}
+				std::cout << ptr << std::endl;
 			} while (point[index] <= p1[index]);
 		} else {
 			intPair point = p1;
@@ -657,7 +659,7 @@ intPair schematicGenerator::calculateActualPosition(
 					return;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
-					point[index] = ptr->position[index];
+					point[index] = ptr->position[index] - size[index] - 1;
 				else {
 					bestDistance = intPair::L2norm_sq(point, optimumPosition);
 					bestPosition = point;
@@ -723,6 +725,7 @@ void schematicGenerator::partitionPlacement() {
 		intPair optimumPosition = calculateOptimumPartitionPosition(p, remainingPartitions);
 		p->position = calculateActualPosition(p->size, optimumPosition, layoutData);
 
+		placedPartitions.insert(p);
 		auto&& pS = layoutData.insert(std::make_pair(p, positionalStructure<partition>(p)));
 		for (auto&& pair : layoutData) {
 			pair.second.add(p);

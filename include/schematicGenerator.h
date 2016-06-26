@@ -13,7 +13,7 @@ private:
 		 */
 		unsigned int wireModuleDistance = 5;
 		// Important Layout Parameters, just guesses for now
-		unsigned int maxPartitionSize = 20;
+		unsigned int maxPartitionSize = 50;
 		unsigned int maxPartitionConnections = 20;
 		unsigned int maxPathLength = 10;
 
