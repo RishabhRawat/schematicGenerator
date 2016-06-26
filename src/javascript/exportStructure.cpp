@@ -192,6 +192,24 @@ std::string schematicGenerator::createJsonSchematicFromJson(std::string jsonData
 			pS["boxes"].push_back(bS);
 		}
 		outputJson["partitions"].push_back(pS);
+
+		std::cout<<std::endl;
+		std::cout<<"dsd"<<std::endl;
+
+		for (auto&& p : allPartitions) {
+			std::cout<<"P_pos: "<<p->position.x<<", "<<p->position.y<<std::endl;
+			std::cout<<"P_size: "<<p->size.x<<", "<<p->size.y<<std::endl;
+			std::cout<<"P_offset: "<<p->offset.x<<", "<<p->offset.y<<std::endl;
+			for (auto&& b : p->partitionBoxes) {
+				std::cout<<"B_pos: "<<b->position.x<<", "<<b->position.y<<std::endl;
+				std::cout<<"B_size: "<<b->size.x<<", "<<b->size.y<<std::endl;
+				std::cout<<"B_offset: "<<b->offset.x<<", "<<b->offset.y<<std::endl;
+//				for (auto&& m : b->boxModules) {
+//					std::cout<<"M_pos: "<<m->position.x<<", "<<m->position.y<<std::endl;
+//					std::cout<<"M_size: "<<m->size.x<<", "<<m->size.y<<std::endl;
+//				}
+			}
+		}
 	}
 	return outputJson.dump(2);
 }

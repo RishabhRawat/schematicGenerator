@@ -1,4 +1,5 @@
 #include "schematicGenerator.h"
+#include <strings.h>
 #include <iostream>
 #include <iterator>
 #include <sstream>
@@ -587,7 +588,6 @@ intPair schematicGenerator::calculateOptimumBoxPosition(const box* b, hashlib::p
 template <typename T>
 intPair schematicGenerator::calculateActualPosition(
 		const intPair size, const intPair optimumPosition, hashlib::dict<T*, positionalStructure<T>>& layoutData) {
-	// TODO: This algorithm needs a lot of testing!!!!!!!!!!!!!!!!!!!!! yeah that many exclaimations :/
 	intPair bestPosition = {INT32_MAX, INT32_MAX};
 	unsigned int bestDistance = UINT32_MAX;
 
@@ -596,7 +596,9 @@ intPair schematicGenerator::calculateActualPosition(
 	auto obstructionPointer = [&](
 			const intPair point, const positionalStructure<T>& posStruct, const direction d) -> const T* {
 		// Check all rectangles in that direction for overlaps
-		for (const T* const obst : posStruct.side[d]) {
+		//		for (const T* const obst : posStruct.side[d]) {
+		for (auto&& obst_pair : layoutData) {
+			const T* const obst = obst_pair.first;
 			// If one rectangle is on left side of other
 			if (!(obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x ||
 						// If one rectangle is above other
@@ -625,7 +627,7 @@ intPair schematicGenerator::calculateActualPosition(
 				}
 			} while (point[index] <= p1[index]);
 		} else if (p1[index] > optimumPosition[index]) {
-			intPair point = {optimumPosition[index], p0[1 - orientation]};
+			intPair point = optimumPosition.component(index) + p0.component(1 - index);
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					break;
@@ -638,7 +640,7 @@ intPair schematicGenerator::calculateActualPosition(
 					break;
 				}
 			} while (point[index] <= p1[index]);
-			point = {optimumPosition[index], p0[1 - orientation]};
+			point = optimumPosition.component(index) + p0.component(1 - index);
 			do {
 				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
 					return;
@@ -650,8 +652,7 @@ intPair schematicGenerator::calculateActualPosition(
 					bestPosition = point;
 					return;
 				}
-				std::cout << ptr << std::endl;
-			} while (point[index] <= p1[index]);
+			} while (point[index] >= p0[index]);
 		} else {
 			intPair point = p1;
 			do {
@@ -669,22 +670,38 @@ intPair schematicGenerator::calculateActualPosition(
 		}
 	};
 
-	for (std::pair<T*, positionalStructure<T>> p : layoutData) {
-		if (p.first->position.x < optimumPosition.x)  // left
-			scanEdge(p.first->getVertex(0) - size.component(1), p.first->getVertex(1) + size.component(1), p.second,
-					left);
-		if (p.first->position.y + p.first->size.y > optimumPosition.y)  // top
-			scanEdge(p.first->getVertex(1) - size.component(0), p.first->getVertex(2) - size.component(0), p.second,
-					top);
-		if (p.first->position.x + p.first->size.x > optimumPosition.x)  // right
-			scanEdge(p.first->getVertex(3) - size.component(1), p.first->getVertex(2) - size.component(1), p.second,
-					right);
-		if (p.first->position.y < optimumPosition.y)  // bottom
-			scanEdge(p.first->getVertex(0) - size.component(0), p.first->getVertex(3) - size.component(0), p.second,
-					bottom);
+	bool obstructed = false;
+	for (std::pair<T*, positionalStructure<T>>& p : layoutData) {
+		if (!(p.first->position.x > optimumPosition.x + size.x ||
+					optimumPosition.x > p.first->position.x + p.first->size.x ||
+					// If one rectangle is above other
+					p.first->position.y > optimumPosition.y + size.y ||
+					optimumPosition.y > p.first->position.y + p.first->size.y)) {
+			obstructed = true;
+			break;
+		}
 	};
 
-	if (bestDistance == INT32_MAX)
+	if (!obstructed)
+		return optimumPosition;
+
+	// NOTE: For svg width?
+	for (std::pair<T*, positionalStructure<T>> p : layoutData) {
+		if (p.first->position.x < optimumPosition.x + size.x)  // left
+			scanEdge(p.first->getVertex(0) - size - intPair{1, 0},
+					p.first->getVertex(1) - size.component(0) - intPair{1, 0}, p.second, left);
+		if (p.first->position.y + p.first->size.y > optimumPosition.y)  // top
+			scanEdge(p.first->getVertex(1) - size.component(0) + intPair{0, 1}, p.first->getVertex(2) + intPair{0, 1},
+					p.second, top);
+		if (p.first->position.x + p.first->size.x > optimumPosition.x)  // right
+			scanEdge(p.first->getVertex(3) - size.component(1) + intPair{1, 0}, p.first->getVertex(2) + intPair{1, 0},
+					p.second, right);
+		if (p.first->position.y < optimumPosition.y + size.y)  // bottom
+			scanEdge(p.first->getVertex(0) - size - intPair{0, 1},
+					p.first->getVertex(3) - size.component(1) - intPair{0, 1}, p.second, bottom);
+	};
+
+	if (bestPosition.x == INT32_MAX && bestPosition.y == INT32_MAX)
 		throw std::runtime_error("Some error in algorithm");
 	return bestPosition;
 }

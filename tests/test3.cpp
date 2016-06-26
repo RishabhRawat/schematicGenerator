@@ -9,6 +9,6 @@ int main(int argc, char ** argv){
 	std::string str((std::istreambuf_iterator<char>(t)),
 			std::istreambuf_iterator<char>());
 	schematicGenerator myPlacementObject;
-	std::cout<<myPlacementObject.createJsonSchematicFromJson(str);
+	myPlacementObject.createJsonSchematicFromJson(str);
 	return 0;
 }
