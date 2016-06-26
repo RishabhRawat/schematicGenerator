@@ -129,6 +129,7 @@ void schematicGenerator::initializeStructures() {
 				t->originalPosition = {m.second->size.x, (output-- * m.second->size.y) / maxout};
 			else
 				t->originalPosition = {0, (input-- * m.second->size.y) / maxin};
+			t->placedPosition = t->originalPosition;
 		}
 	}
 }
@@ -537,7 +538,6 @@ box* schematicGenerator::selectNextBox(
 		unsigned int count = 0;
 		for (module* m : b->boxModules) {
 			for (moduleLinkPair& connectedPair : m->connectedModuleLinkMap) {
-				std::cout<<connectedPair.first<<std::endl;
 				if (placedBoxes.find(connectedPair.first->parentBox) != placedBoxes.end())
 					count++;
 			}
@@ -597,9 +597,9 @@ intPair schematicGenerator::calculateActualPosition(
 		// Check all rectangles in that direction for overlaps
 		for (const T* const obst : posStruct.side[d]) {
 			// If one rectangle is on left side of other
-			if ((obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x) &&
+			if (!(obst->position.x > point.x + size.x || point.x > obst->position.x + obst->size.x ||
 					// If one rectangle is above other
-					(obst->position.y > point.y + size.y || point.y > obst->position.y + obst->size.y))
+					obst->position.y > point.y + size.y || point.y > obst->position.y + obst->size.y))
 				return obst;
 		}
 		return nullptr;
