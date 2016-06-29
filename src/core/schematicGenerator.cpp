@@ -188,7 +188,7 @@ partition* schematicGenerator::createPartition(hashlib::pool<module*>& moduleSet
 	while (!moduleSet.empty() && (partitionEntries < designParameters.maxPartitionSize) &&
 			(connections < designParameters.maxPartitionConnections)) {
 		module* selectedModule = nullptr;
-		int maxConnectionsInPartition = -1;
+		int maxConnectionsInPartition = 1;
 		int minConnectionsOutPartion = INT32_MAX;
 
 		// Algo to select module
@@ -211,8 +211,8 @@ partition* schematicGenerator::createPartition(hashlib::pool<module*>& moduleSet
 			}
 		}
 
-		if (!selectedModule || maxConnectionsInPartition < 0 || minConnectionsOutPartion == INT32_MAX)
-			throw "Bad selectedModule in schematicGenerator::createPartition";
+		if (!selectedModule)
+			break;
 
 		moduleSet.erase(selectedModule);
 		newPartition->addModule(selectedModule);
@@ -522,8 +522,8 @@ void schematicGenerator::boxPlacement() {
 				pS.first->second.add(p.first);
 			}
 			leftBottom = {std::min(leftBottom.x, b->position.x), std::min(leftBottom.y, b->position.y)};
-			rightTop = {std::max(leftBottom.x, b->position.x + b->size.x),
-					std::max(leftBottom.y, b->position.y + b->size.y)};
+			rightTop = {
+					std::max(rightTop.x, b->position.x + b->size.x), std::max(rightTop.y, b->position.y + b->size.y)};
 		}
 		p->size = rightTop - leftBottom;
 		p->offset = leftBottom;
@@ -739,7 +739,7 @@ void schematicGenerator::partitionPlacement() {
 	while (!remainingPartitions.empty()) {
 		partition* p = selectNextParition(remainingPartitions, placedPartitions);
 		remainingPartitions.erase(p);
-		intPair optimumPosition = calculateOptimumPartitionPosition(p, remainingPartitions);
+		intPair optimumPosition = calculateOptimumPartitionPosition(p, placedPartitions);
 		p->position = calculateActualPosition(p->size, optimumPosition, layoutData);
 
 		placedPartitions.insert(p);
@@ -749,8 +749,7 @@ void schematicGenerator::partitionPlacement() {
 			pS.first->second.add(pair.first);
 		}
 		leftBottom = {std::min(leftBottom.x, p->position.x), std::min(leftBottom.y, p->position.y)};
-		rightTop = {
-				std::max(leftBottom.x, p->position.x + p->size.x), std::max(leftBottom.y, p->position.y + p->size.y)};
+		rightTop = {std::max(rightTop.x, p->position.x + p->size.x), std::max(rightTop.y, p->position.y + p->size.y)};
 	}
 	size = rightTop - leftBottom;
 	offset = leftBottom;
