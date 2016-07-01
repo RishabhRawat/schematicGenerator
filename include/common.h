@@ -16,7 +16,7 @@ struct intPair {
 		return {x + rhs.x, y + rhs.y};
 	}
 	intPair& operator+=(const intPair& rhs) {
-		return *this=*this+rhs;
+		return *this = *this + rhs;
 	}
 	intPair operator-(const intPair& rhs) const {
 		return {x - rhs.x, y - rhs.y};
@@ -57,7 +57,6 @@ struct schematicParameters {
 	unsigned int maxPartitionSize = 50;
 	unsigned int maxPartitionConnections = 20;
 	unsigned int maxPathLength = 10;
-
 };
 
 class coreDesign;
@@ -73,7 +72,6 @@ struct bitTerminal;
 class net;
 class coalescedNet;
 struct bitNet;
-
 
 namespace hashlib {
 template <>

@@ -16,6 +16,7 @@ class terminal {
 	friend class splicedTerminal;
 	friend class coreDesign;
 	friend class placement;
+	friend class routing;
 
 public:
 	const std::string terminalIdentifier;
@@ -67,6 +68,7 @@ public:
 class splicedTerminal {
 	friend class coreDesign;
 	friend class placement;
+	friend class routing;
 	friend class module;
 
 private:

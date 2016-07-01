@@ -8,6 +8,7 @@ class module
 {
     friend class coreDesign;
 	friend class placement;
+	friend class routing;
 	friend class box;
 
 private:
