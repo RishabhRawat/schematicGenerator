@@ -6,7 +6,8 @@
 
 class module
 {
-    friend class schematicGenerator;
+    friend class coreDesign;
+	friend class placement;
 	friend class box;
 
 private:
@@ -18,7 +19,7 @@ private:
     /* First along x-axis then along y-axis*/
     intPair size = {50,100}; //Default size
 
-	mutable schematic::clockwiseRotation moduleRotation = schematic::d_0;
+	mutable clockwiseRotation moduleRotation = clockwiseRotation::d_0;
 
 	namedTerminalCollection moduleTerminals;
 
@@ -35,7 +36,7 @@ private:
 		parentBox = b;
 	}
 
-	void rotateModule(schematic::clockwiseRotation newRotValue);
+	void rotateModule(clockwiseRotation newRotValue);
 
 
 public:
@@ -50,7 +51,7 @@ public:
 	    return size;
     }
 
-    terminal &addTerminal(const std::string &terminalName, const schematic::terminalType type, const int width);
+    terminal &addTerminal(const std::string &terminalName, const terminalType type, const int width);
 
 	terminal & getTerminal(const std::string &basic_string);
 

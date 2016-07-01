@@ -29,7 +29,7 @@
 //}
 //
 
-terminal::terminal(const std::string& terminalIdentifier, const schematic::terminalType type, const int terminalWidth,
+terminal::terminal(const std::string& terminalIdentifier, const terminalType type, const int terminalWidth,
 		module* const parentModule, const bool systemTerminal)
 	: terminalIdentifier(terminalIdentifier),
 	  type(type),

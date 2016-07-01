@@ -15,7 +15,8 @@ struct bitNet {
 class net {
 	friend class terminal;
 	friend class splicedTerminal;
-	friend class schematicGenerator;
+	friend class placement;
+	friend class coreDesign;
 
 public:
 	const std::string netIdentifier;
@@ -47,7 +48,9 @@ public:
 };
 
 class coalescedNet {
-	friend class schematicGenerator;
+	friend class coreDesign;
+	friend class placement;
+	friend class routing;
 	const net* const sourceNet;
 	moduleSplicedTerminalMap connectedModuleSplicedTerminalMap;
 	coalescedNet(const net* const sourceNet) : sourceNet(sourceNet) {}

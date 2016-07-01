@@ -1,5 +1,3 @@
-var sch = new Module.schematicGenerator();
-
 jsonData = {
 	"creator": "Yosys 0.6+135 (git sha1 ca91bcc, clang 3.4-1ubuntu3 -fPIC -Os)",
 	"modules": {
@@ -3833,38 +3831,4 @@ jsonData = {
 		}
 	}
 }
-
-
-string = JSON.stringify(jsonData)
-		 // console.log(string);
-		 var structure = sch.createJsonSchematicFromJson(string);
-var data = JSON.parse(structure);
-console.log(structure);
-
-var createRectChild =
-		function(svgElem, x, y, size_x, size_y, strokeWidth) {
-	svgElem.rect(size_x, size_y).attr({x: x, y: y, fill: '#fff'}).stroke({width: 1});
-	return svgElem.nested().size(size_x, size_y).attr({x: x, y: y});
-}
-
-
-var draw = SVG('drawing').size(data.size_x + 6, data.size_y + 6);
-var tRect = createRectChild(draw, 0, 0, data.size_x, data.size_y, 1);
-
-for (i = 0; i < data.partitions.length; i++) {
-	var partition = data.partitions[i];
-	var pRect = createRectChild(tRect, partition.pos_x - data.offset_x, partition.pos_y - data.offset_y,
-			partition.size_x, partition.size_y, 1);
-	for (j = 0; j < partition.boxes.length; j++) {
-		var box = partition.boxes[j];
-		var bRect = createRectChild(
-				pRect, box.pos_x - partition.offset_x, box.pos_y - partition.offset_y, box.size_x, box.size_y, 1);
-		for (k = 0; k < box.modules.length; k++) {
-			var mod = box.modules[k];
-			var mRect = createRectChild(
-					bRect, mod.pos_x - box.offset_x, mod.pos_y - box.offset_y, mod.size_x, mod.size_y, 1);
-			// console.log("module: ", box.offset_x + mod.pos_x, box.offset_y + mod.pos_y, mod.size_x, mod.size_y);
-			// console.log(mod.pos_x, mod.pos_y, mod.size_x, mod.size_y);
-		}
-	}
-}
+createSchematic('drawing',jsonData);

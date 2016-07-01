@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "schematicGenerator.h"
+#include "schematic.h"
 
 int main(int argc, char ** argv){
 //	if(argc < 2)
@@ -8,7 +8,7 @@ int main(int argc, char ** argv){
 	std::ifstream t("test.json");
 	std::string str((std::istreambuf_iterator<char>(t)),
 			std::istreambuf_iterator<char>());
-	schematicGenerator myPlacementObject;
-	myPlacementObject.createJsonSchematicFromJson(str);
+	schematic myPlacementObject;
+	std::cout<< myPlacementObject.createDetailedJsonSchematicFromJson(str)<<std::endl;
 	return 0;
 }

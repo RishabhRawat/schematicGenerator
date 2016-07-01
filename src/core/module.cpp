@@ -1,6 +1,6 @@
 #include "module.h"
 
-terminal& module::addTerminal(const std::string& terminalName, const schematic::terminalType type, const int width) {
+terminal& module::addTerminal(const std::string& terminalName, const terminalType type, const int width) {
 	// FIXME: I need to check whether the returned reference is correct
 	return *(
 			moduleTerminals.insert({terminalName, new terminal(terminalName, type, width, this, false)}).first->second);
@@ -15,21 +15,21 @@ splicedTerminal* module::addSplicedTerminal(
 	return *(moduleSplicedTerminals.insert(new splicedTerminal(baseTerminal, terminalName, attachedNet)).first);
 }
 
-void module::rotateModule(schematic::clockwiseRotation newRotValue) {
+void module::rotateModule(clockwiseRotation newRotValue) {
 	for (splicedTerminal* t : moduleSplicedTerminals) {
 		intPair temp;
 		switch (newRotValue) {
-			case schematic::d_0:
+			case clockwiseRotation::d_0:
 				t->placedPosition = t->originalPosition;
 				break;
-			case schematic::d_90:
+			case clockwiseRotation::d_90:
 				temp = (t->originalPosition - size / 2);
 				t->placedPosition = intPair{-temp.y, temp.x} + size / 2;
 				break;
-			case schematic::d_180:
+			case clockwiseRotation::d_180:
 				t->placedPosition = size - t->originalPosition;
 				break;
-			case schematic::d_270:
+			case clockwiseRotation::d_270:
 				temp = (t->originalPosition - size / 2);
 				t->placedPosition = intPair{temp.y, -temp.x} + size / 2;
 				break;

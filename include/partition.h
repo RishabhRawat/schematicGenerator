@@ -3,7 +3,8 @@
 #include "common.h"
 
 class partition {
-	friend class schematicGenerator;
+	friend class placement;
+	friend class coreDesign;
 
 private:
 	std::vector<box*> partitionBoxes;
