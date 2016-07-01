@@ -24,6 +24,7 @@ void coreDesign::doPlacement() {
 	initializeStructures();
 	placement placementObject;
 	placementObject.place(this,designParameters);
+	placementObject.flattenSchematic();
 }
 
 void coreDesign::initializeStructures() {
@@ -130,34 +131,6 @@ terminal& coreDesign::addSystemTerminal(
 					.insert({terminalName, new terminal(terminalName, type, width, &systemModule, true)})
 					.first->second;
 }
-
-void coreDesign::routing() {
-	addObstacleBounding();
-	for (coalescedNet* internalCoalescedNet : internalCoalescedNets) {
-		splicedTerminalSet tSet;
-		for (auto&& mT_pair : internalCoalescedNet->connectedModuleSplicedTerminalMap) {
-			for (splicedTerminal* t : mT_pair.second) {
-				tSet.insert(t);
-			}
-		}
-
-		if (internalCoalescedNet->connectedModuleSplicedTerminalMap.size() < 2)
-			throw std::runtime_error("Dangling net??");
-
-		splicedTerminal* t0 = tSet.pop();
-		splicedTerminal* t1 = tSet.pop();
-		initNet(t0, t1);
-		while (!tSet.empty()) {
-			expandNet(tSet.pop());
-		}
-	}
-}
-
-void coreDesign::addObstacleBounding() {}
-
-void coreDesign::initNet(splicedTerminal* t0, splicedTerminal* t1) {}
-
-void coreDesign::expandNet(splicedTerminal* pT) {}
 
 terminal& coreDesign::getSystemTerminal(const std::string& terminalIdentifier) {
 	return systemModule.getTerminal(terminalIdentifier);

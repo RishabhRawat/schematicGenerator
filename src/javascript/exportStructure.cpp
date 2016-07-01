@@ -1,15 +1,14 @@
 #include <box.h>
-#include "partition.h"
-#include "json/json.hpp"
 #include "coreDesign.h"
+#include "json/json.hpp"
+#include "partition.h"
 #include "placement.h"
 
-std::string coreDesign::createJsonSchematicFromJson(std::string jsonData) {
+std::string coreDesign::createDebugJsonSchematicFromJson(std::string jsonData) {
 	parseJsonString(jsonData);
-//	doPlacement();
 	initializeStructures();
 	placement placementObject;
-	placementObject.place(this,designParameters);
+	placementObject.place(this, designParameters);
 
 	nlohmann::json outputJson;
 	outputJson["name"] = systemModule.moduleIdentifier;
@@ -65,7 +64,42 @@ std::string coreDesign::createJsonSchematicFromJson(std::string jsonData) {
 			pS["boxes"].push_back(bS);
 		}
 		outputJson["partitions"].push_back(pS);
+	}
+	return outputJson.dump(2);
+}
 
+std::string coreDesign::createJsonSchematicFromJson(std::string jsonData) {
+	parseJsonString(jsonData);
+	doPlacement();
+
+	nlohmann::json outputJson;
+	outputJson["name"] = systemModule.moduleIdentifier;
+	outputJson["size_x"] = size.x;
+	outputJson["size_y"] = size.y;
+
+	for (splicedTerminal* t : systemModule.moduleSplicedTerminals) {
+		nlohmann::json tS;
+		tS["name"] = t->terminalIdentifier;
+		tS["pos_x"] = t->placedPosition.x;
+		tS["pos_y"] = t->placedPosition.y;
+		outputJson["systemTerminals"].push_back(tS);
+	}
+
+	for (namedModulePair& m_pair : subModules) {
+		nlohmann::json mS;
+		mS["name"] = m_pair.second->moduleIdentifier;
+		mS["pos_x"] = m_pair.second->position.x;
+		mS["pos_y"] = m_pair.second->position.y;
+		mS["size_x"] = m_pair.second->size.x;
+		mS["size_y"] = m_pair.second->size.y;
+		for (splicedTerminal* t : m_pair.second->moduleSplicedTerminals) {
+			nlohmann::json tS;
+			tS["name"] = t->terminalIdentifier;
+			tS["pos_x"] = t->placedPosition.x;
+			tS["pos_y"] = t->placedPosition.y;
+			mS["terminals"].push_back(tS);
+		}
+		outputJson["modules"].push_back(mS);
 	}
 	return outputJson.dump(2);
 }

@@ -108,8 +108,8 @@ moduleSet* placement::selectBoxSeeds(partition* p) {
 		bool seed = false;
 		// FIXME: what about when there are no connectedModuleLinkMap entries ??
 		for (moduleLinkPair pair : m->connectedModuleLinkMap) {
-			if (p->partitionModules.find(pair.first) == p->partitionModules.end() && pair.first !=
-					&core->systemModule) {
+			if (p->partitionModules.find(pair.first) == p->partitionModules.end() &&
+					pair.first != &core->systemModule) {
 				seed = true;
 			} else if (pair.first == &core->systemModule) {
 				for (ulink* l : pair.second) {
@@ -713,6 +713,16 @@ void placement::systemTerminalPlacement() {
 					else
 						ul->linkSource->placedPosition = {core->offset.x, gravity.y};
 					break;
+			}
+		}
+	}
+}
+
+void placement::flattenSchematic() {
+	for (partition* p : allPartitions) {
+		for (box* b : p->partitionBoxes) {
+			for (module* m : b->boxModules) {
+				m->position = (m->position - b->offset) + (b->position - p->offset) + (p->position - core->offset);
 			}
 		}
 	}

@@ -7,8 +7,8 @@
 
 class coreDesign {
 	friend class placement;
+	friend class routing;
 private:
-
 	module systemModule;  // just a place holder
 	schematicParameters& designParameters;
 
@@ -18,10 +18,7 @@ private:
 	intPair size, offset;
 	hashlib::pool<coalescedNet*> internalCoalescedNets;
 
-
 	void initializeStructures();
-
-	void routing();
 
 	void printInitialStructures();
 
@@ -30,41 +27,25 @@ private:
 public:
 	// API FUNCTIONS
 
-	coreDesign(schematicParameters& designParameters)
-		: systemModule("topModule"), designParameters(designParameters) {}
-
+	coreDesign(schematicParameters& designParameters) : systemModule("topModule"), designParameters(designParameters) {}
 	~coreDesign();
 
 	void doPlacement();
+	void doRouting();
 
+	void parseJson(nlohmann::json parsedJson);
 	void parseJsonFile(std::string jsonFile);
+	void parseJsonString(std::string jsonText);
+	std::string createDebugJsonSchematicFromJson(std::string jsonData);
+	std::string createJsonSchematicFromJson(std::string jsonData);
 
-	terminal& addSystemTerminal(
-			const std::string& terminalIdentifier, const terminalType type, const int width);
-
+	terminal& addSystemTerminal(const std::string& terminalIdentifier, const terminalType type, const int width);
 	terminal& getSystemTerminal(const std::string& terminalIdentifier);
-
 	module& addModule(const std::string& moduleName);
-
 	module& getModule(const std::string& moduleName);
-
 	net& addNet(const std::string& netName, const int netWidth);
 
 	net& getNet(const std::string& netName);
-
-	void parseJson(nlohmann::json parsedJson);
-
-	void parseJsonString(std::string jsonText);
-
-	exportStructure createSchematicFromJson(std::string jsonData);
-
-	std::string createJsonSchematicFromJson(std::string jsonData);
-
-	void addObstacleBounding();
-
-	void initNet(splicedTerminal* t0, splicedTerminal* t1);
-
-	void expandNet(splicedTerminal* pTerminal);
 };
 
 #endif  // PLACEMENT_H

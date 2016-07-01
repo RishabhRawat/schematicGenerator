@@ -14,15 +14,21 @@ void schematic::doPlacement() {
 	pSchematicGenerator->doPlacement();
 }
 
+std::string schematic::createDetailedJsonSchematicFromJson(std::string jsonData) {
+	return pSchematicGenerator->createDebugJsonSchematicFromJson(jsonData);
+}
+
 std::string schematic::createJsonSchematicFromJson(std::string jsonData) {
 	return pSchematicGenerator->createJsonSchematicFromJson(jsonData);
 }
+
+
 
 #ifdef WEB_COMPILATION
 EMSCRIPTEN_BINDINGS(schematic) {
 	emscripten::class_<schematic>("schematic")
 			.constructor<>()
-			//.function("createSchematicFromJson", &schematic::createSchematicFromJson)
-			.function("createJsonSchematicFromJson", &schematic::createJsonSchematicFromJson);
+			.function("createJsonSchematicFromJson", &schematic::createJsonSchematicFromJson)
+			.function("createDetailedJsonSchematicFromJson", &schematic::createDetailedJsonSchematicFromJson);
 }
 #endif  // WEB_COMPILATION
