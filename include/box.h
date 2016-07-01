@@ -4,7 +4,8 @@
 #include "module.h"
 
 class box {
-	friend class schematicGenerator;
+	friend class placement;
+	friend class coreDesign;
 
 private:
 	partition* parentPartition;

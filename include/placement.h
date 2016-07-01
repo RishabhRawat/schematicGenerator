@@ -1,23 +1,18 @@
 #ifndef PLACEMENT_H
 #define PLACEMENT_H
 
-#include <json/json.hpp>
-#include "module.h"
-#include "net.h"
+#include <vector>
+#include "box.h"
+#include "partition.h"
 
-class schematicGenerator {
-private:
-	struct schematicParameters {
-		/*
-		 * This is the distance used in placing modules reserved for string wires
-		 */
-		unsigned int wireModuleDistance = 5;
-		// Important Layout Parameters, just guesses for now
-		unsigned int maxPartitionSize = 50;
-		unsigned int maxPartitionConnections = 20;
-		unsigned int maxPathLength = 10;
 
-	} designParameters;
+class placement {
+	friend class coreDesign;
+
+	schematicParameters designParameters;
+	partitionVector allPartitions;
+	coreDesign* core;
+	~placement();
 
 	template <typename T>
 	struct positionalStructure {
@@ -40,24 +35,12 @@ private:
 		}
 	};
 
-	module systemModule;  // just a place holder
-	namedModuleCollection subModules;
-	namedNetCollection internalNets;
-
-	intPair size, offset;
-	hashlib::pool<coalescedNet*> internalCoalescedNet;
-
-	partitionCollection allPartitions;
-
-
-
-	void initializeStructures();
+	void place(coreDesign* inputDesign, schematicParameters& parameters);
 
 	void partitionFormation();
 
 	module* selectPartitionSeed(hashlib::pool<module*> moduleSet) const;
 
-	//	int connectionsToExistingPartitions(module *m);
 	partition* createPartition(hashlib::pool<module*>& moduleSet, module* seed);
 
 	void boxFormation();
@@ -77,7 +60,7 @@ private:
 	void boxPlacement();  // SHARING BOUNDARIES IS PERFECTLY LEGAL
 
 	box* selectNextBox(const hashlib::pool<box*, hashlib::hash_ops<box*>>& remainingBoxes,
-			const hashlib::pool<box*, hashlib::hash_ops<box*>>& placedBoxes);
+	const hashlib::pool<box*, hashlib::hash_ops<box*>>& placedBoxes);
 
 	intPair calculateOptimumBoxPosition(const box* b, hashlib::pool<box*>& placedBoxes);
 
@@ -94,43 +77,9 @@ private:
 
 	void systemTerminalPlacement();
 
-	void printInitialStructures();
-
-	void printDerivedStructures();
-
 	void printPartitions();
 
-public:
-	// API FUNCTIONS
 
-	schematicGenerator() : systemModule("topModule") {}
-
-	~schematicGenerator();
-
-	void doPlacement();
-
-	void parseJsonFile(std::string jsonFile);
-
-	terminal& addSystemTerminal(
-			const std::string& terminalIdentifier, const schematic::terminalType type, const int width);
-
-	terminal& getSystemTerminal(const std::string& terminalIdentifier);
-
-	module& addModule(const std::string& moduleName);
-
-	module& getModule(const std::string& moduleName);
-
-	net& addNet(const std::string& netName, const int netWidth);
-
-	net& getNet(const std::string& netName);
-
-	void parseJson(nlohmann::json parsedJson);
-
-	void parseJsonString(std::string jsonText);
-
-	exportStructure createSchematicFromJson(std::string jsonData);
-
-	std::string createJsonSchematicFromJson(std::string jsonData);
 };
 
-#endif  // PLACEMENT_H
+#endif //SCHEMATICGENERATOR_PLACEMENT_H

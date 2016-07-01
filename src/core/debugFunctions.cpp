@@ -1,9 +1,10 @@
 #include <iostream>
 #include "box.h"
 #include "partition.h"
-#include "schematicGenerator.h"
+#include "coreDesign.h"
+#include "placement.h"
 
-void schematicGenerator::printDerivedStructures() {
+void coreDesign::printDerivedStructures() {
 	std::cout << std::endl << "Printing All modules" << std::endl;
 	for (namedModulePair nm : subModules) {
 		std::cout << nm.first << " : " << std::endl;
@@ -13,7 +14,7 @@ void schematicGenerator::printDerivedStructures() {
 		}
 	}
 	std::cout << std::endl << "Printing All coalescedNet connections to modules and their splicedTerminal" << std::endl;
-	for (coalescedNet* n : internalCoalescedNet) {
+	for (coalescedNet* n : internalCoalescedNets) {
 		std::cout << n->sourceNet->netIdentifier << " : " << std::endl;
 		for (moduleSplicedTerminalPair mt : n->connectedModuleSplicedTerminalMap) {
 			std::cout << "\t" << mt.first->moduleIdentifier << std::endl;
@@ -43,7 +44,7 @@ void schematicGenerator::printDerivedStructures() {
 	std::cout << "Debug Print Derived Structures Finished" << std::endl;
 }
 
-void schematicGenerator::printInitialStructures() {
+void coreDesign::printInitialStructures() {
 	std::cout << std::endl << "Printing All modules" << std::endl;
 	for (namedModulePair nm : subModules) {
 		std::cout << nm.first << " : " << std::endl;
@@ -54,7 +55,7 @@ void schematicGenerator::printInitialStructures() {
 	std::cout << "Debug Print Initial Structures Finished" << std::endl;
 }
 
-void schematicGenerator::printPartitions() {
+void placement::printPartitions() {
 	std::cout << std::endl << "Printing all partitions" << std::endl;
 	int i = 0;
 	for (partition* p : allPartitions) {

@@ -4,12 +4,10 @@
 #include <vector>
 #include "hashlib.h"
 
-namespace schematic {
-enum terminalType { inType, outType, inoutType };
+enum class terminalType { inType, outType, inoutType };
 
-enum terminalSide { leftSide, rightSide, topSide, bottomSide, noneSide };
-enum clockwiseRotation { d_0 = 0, d_90 = 1, d_180 = 2, d_270 = 3 };
-}
+enum class terminalSide { leftSide, rightSide, topSide, bottomSide, noneSide };
+enum class clockwiseRotation { d_0 = 0, d_90 = 1, d_180 = 2, d_270 = 3 };
 
 struct intPair {
 	int x;
@@ -50,19 +48,32 @@ struct intPair {
 	}
 };
 
-struct bitNet;
-struct bitTerminal;
+struct schematicParameters {
+	/*
+	 * This is the distance used in placing modules reserved for string wires
+	 */
+	unsigned int wireModuleDistance = 5;
+	// Important Layout Parameters, just guesses for now
+	unsigned int maxPartitionSize = 50;
+	unsigned int maxPartitionConnections = 20;
+	unsigned int maxPathLength = 10;
+
+};
+
+class coreDesign;
 
 class module;
+class box;
+class partition;
 
 class terminal;
 class splicedTerminal;
+struct bitTerminal;
 
 class net;
 class coalescedNet;
+struct bitNet;
 
-class box;
-class partition;
 
 namespace hashlib {
 template <>
@@ -82,9 +93,8 @@ struct hash_ops<coalescedNet*> : hash_ptr_ops {};
 struct ulink {
 	coalescedNet* linkNet;
 	splicedTerminal* linkSource;
-	std::vector<splicedTerminal*>* linkSink;  // This will come from moduleSplicedTerminalMap
-	// So the moment that gets deleted this pointer is invalid
-	// But that is a good thing i believe
+	// This vector is not owned by ulink but comes from moduleSplicedTerminalMap
+	std::vector<splicedTerminal*>* linkSink;
 	ulink(coalescedNet* linkNet, splicedTerminal* linkSource, std::vector<splicedTerminal*>* linkSink)
 		: linkNet(linkNet), linkSource(linkSource), linkSink(linkSink) {}
 };
@@ -97,11 +107,11 @@ typedef std::pair<std::string, module*> namedModulePair;
 typedef std::pair<std::string, terminal*> namedTerminalPair;
 typedef std::pair<std::string, net*> namedNetPair;
 
-typedef std::vector<module*> moduleCollection;
-typedef std::vector<splicedTerminal*> splicedTerminalCollection;
-typedef std::vector<ulink*> linkCollection;
-typedef std::vector<box*> boxCollection;
-typedef std::vector<partition*> partitionCollection;
+typedef std::vector<module*> moduleVector;
+typedef std::vector<splicedTerminal*> splicedTerminalVector;
+typedef std::vector<ulink*> linkVector;
+typedef std::vector<box*> boxVector;
+typedef std::vector<partition*> partitionVector;
 
 typedef hashlib::dict<module*, std::vector<ulink*>> moduleLinkMap;
 typedef hashlib::dict<module*, std::vector<splicedTerminal*>> moduleSplicedTerminalMap;

@@ -14,18 +14,19 @@ struct bitTerminal {
 
 class terminal {
 	friend class splicedTerminal;
-	friend class schematicGenerator;
+	friend class coreDesign;
+	friend class placement;
 
 public:
 	const std::string terminalIdentifier;
-	const schematic::terminalType type;
+	const terminalType type;
 	const int terminalWidth;
 	module* const parentModule;
 
 	terminal partialTerminal(int index1, int index2);
 	terminal operator[](int index);
 
-	terminal(const std::string& terminalIdentifier, const schematic::terminalType type, const int terminalWidth,
+	terminal(const std::string& terminalIdentifier, const terminalType type, const int terminalWidth,
 			module* const parentModule, const bool systemTerminal);
 
 	~terminal();
@@ -51,7 +52,7 @@ private:
 
 	std::vector<splicedTerminal*> splices;
 
-	schematic::terminalSide side;
+	terminalSide side;
 	intPair terminalPositionHint;
 
 #ifdef WEB_COMPILATION
@@ -64,7 +65,8 @@ public:
 };
 
 class splicedTerminal {
-	friend class schematicGenerator;
+	friend class coreDesign;
+	friend class placement;
 	friend class module;
 
 private:
@@ -81,7 +83,7 @@ public:
 	module* getParent() const {
 		return baseTerminal->parentModule;
 	}
-	schematic::terminalType getType() const {
+	terminalType getType() const {
 		return baseTerminal->type;
 	}
 	bool isSystemTerminal() const {

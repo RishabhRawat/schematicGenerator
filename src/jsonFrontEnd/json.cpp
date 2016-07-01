@@ -1,21 +1,21 @@
 #include "json/json.hpp"
 #include <fstream>
 #include <system_error>
-#include "schematicGenerator.h"
+#include "coreDesign.h"
 namespace schematic {
-schematic::terminalType parseTerminalType(std::string t) {
+terminalType parseTerminalType(std::string t) {
 	if (t == "in" || t == "input")
-		return schematic::inType;
+		return terminalType::inType;
 	else if (t == "output" || t == "out")
-		return schematic::outType;
+		return terminalType::outType;
 	else if (t == "inoutType")
-		return schematic::inoutType;
+		return terminalType::inoutType;
 	else
 		throw std::invalid_argument("unknown port direction");
 }
 }
 
-void schematicGenerator::parseJsonFile(std::string fName) {
+void coreDesign::parseJsonFile(std::string fName) {
 	std::ifstream jsonFile(fName);
 	if (!jsonFile)
 		throw std::system_error(errno, std::system_category());
@@ -24,10 +24,10 @@ void schematicGenerator::parseJsonFile(std::string fName) {
 	jsonFile >> parsedJson;
 	parseJson(parsedJson);
 }
-void schematicGenerator::parseJsonString(std::string jsonText) {
+void coreDesign::parseJsonString(std::string jsonText) {
 	parseJson(nlohmann::json::parse(jsonText));
 }
-void schematicGenerator::parseJson(nlohmann::json parsedJson) {
+void coreDesign::parseJson(nlohmann::json parsedJson) {
 	unsigned int netNumberGuess = 50;
 	unsigned int netIncrementNumberGuess = 10;
 

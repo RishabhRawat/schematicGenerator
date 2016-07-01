@@ -1,35 +1,10 @@
-#include "schematicGenerator.h"
-#include <strings.h>
-#include <iostream>
-#include <iterator>
-#include <sstream>
-#include "box.h"
-#include "partition.h"
+#include "placement.h"
+#include "coreDesign.h"
 
-schematicGenerator::~schematicGenerator() {
-	for (partition* p : allPartitions) {
-		delete p;
-	}
-
-	for (auto&& item : internalNets) {
-		delete item.second;
-	}
-
-	for (auto&& item : internalCoalescedNet) {
-		delete item;
-	}
-
-	for (auto&& item : subModules) {
-		delete item.second;
-	}
-}
-
-void schematicGenerator::doPlacement() {
-	//	printInitialStructures();
-	initializeStructures();
-	//	printDerivedStructures();
+void placement::place(coreDesign* inputDesign, schematicParameters& parameters) {
+	core = inputDesign;
+	designParameters = parameters;
 	partitionFormation();
-	//	printPartitions();
 	boxFormation();
 	modulePlacement();
 	boxPlacement();
@@ -37,109 +12,11 @@ void schematicGenerator::doPlacement() {
 	systemTerminalPlacement();
 }
 
-void schematicGenerator::initializeStructures() {
-	/*
-	 * First Preprocessing Technique is no coelescing, and using standard nets
-	 * themselves as
-	 * coelesced nets.
-	 * The terminals will be sliced and if a terminal is fanout to different
-	 * nets,
-	 * then there will be two copies of that terminal
-	 */
-
-	subModules.insert({systemModule.moduleIdentifier, &systemModule});
-	// Iterates over all bitTerminals in the whole system
-	for (namedModulePair& m_pair : subModules) {
-		for (namedTerminalPair& t_pair : m_pair.second->moduleTerminals) {
-			// TODO: Fix terminal placement
-			if (t_pair.second->type == schematic::outType)
-				t_pair.second->side = schematic::rightSide;
-			else
-				t_pair.second->side = schematic::leftSide;
-
-			hashlib::dict<net*, std::vector<int>> attachedNetIndexes;
-			for (int i = 0; i < t_pair.second->terminalWidth; ++i) {
-				for (bitNet* bN : t_pair.second->internalBitTerminals[i]->connectedBitNets) {
-					auto pair = attachedNetIndexes.find(bN->baseNet);
-					if (pair == attachedNetIndexes.end())
-						attachedNetIndexes.insert({bN->baseNet, {i}});
-					else
-						pair->second.push_back(i);
-				}
-			}
-			// Adding spliced Terminals
-			// TODO: Implement a more efficient string builder?
-			for (auto&& nI_pair : attachedNetIndexes) {
-				std::ostringstream imploded;
-				imploded << t_pair.second->terminalIdentifier << "_";
-				std::copy(nI_pair.second.begin(), nI_pair.second.end(), std::ostream_iterator<int>(imploded, "_"));
-				// Insertion into module
-				splicedTerminal* newST =
-						m_pair.second->addSplicedTerminal(t_pair.second, imploded.str(), nI_pair.first);
-				// Insertion into coalesced List
-				if (nI_pair.first->coalesced == nullptr) {
-					coalescedNet* newCNet = new coalescedNet(nI_pair.first);
-					newCNet->connectedModuleSplicedTerminalMap.insert({m_pair.second, {newST}});
-					nI_pair.first->coalesced = newCNet;
-					internalCoalescedNet.insert(newCNet);
-				} else {
-					auto cMST_iter = nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.find(m_pair.second);
-					if (cMST_iter == nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.end())
-						nI_pair.first->coalesced->connectedModuleSplicedTerminalMap.insert({m_pair.second, {newST}});
-					else
-						cMST_iter->second.push_back(newST);
-				}
-			}
-		}
-	}
-
-	// Setting up module connectivity
-	for (namedModulePair& m : subModules) {
-		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
-			for (moduleSplicedTerminalPair& mST_pair : t->getCoalescedNet()->connectedModuleSplicedTerminalMap) {
-				if (mST_pair.first != m.second) {
-					// FIXME: Possible bug in implementation
-					moduleLinkMap::iterator mapIterator = m.second->connectedModuleLinkMap.find(mST_pair.first);
-					if (mapIterator == m.second->connectedModuleLinkMap.end()) {
-						linkCollection newCollection{new ulink(t->getCoalescedNet(), t, &mST_pair.second)};
-						m.second->connectedModuleLinkMap.insert(
-								std::pair<module*, linkCollection>(mST_pair.first, newCollection));
-					} else {
-						mapIterator->second.push_back(new ulink(t->getCoalescedNet(), t, &mST_pair.second));
-					}
-				}
-			}
-		}
-	}
-	subModules.erase(systemModule.moduleIdentifier);
-
-	// Terminal Positioning
-	for (namedModulePair m : subModules) {
-		int input = 0;  // count inout on left side :/
-		int output = 0;
-		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
-			if (t->getType() == schematic::outType) {
-				output++;
-			} else
-				input++;
-		}
-		int maxout = output + 1;
-		int maxin = input + 1;
-		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
-			if (t->getType() == schematic::outType)
-				t->originalPosition = {m.second->size.x, (output-- * m.second->size.y) / maxout};
-			else
-				t->originalPosition = {0, (input-- * m.second->size.y) / maxin};
-			t->placedPosition = t->originalPosition;
-		}
-	}
-}
-
-void schematicGenerator::partitionFormation() {
+void placement::partitionFormation() {
 	module* seed;
 	hashlib::pool<module*> moduleSet;
 
-	for (namedModulePair& m : subModules)
+	for (namedModulePair& m : core->subModules)
 		moduleSet.insert(m.second);
 
 	while (!moduleSet.empty()) {
@@ -149,7 +26,7 @@ void schematicGenerator::partitionFormation() {
 	}
 }
 
-module* schematicGenerator::selectPartitionSeed(hashlib::pool<module*> moduleSet) const {
+module* placement::selectPartitionSeed(hashlib::pool<module*> moduleSet) const {
 	// TODO: Improve this bruteforce Algorithm
 	int maxConnectionsInFreeSet = -1;
 	int minConnectionsOutFreeSet = INT32_MAX;
@@ -176,11 +53,11 @@ module* schematicGenerator::selectPartitionSeed(hashlib::pool<module*> moduleSet
 		}
 	}
 	if (!seed || maxConnectionsInFreeSet < 0 || minConnectionsOutFreeSet == INT32_MAX)
-		throw "Bad moduleSet in schematicGenerator::selectPartitionSeed";
+		throw "Bad moduleSet in placement::selectPartitionSeed";
 	return seed;
 }
 
-partition* schematicGenerator::createPartition(hashlib::pool<module*>& moduleSet, module* seed) {
+partition* placement::createPartition(hashlib::pool<module*>& moduleSet, module* seed) {
 	partition* newPartition = new partition();
 	newPartition->addModule(seed);
 	unsigned int connections = 0;
@@ -222,7 +99,7 @@ partition* schematicGenerator::createPartition(hashlib::pool<module*>& moduleSet
 	return newPartition;
 }
 
-moduleSet* schematicGenerator::selectBoxSeeds(partition* p) {
+moduleSet* placement::selectBoxSeeds(partition* p) {
 	if (p->length() > 1)
 		throw std::runtime_error("Invalid Partition Error: placment::selectBoxSeeds");
 
@@ -231,12 +108,13 @@ moduleSet* schematicGenerator::selectBoxSeeds(partition* p) {
 		bool seed = false;
 		// FIXME: what about when there are no connectedModuleLinkMap entries ??
 		for (moduleLinkPair pair : m->connectedModuleLinkMap) {
-			if (p->partitionModules.find(pair.first) == p->partitionModules.end() && pair.first != &systemModule) {
+			if (p->partitionModules.find(pair.first) == p->partitionModules.end() && pair.first !=
+					&core->systemModule) {
 				seed = true;
-			} else if (pair.first == &systemModule) {
+			} else if (pair.first == &core->systemModule) {
 				for (ulink* l : pair.second) {
 					for (splicedTerminal* t : *(l->linkSink)) {
-						if (t->getType() == schematic::inType || t->getType() == schematic::inoutType) {
+						if (t->getType() == terminalType::inType || t->getType() == terminalType::inoutType) {
 							seed = true;
 							break;
 						}
@@ -252,7 +130,7 @@ moduleSet* schematicGenerator::selectBoxSeeds(partition* p) {
 		int outGoingNets = 0;
 		if (!seed) {
 			for (splicedTerminal* t : m->moduleSplicedTerminals) {
-				if (t->getType() == schematic::outType)
+				if (t->getType() == terminalType::outType)
 					outGoingNets++;
 				if (outGoingNets > 1)
 					break;
@@ -265,7 +143,7 @@ moduleSet* schematicGenerator::selectBoxSeeds(partition* p) {
 	return roots;
 }
 
-box* schematicGenerator::selectPath(box* path, moduleSet remainingModules) {
+box* placement::selectPath(box* path, moduleSet remainingModules) {
 	for (module* m : remainingModules) {
 		remainingModules.erase(m);
 	}
@@ -278,10 +156,10 @@ box* schematicGenerator::selectPath(box* path, moduleSet remainingModules) {
 			moduleLinkMap::iterator mapIterator = lastModule->connectedModuleLinkMap.find(m);
 			if (mapIterator != lastModule->connectedModuleLinkMap.end()) {
 				for (ulink* l : mapIterator->second) {
-					if (l->linkSource->getType() == schematic::inType ||
-							l->linkSource->getType() == schematic::inoutType) {
+					if (l->linkSource->getType() == terminalType::inType ||
+							l->linkSource->getType() == terminalType::inoutType) {
 						for (splicedTerminal* t : *(l->linkSink)) {
-							if (t->getType() == schematic::outType || t->getType() == schematic::inoutType) {
+							if (t->getType() == terminalType::outType || t->getType() == terminalType::inoutType) {
 								remainingModules.erase(m);
 								path->add(m, l->linkSource, t);  // Note The root is added earlier
 								searchSuccess = true;
@@ -300,7 +178,7 @@ box* schematicGenerator::selectPath(box* path, moduleSet remainingModules) {
 	return path;
 }
 
-void schematicGenerator::boxFormation() {
+void placement::boxFormation() {
 	for (partition* p : allPartitions) {
 		moduleSet* seeds = selectBoxSeeds(p);
 		if (seeds->empty())
@@ -330,14 +208,7 @@ void schematicGenerator::boxFormation() {
 	}
 }
 
-terminal& schematicGenerator::addSystemTerminal(
-		const std::string& terminalName, const schematic::terminalType type, const int width) {
-	return *systemModule.moduleTerminals
-					.insert({terminalName, new terminal(terminalName, type, width, &systemModule, true)})
-					.first->second;
-}
-
-void schematicGenerator::modulePlacement() {
+void placement::modulePlacement() {
 	for (partition* p : allPartitions) {
 		for (box* b : p->partitionBoxes) {
 			intPair rightTop;
@@ -350,24 +221,24 @@ void schematicGenerator::modulePlacement() {
 	}
 }
 
-void schematicGenerator::initModulePlacement(box* b, intPair& leftBottom, intPair& rightTop) {
+void placement::initModulePlacement(box* b, intPair& leftBottom, intPair& rightTop) {
 	module* root = b->boxModules.front();
 	if (b->length() > 1) {
 		splicedTerminal* out = b->boxLink.front().first;
 		switch (out->baseTerminal->side) {
-			case schematic::rightSide:
-				root->rotateModule(schematic::d_0);
+			case terminalSide::rightSide:
+				root->rotateModule(clockwiseRotation::d_0);
 				break;
-			case schematic::topSide:
-				root->rotateModule(schematic::d_90);
+			case terminalSide::topSide:
+				root->rotateModule(clockwiseRotation::d_90);
 				break;
-			case schematic::leftSide:
-				root->rotateModule(schematic::d_180);
+			case terminalSide::leftSide:
+				root->rotateModule(clockwiseRotation::d_180);
 				break;
-			case schematic::bottomSide:
-				root->rotateModule(schematic::d_270);
+			case terminalSide::bottomSide:
+				root->rotateModule(clockwiseRotation::d_270);
 				break;
-			case schematic::noneSide:
+			case terminalSide::noneSide:
 				throw std::runtime_error(
 						"Invalid side of terminal, Have you initialized "
 						"terminal positions?");
@@ -379,19 +250,19 @@ void schematicGenerator::initModulePlacement(box* b, intPair& leftBottom, intPai
 
 	for (splicedTerminal* t : root->moduleSplicedTerminals) {
 		switch (t->baseTerminal->side) {
-			case schematic::leftSide:
+			case terminalSide::leftSide:
 				lT++;
 				break;
-			case schematic::bottomSide:
+			case terminalSide::bottomSide:
 				bT++;
 				break;
-			case schematic::rightSide:
+			case terminalSide::rightSide:
 				rT++;
 				break;
-			case schematic::topSide:
+			case terminalSide::topSide:
 				tT++;
 				break;
-			case schematic::noneSide:
+			case terminalSide::noneSide:
 				throw std::runtime_error("Invalid terminal side assignments");
 		}
 	}
@@ -401,40 +272,40 @@ void schematicGenerator::initModulePlacement(box* b, intPair& leftBottom, intPai
 	rightTop = root->position + root->size + intPair{calculatePadding(rT), calculatePadding(tT)};
 }
 
-void schematicGenerator::placeModule(box* b, unsigned int index, intPair& leftBottom, intPair& rightTop) {
+void placement::placeModule(box* b, unsigned int index, intPair& leftBottom, intPair& rightTop) {
 	module* m_prev = b->boxModules[index - 1];
 	module* m = b->boxModules[index];
 	splicedTerminal* source = b->boxLink[index - 1].first;
 	splicedTerminal* sink = b->boxLink[index - 1].second;
 
 	switch (sink->baseTerminal->side) {
-		case schematic::rightSide:
-			m->rotateModule(schematic::d_180);
+		case terminalSide::rightSide:
+			m->rotateModule(clockwiseRotation::d_180);
 			break;
-		case schematic::topSide:
-			m->rotateModule(schematic::d_270);
+		case terminalSide::topSide:
+			m->rotateModule(clockwiseRotation::d_270);
 			break;
-		case schematic::leftSide:
-			m->rotateModule(schematic::d_0);
+		case terminalSide::leftSide:
+			m->rotateModule(clockwiseRotation::d_0);
 			break;
-		case schematic::bottomSide:
-			m->rotateModule(schematic::d_90);
+		case terminalSide::bottomSide:
+			m->rotateModule(clockwiseRotation::d_90);
 			break;
-		case schematic::noneSide:
+		case terminalSide::noneSide:
 			throw std::runtime_error(
 					"Invalid side of terminal, Have you initialized terminal "
 					"positions?");
 	}
 
 	switch (source->baseTerminal->side) {
-		case schematic::rightSide:
+		case terminalSide::rightSide:
 			m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y;
 			break;
-		case schematic::topSide:
+		case terminalSide::topSide:
 			m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y +
 							designParameters.wireModuleDistance;
 			break;
-		case schematic::leftSide:
+		case terminalSide::leftSide:
 			if (source->placedPosition.y > m_prev->size.y / 2)
 				m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y +
 								designParameters.wireModuleDistance;
@@ -442,11 +313,11 @@ void schematicGenerator::placeModule(box* b, unsigned int index, intPair& leftBo
 				m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y -
 								designParameters.wireModuleDistance;
 			break;
-		case schematic::bottomSide:
+		case terminalSide::bottomSide:
 			m->position.y = m_prev->position.y + source->placedPosition.y - sink->placedPosition.y -
 							designParameters.wireModuleDistance;
 			break;
-		case schematic::noneSide:
+		case terminalSide::noneSide:
 			throw std::runtime_error(
 					"Invalid side of terminal, Have you initialized terminal "
 					"positions?");
@@ -457,19 +328,19 @@ void schematicGenerator::placeModule(box* b, unsigned int index, intPair& leftBo
 
 	for (splicedTerminal* t : m->moduleSplicedTerminals) {
 		switch (t->baseTerminal->side) {
-			case schematic::leftSide:
+			case terminalSide::leftSide:
 				lT++;
 				break;
-			case schematic::bottomSide:
+			case terminalSide::bottomSide:
 				bT++;
 				break;
-			case schematic::rightSide:
+			case terminalSide::rightSide:
 				rT++;
 				break;
-			case schematic::topSide:
+			case terminalSide::topSide:
 				tT++;
 				break;
-			case schematic::noneSide:
+			case terminalSide::noneSide:
 				throw std::runtime_error("Invalid terminal side assignments");
 		}
 	}
@@ -486,11 +357,11 @@ void schematicGenerator::placeModule(box* b, unsigned int index, intPair& leftBo
 		leftBottom.y = newBottom;
 }
 
-int schematicGenerator::calculatePadding(unsigned int n) {
+int placement::calculatePadding(unsigned int n) {
 	return (10 + 2 * n);
 }
 
-void schematicGenerator::boxPlacement() {
+void placement::boxPlacement() {
 	for (partition* p : allPartitions) {
 		hashlib::dict<box*, positionalStructure<box>> layoutData;
 		box* largestBox = *std::max_element(p->partitionBoxes.begin(), p->partitionBoxes.end(),
@@ -530,8 +401,7 @@ void schematicGenerator::boxPlacement() {
 	}
 }
 
-box* schematicGenerator::selectNextBox(
-		const hashlib::pool<box*>& remainingBoxes, const hashlib::pool<box*>& placedBoxes) {
+box* placement::selectNextBox(const hashlib::pool<box*>& remainingBoxes, const hashlib::pool<box*>& placedBoxes) {
 	// TODO: Verify that this works
 	box* nextBox = nullptr;
 	unsigned int maxCount = 0;
@@ -556,7 +426,7 @@ box* schematicGenerator::selectNextBox(
 	return nextBox;
 }
 
-intPair schematicGenerator::calculateOptimumBoxPosition(const box* b, hashlib::pool<box*>& placedBoxes) {
+intPair placement::calculateOptimumBoxPosition(const box* b, hashlib::pool<box*>& placedBoxes) {
 	// The number of terminals of modules in box b which have connections which
 	// connect to the other boxes
 	// ie. terminals crossing the boundary
@@ -567,7 +437,7 @@ intPair schematicGenerator::calculateOptimumBoxPosition(const box* b, hashlib::p
 
 	for (module* boxModule : b->boxModules) {
 		for (moduleLinkPair& m_pair : boxModule->connectedModuleLinkMap) {
-			if (m_pair.first->parentBox != b && m_pair.first != &systemModule &&
+			if (m_pair.first->parentBox != b && m_pair.first != &core->systemModule &&
 					placedBoxes.find(m_pair.first->parentBox) != placedBoxes.end()) {
 				boxCount += m_pair.second.size();
 				for (ulink* ul : m_pair.second) {
@@ -586,7 +456,7 @@ intPair schematicGenerator::calculateOptimumBoxPosition(const box* b, hashlib::p
 }
 
 template <typename T>
-intPair schematicGenerator::calculateActualPosition(
+intPair placement::calculateActualPosition(
 		const intPair size, const intPair optimumPosition, hashlib::dict<T*, positionalStructure<T>>& layoutData) {
 	intPair bestPosition = {INT32_MAX, INT32_MAX};
 	unsigned int bestDistance = UINT32_MAX;
@@ -705,7 +575,7 @@ intPair schematicGenerator::calculateActualPosition(
 		throw std::runtime_error("Some error in algorithm");
 	return bestPosition;
 }
-void schematicGenerator::partitionPlacement() {
+void placement::partitionPlacement() {
 	unsigned int maxModules = 0;
 	partition* largestPartition = nullptr;
 	hashlib::dict<partition*, positionalStructure<partition>> layoutData;
@@ -751,10 +621,10 @@ void schematicGenerator::partitionPlacement() {
 		leftBottom = {std::min(leftBottom.x, p->position.x), std::min(leftBottom.y, p->position.y)};
 		rightTop = {std::max(rightTop.x, p->position.x + p->size.x), std::max(rightTop.y, p->position.y + p->size.y)};
 	}
-	size = rightTop - leftBottom;
-	offset = leftBottom;
+	core->size = rightTop - leftBottom;
+	core->offset = leftBottom;
 }
-partition* schematicGenerator::selectNextParition(
+partition* placement::selectNextParition(
 		hashlib::pool<partition*> remainingPartition, hashlib::pool<partition*> placedPartition) {
 	unsigned int max = 0;
 	partition* maxConnectedPartition = nullptr;
@@ -763,7 +633,7 @@ partition* schematicGenerator::selectNextParition(
 		for (box* b : p->partitionBoxes) {
 			for (module* m : b->boxModules) {
 				for (moduleLinkPair& otherM : m->connectedModuleLinkMap) {
-					if (otherM.first == &systemModule)
+					if (otherM.first == &core->systemModule)
 						continue;
 					partition* pP = otherM.first->parentBox->parentPartition;
 					if (pP != p && placedPartition.find(pP) != placedPartition.end())
@@ -782,8 +652,7 @@ partition* schematicGenerator::selectNextParition(
 	return maxConnectedPartition;
 }
 
-intPair schematicGenerator::calculateOptimumPartitionPosition(
-		partition* p, hashlib::pool<partition*>& placedPartition) {
+intPair placement::calculateOptimumPartitionPosition(partition* p, hashlib::pool<partition*>& placedPartition) {
 	intPair partitionGrav = {0, 0};
 	intPair restGrav = {0, 0};
 	int partitionCount = 0;
@@ -791,7 +660,7 @@ intPair schematicGenerator::calculateOptimumPartitionPosition(
 	for (box* b : p->partitionBoxes) {
 		for (module* boxModule : b->boxModules) {
 			for (moduleLinkPair& m_pair : boxModule->connectedModuleLinkMap) {
-				if (m_pair.first->parentBox->parentPartition != p && m_pair.first != &systemModule &&
+				if (m_pair.first != &core->systemModule && m_pair.first->parentBox->parentPartition != p &&
 						placedPartition.find(m_pair.first->parentBox->parentPartition) != placedPartition.end()) {
 					partitionCount += m_pair.second.size();
 					for (ulink* ul : m_pair.second) {
@@ -813,58 +682,44 @@ intPair schematicGenerator::calculateOptimumPartitionPosition(
 	return (restGrav / restCount - partitionGrav / partitionCount);  // For x0,y0 (lower bottom)
 }
 
-void schematicGenerator::systemTerminalPlacement() {
+void placement::systemTerminalPlacement() {
 	auto calculateTerminalGravity = [&](std::vector<splicedTerminal*>* sinkT) {
 		intPair grav{0, 0};
 		int count = 0;
 		for (splicedTerminal* sT : *sinkT) {
 			grav += sT->placedPosition + sT->getParent()->position + sT->getParent()->parentBox->offset +
 					sT->getParent()->parentBox->position + sT->getParent()->parentBox->parentPartition->offset +
-					sT->getParent()->parentBox->parentPartition->position + offset;
+					sT->getParent()->parentBox->parentPartition->position + core->offset;
 			count++;
 		}
 		return grav / count;
 	};
 
-	for (moduleLinkPair& pair : systemModule.connectedModuleLinkMap) {
+	for (moduleLinkPair& pair : core->systemModule.connectedModuleLinkMap) {
 		for (ulink* ul : pair.second) {
 			// NOTE: ASSUMING ONLY ONE LINK PER TERMINAL
 			intPair gravity = calculateTerminalGravity(ul->linkSink);
 			// Currently only terminal directions are left and right, this can be easily changed here
 			switch (ul->linkSource->getType()) {
-				case schematic::inType:
-					ul->linkSource->placedPosition = {offset.x, gravity.y};
+				case terminalType::inType:
+					ul->linkSource->placedPosition = {core->offset.x, gravity.y};
 					break;
-				case schematic::outType:
-					ul->linkSource->placedPosition = {offset.x + size.x, gravity.y};
+				case terminalType::outType:
+					ul->linkSource->placedPosition = {core->offset.x + core->size.x, gravity.y};
 					break;
-				case schematic::inoutType:
-					if (gravity.x > offset.x + size.x / 2)
-						ul->linkSource->placedPosition = {offset.x + size.x, gravity.y};
+				case terminalType::inoutType:
+					if (gravity.x > core->offset.x + core->size.x / 2)
+						ul->linkSource->placedPosition = {core->offset.x + core->size.x, gravity.y};
 					else
-						ul->linkSource->placedPosition = {offset.x, gravity.y};
+						ul->linkSource->placedPosition = {core->offset.x, gravity.y};
 					break;
 			}
 		}
 	}
 }
 
-terminal& schematicGenerator::getSystemTerminal(const std::string& terminalIdentifier) {
-	return systemModule.getTerminal(terminalIdentifier);
-}
-
-module& schematicGenerator::addModule(const std::string& moduleName) {
-	return *(subModules.insert(std::make_pair(moduleName, new module(moduleName))).first->second);
-}
-
-module& schematicGenerator::getModule(const std::string& moduleName) {
-	return *subModules.find(moduleName)->second;
-}
-
-net& schematicGenerator::addNet(const std::string& netName, const int netWidth) {
-	return *(internalNets.insert({netName, new net(netName, netWidth)}).first->second);
-}
-
-net& schematicGenerator::getNet(const std::string& netName) {
-	return *(internalNets.find(netName)->second);
+placement::~placement() {
+	for (partition* p : allPartitions) {
+		delete p;
+	}
 }

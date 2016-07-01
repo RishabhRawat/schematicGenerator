@@ -1,4 +1,4 @@
-var sch = new Module.schematicGenerator();
+var sch = new Module.schematic();
 
 jsonData = {
 	"creator": "Yosys 0.6+135 (git sha1 ca91bcc, clang 3.4-1ubuntu3 -fPIC -Os)",
