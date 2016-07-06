@@ -53,7 +53,7 @@ private:
 
 	std::vector<splicedTerminal*> splices;
 
-	terminalSide side;
+	mutable terminalSide side;
 	intPair terminalPositionHint;
 
 #ifdef WEB_COMPILATION

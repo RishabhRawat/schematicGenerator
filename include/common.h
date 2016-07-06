@@ -6,7 +6,7 @@
 
 enum class terminalType { inType, outType, inoutType };
 
-enum class terminalSide { leftSide, rightSide, topSide, bottomSide, noneSide };
+enum class terminalSide { leftSide, topSide, rightSide, bottomSide, noneSide };
 enum class clockwiseRotation { d_0 = 0, d_90 = 1, d_180 = 2, d_270 = 3 };
 
 struct intPair {

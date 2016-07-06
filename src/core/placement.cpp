@@ -703,15 +703,20 @@ void placement::systemTerminalPlacement() {
 			switch (ul->linkSource->getType()) {
 				case terminalType::inType:
 					ul->linkSource->placedPosition = {core->offset.x, gravity.y};
+					ul->linkSource->baseTerminal->side = terminalSide::leftSide;
 					break;
 				case terminalType::outType:
 					ul->linkSource->placedPosition = {core->offset.x + core->size.x, gravity.y};
+					ul->linkSource->baseTerminal->side = terminalSide::rightSide;
 					break;
 				case terminalType::inoutType:
-					if (gravity.x > core->offset.x + core->size.x / 2)
+					if (gravity.x > core->offset.x + core->size.x / 2) {
 						ul->linkSource->placedPosition = {core->offset.x + core->size.x, gravity.y};
-					else
+						ul->linkSource->baseTerminal->side = terminalSide::rightSide;
+					} else {
 						ul->linkSource->placedPosition = {core->offset.x, gravity.y};
+						ul->linkSource->baseTerminal->side = terminalSide::leftSide;
+					}
 					break;
 			}
 		}

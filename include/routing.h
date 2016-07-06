@@ -1,12 +1,13 @@
 #ifndef ROUTING_H
 #define ROUTING_H
 
+#include <set>
+#include <unordered_set>
 #include "common.h"
 #include "net.h"
 
 class routing {
-public:
-	enum class direction { left, up, right, down, none };
+	enum class direction { left, up, right, down };
 	struct segment {
 		int index;
 		int end1;
@@ -25,33 +26,43 @@ public:
 	struct activeSegment {
 		int bends = -1;
 		int crossedNets = 0;
-		segment originSegment, currentSegment;
-		direction originDirection, currentDirection;
+		activeSegment* originSegment;
+		segment currentSegment;
+		direction dir;
 
-		activeSegment(segment origin, direction originDir, segment current, direction currentDir)
-			: originSegment(origin), originDirection(originDir), originSegment(origin), originDirection(originDir) {}
+		activeSegment(activeSegment* origin, segment current, direction dir)
+			: originSegment(origin), segment(current), dir(dir) {}
 
 		activeSegment(
-				segment origin, direction originDir, segment current, direction currentDir, int bends, int crossedNets)
+				int bends, int crossedNets, activeSegment* originSegment, const segment& currentSegment, direction dir)
 			: bends(bends),
 			  crossedNets(crossedNets),
-			  originSegment(origin),
-			  originDirection(originDir),
-			  originSegment(origin),
-			  originDirection(originDir) {}
+			  originSegment(originSegment),
+			  currentSegment(currentSegment),
+			  dir(dir) {}
 	};
 
 	struct endSegment : segment {
 		enum class endType { leftCrossing, rightCrossing, segment };
 		endType type;
-	};
 
-private:
-	hashlib::pool<obstacleSegment *> hObstacleSet, vObstacleSet;
+		endSegment(int index, int end1, int end2, endType type) : index(index), end1(end1), end2(end2), type(type){};
+	};
+	struct obstacleSegmentLessComparator {
+		bool operator()(const obstacleSegment* lhs, const obstacleSegment* rhs) const {
+			// I want to order it using index, but I want them to be equal only if pointers match
+			if (lhs->index < rhs->index)
+				return true;
+			else
+				return lhs < rhs;
+		}
+	};
+	std::set<obstacleSegment *, obstacleSegmentLessComparator> hObstacleSet, vObstacleSet;
 	const coreDesign* core;
 
 	coalescedNet* currentNet;
-	hashlib::pool<activeSegment*> A, B;
+	std::unordered_set<activeSegment *> activesA, activesB;
+	std::unordered_set<endSegment*> E;
 	bool solutionFound;
 
 	void addObstacleBounding();
@@ -60,19 +71,20 @@ private:
 	void route();
 
 	routing(coreDesign* core) : core(core) {}
-	void initActives(hashlib::pool<activeSegment*>& activeSet, const splicedTerminal* t);
-	bool expandActives(hashlib::pool<activeSegment*>& actSegmentSet, hashlib::pool<activeSegment*>& incrementedActSegmentSet);
+	void initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t);
+	void expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
+			std::unordered_set<activeSegment*>& incrementedActSegmentSet);
 	void reconstructSolution();
-	bool expandSegment(activeSegment* actSegment, hashlib::pool<activeSegment*>& actSegmentSet);
-};
+	void expandSegment(activeSegment* actSegment, std::unordered_set<activeSegment*>& actSegmentSet);
 
-namespace hashlib {
-template <>
-struct hash_ops<routing::obstacleSegment*> : hash_ptr_ops {};
-template <>
-struct hash_ops<routing::activeSegment*> : hash_ptr_ops {};
-template <>
-struct hash_ops<routing::endSegment*> : hash_ptr_ops {};
-};
+	bool straightLine(splicedTerminal* t0, splicedTerminal* t1);
 
+	void solidObstacle(int i, int end1, int end2, activeSegment* actS);
+
+	void transparentObstacle();
+
+	void reconstructPath(activeSegment* pSegment, int x);
+
+	int routing::pathLength(routing::activeSegment* actS, int x);
+};
 #endif  // ROUTING_H
