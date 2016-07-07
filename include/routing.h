@@ -27,11 +27,11 @@ class routing {
 	};
 
 	struct obstacleSegment : segment {
-		enum class obstacleType { module, net, startA, startB };
+		enum obstacleType { module, net, startA, startB };
 		obstacleType type;
-		coalescedNet* net;
+		void* sourcePtr;
 
-		obstacleSegment(int index, int end1, int end2, obstacleType oType, coalescedNet* net)
+		obstacleSegment(int index, int end1, int end2, obstacleType oType, void* net)
 			: index(index), end1(end1), end2(end2), type(type), net(net) {}
 		obstacleSegment(int i) : index(i) {}
 	};
@@ -101,6 +101,12 @@ class routing {
 		}
 	};
 
+	struct optimumSolution {
+		int cost = INT32_MAX;
+		int optimalEnd = 0;
+		activeSegment *a = nullptr, *b = nullptr;
+	} soln;
+
 	using orderedObstacleSet = std::set<obstacleSegment*, obstacleSegmentAscendingComparator>;
 	orderedObstacleSet hObstacleSet, vObstacleSet;
 	const coreDesign* core;
@@ -132,8 +138,10 @@ class routing {
 
 	void reconstructPath(activeSegment* pSegment, int x);
 
-	int pathLength(routing::activeSegment* actS, int x);
+	unsigned int pathLength(routing::activeSegment* actS, int x);
 
 	void newActives(activeSegment* actS, std::unordered_set<activeSegment*>& newActSegmentSet);
+
+	void updateSolution(segment s, obstacleSegment* obstacle, activeSegment* actSegment);
 };
 #endif  // ROUTING_H

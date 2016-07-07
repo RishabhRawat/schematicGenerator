@@ -27,33 +27,27 @@ void routing::route() {
 }
 
 void routing::addObstacleBounding() {
-	hObstacleSet.insert(
-			new obstacleSegment{INT32_MIN, INT32_MIN, INT32_MAX, obstacleSegment::obstacleType::module, nullptr});
-	hObstacleSet.insert(
-			new obstacleSegment{INT32_MAX, INT32_MIN, INT32_MAX, obstacleSegment::obstacleType::module, nullptr});
-	vObstacleSet.insert(
-			new obstacleSegment{INT32_MIN, INT32_MIN, INT32_MAX, obstacleSegment::obstacleType::module, nullptr});
-	vObstacleSet.insert(
-			new obstacleSegment{INT32_MAX, INT32_MIN, INT32_MAX, obstacleSegment::obstacleType::module, nullptr});
+	hObstacleSet.insert(new obstacleSegment{INT32_MIN, INT32_MIN, INT32_MAX, obstacleSegment::module, nullptr});
+	hObstacleSet.insert(new obstacleSegment{INT32_MAX, INT32_MIN, INT32_MAX, obstacleSegment::module, nullptr});
+	vObstacleSet.insert(new obstacleSegment{INT32_MIN, INT32_MIN, INT32_MAX, obstacleSegment::module, nullptr});
+	vObstacleSet.insert(new obstacleSegment{INT32_MAX, INT32_MIN, INT32_MAX, obstacleSegment::module, nullptr});
 
 	for (namedModulePair& m_pair : core->subModules) {
 		intPair mPos = m_pair.second->position;
 		intPair mSize = m_pair.second->size;
+		hObstacleSet.insert(new obstacleSegment{mPos.y, mPos.x, mPos.x + mSize.x, obstacleSegment::module, nullptr});
 		hObstacleSet.insert(
-				new obstacleSegment{mPos.y, mPos.x, mPos.x + mSize.x, obstacleSegment::obstacleType::module, nullptr});
-		hObstacleSet.insert(new obstacleSegment{
-				mPos.y + mSize.y, mPos.x, mPos.x + mSize.x, obstacleSegment::obstacleType::module, nullptr});
+				new obstacleSegment{mPos.y + mSize.y, mPos.x, mPos.x + mSize.x, obstacleSegment::module, nullptr});
+		vObstacleSet.insert(new obstacleSegment{mPos.x, mPos.y, mPos.y + mSize.y, obstacleSegment::module, nullptr});
 		vObstacleSet.insert(
-				new obstacleSegment{mPos.x, mPos.y, mPos.y + mSize.y, obstacleSegment::obstacleType::module, nullptr});
-		vObstacleSet.insert(new obstacleSegment{
-				mPos.x + mSize.x, mPos.y, mPos.y + mSize.y, obstacleSegment::obstacleType::module, nullptr});
+				new obstacleSegment{mPos.x + mSize.x, mPos.y, mPos.y + mSize.y, obstacleSegment::module, nullptr});
 	}
 
 	for (splicedTerminal* sysT : core->systemModule.moduleSplicedTerminals) {
 		hObstacleSet.insert(new obstacleSegment{sysT->placedPosition.y, sysT->placedPosition.x, sysT->placedPosition.x,
-				obstacleSegment::obstacleType::module, nullptr});
+				obstacleSegment::module, nullptr});
 		vObstacleSet.insert(new obstacleSegment{sysT->placedPosition.x, sysT->placedPosition.y, sysT->placedPosition.y,
-				obstacleSegment::obstacleType::module, nullptr});
+				obstacleSegment::module, nullptr});
 	}
 }
 
@@ -105,16 +99,20 @@ void routing::expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
 		std::unordered_set<activeSegment*>& incrementedActSegmentSet) {
 	int minCrossover = INT32_MAX, minLength = INT32_MAX;
 	int j = 0;
+	bool solved = false;
 	for (activeSegment* s : actSegmentSet)
 		j = std::max(j, s->bends);
 
-	// TODO: correct this!!
 	for (activeSegment* s : actSegmentSet) {
-		if (s->index == j)
-			generateEndSegments(s);
+		if (s->index == j) {
+			if (!generateEndSegments(s, *s, s->crossedNets, s->isVertical() ? hObstacleSet : vObstacleSet))
+				newActives(s, incrementedActSegmentSet);
+			else
+				solved = true;
+		}
 	}
 
-	if (solutionFound)
+	if (solved)
 		reconstructSolution();
 
 	if (actSegmentSet.empty())
@@ -131,8 +129,7 @@ void routing::reconstructSolution() {
 			int max = optB->index;
 			if (max < min)
 				std::swap(min, max);
-			vObstacleSet.insert(
-					new obstacleSegment{optimum.x, min, max, obstacleSegment::obstacleType::net, currentNet});
+			vObstacleSet.insert(new obstacleSegment{optimum.x, min, max, obstacleSegment::net, currentNet});
 			reconstructPath(optA, optimum.x);
 			reconstructPath(optB, optimum.x);
 			break;
@@ -142,24 +139,21 @@ void routing::reconstructSolution() {
 			int max = optB->index;
 			if (max < min)
 				std::swap(min, max);
-			hObstacleSet.insert(
-					new obstacleSegment{optimum.y, min, max, obstacleSegment::obstacleType::net, currentNet});
+			hObstacleSet.insert(new obstacleSegment{optimum.y, min, max, obstacleSegment::net, currentNet});
 			reconstructPath(optA, optimum.y);
 			reconstructPath(optB, optimum.y);
 			break;
 	}
 
 	for (auto&& iter = hObstacleSet.begin(); iter != hObstacleSet.end();) {
-		if ((*iter)->type == obstacleSegment::obstacleType::startA ||
-				(*iter)->type == obstacleSegment::obstacleType::startB)
+		if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB)
 			iter == hObstacleSet.erase(iter);
 		else
 			++iter;
 	}
 
 	for (auto&& iter = vObstacleSet.begin(); iter != vObstacleSet.end();) {
-		if ((*iter)->type == obstacleSegment::obstacleType::startA ||
-				(*iter)->type == obstacleSegment::obstacleType::startB)
+		if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB)
 			iter == vObstacleSet.erase(iter);
 		else
 			++iter;
@@ -178,37 +172,81 @@ bool routing::generateEndSegments(
 			actSegment->isUpRight()
 					? *obstacleSet.lower_bound(new obstacleSegment{s.index})
 					: *std::reverse_iterator<orderedObstacleSet>(obstacleSet.upper_bound(new obstacleSegment{s.index}));
+
+	segment cutSegment = s;
+
 	if (s.end1 < obstacle->end1) {
 		solved |= generateEndSegments(actSegment, segment{s.index, s.end1, obstacle->end1}, crossovers, obstacleSet);
+		cutSegment.end1 = obstacle->end1;
 	}
 	if (obstacle->end2 < s.end2) {
 		solved |= generateEndSegments(actSegment, segment{s.index, obstacle->end2, s.end2}, crossovers, obstacleSet);
+		cutSegment.end2 = obstacle->end2;
 	}
+
+	endSegment* newEndSegment = new endSegment{std::abs(cutSegment.index - actSegment->index) + strokeWidth,
+			std::abs(obstacle->index - s.index) - strokeWidth, cutSegment.end1, cutSegment.end2, actSegment};
+
 	switch (obstacle->type) {
-		case obstacleSegment::obstacleType::module:
-			E.insert(new endSegment{std::abs(s.index - actSegment->index) + strokeWidth,
-					std::abs(obstacle->index - s.index) - strokeWidth, obstacle->end1, obstacle->end2, actSegment});
+		case obstacleSegment::module:
+			E.insert(newEndSegment);
 			break;
-		case obstacleSegment::obstacleType::net:
-			if (currentNet != obstacle->net) {
-				E.insert(new endSegment{std::abs(s.index - actSegment->index) + strokeWidth,
-						std::abs(obstacle->index - s.index) - strokeWidth, obstacle->end1, obstacle->end2, actSegment});
+		case obstacleSegment::net:
+			if (static_cast<coalescedNet*>(obstacle->net) != currentNet) {
+				E.insert(newEndSegment);
 				solved |= generateEndSegments(actSegment,
-						segment{actSegment->isUpRight() ? obstacle->index - strokeWidth : obstacle->index + strokeWidth,
-								obstacle->end2, s.end2},
+						segment{actSegment->isUpRight() ? obstacle->index + strokeWidth : obstacle->index - strokeWidth,
+								cutSegment.end1, cutSegment.end2},
 						crossovers + 1, obstacleSet);
 			} else {
 				solved = true;
-				updateSolution();
+				updateSolution(cutSegment, obstacle, actSegment);
 			}
 			break;
-		case obstacleSegment::obstacleType::startA:
-			// TODO:complete case
+		case obstacleSegment::startA:
+			E.insert(newEndSegment);
+
+			if (activesA.find(actSegment) != activesA.end()) {
+				for (auto&& a : activesA) {
+					if (a->index == obstacle->index && a->end1 <= obstacle->end1 && obstacle->end2 <= a->end2) {
+						activesA.erase(a);
+						if (a->end1 < obstacle->end1)
+							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, a->end1,
+									obstacle->end1, actSegment->dir, actSegment->prevSegment});
+						if (obstacle->end2 < a->end2)
+							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, obstacle->end2,
+									a->end2, actSegment->dir, actSegment->prevSegment});
+						break;
+					}
+				}
+			} else {
+				solved = true;
+				updateSolution(cutSegment, obstacle, actSegment);
+			}
 			break;
-		case obstacleSegment::obstacleType::startB:
-			// TODO:complete case
+		case obstacleSegment::startB:
+			E.insert(newEndSegment);
+
+			if (activesB.find(actSegment) != activesB.end()) {
+				for (auto&& b : activesB) {
+					if (b->index == obstacle->index && b->end1 <= obstacle->end1 && obstacle->end2 <= b->end2) {
+						activesB.erase(b);
+						if (b->end1 < obstacle->end1)
+							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, b->end1,
+									obstacle->end1, actSegment->dir, actSegment->prevSegment});
+						if (obstacle->end2 < b->end2)
+							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, obstacle->end2,
+									b->end2, actSegment->dir, actSegment->prevSegment});
+						break;
+					}
+				}
+			} else {
+				solved = true;
+				updateSolution(cutSegment, obstacle, actSegment);
+			}
 			break;
 	}
+	return solved;
 }
 bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 	bool horizontal;
@@ -255,37 +293,37 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 
 	if (horizontal) {
 		auto startIter = vObstacleSet.lower_bound(
-				new obstacleSegment{lowerT->placedPosition.x, 0, 0, obstacleSegment::obstacleType::module, nullptr});
+				new obstacleSegment{lowerT->placedPosition.x, 0, 0, obstacleSegment::module, nullptr});
 		auto endIter = vObstacleSet.upper_bound(
-				new obstacleSegment{higherT->placedPosition.x, 0, 0, obstacleSegment::obstacleType::module, nullptr});
+				new obstacleSegment{higherT->placedPosition.x, 0, 0, obstacleSegment::module, nullptr});
 		while (startIter != endIter) {
 			if (((*startIter)->end1 < lowerT->placedPosition.y && lowerT->placedPosition.y < (*startIter)->end1) &&
-					((*startIter)->type == obstacleSegment::obstacleType::module ||
-							((*startIter)->type == obstacleSegment::obstacleType::net) &&
+					((*startIter)->type == obstacleSegment::module ||
+							((*startIter)->type == obstacleSegment::net) &&
 									((*startIter)->end1 == lowerT->placedPosition.y ||
 											(*startIter)->end2 == lowerT->placedPosition.y)))
 				return false;
 			++startIter;
 		}
 		hObstacleSet.insert(new obstacleSegment(lowerT->placedPosition.y, lowerT->placedPosition.x,
-				higherT->placedPosition.x, obstacleSegment::obstacleType::net, currentNet));
+				higherT->placedPosition.x, obstacleSegment::net, currentNet));
 		return true;
 	} else {
 		auto startIter = hObstacleSet.lower_bound(
-				new obstacleSegment{lowerT->placedPosition.y, 0, 0, obstacleSegment::obstacleType::module, nullptr});
+				new obstacleSegment{lowerT->placedPosition.y, 0, 0, obstacleSegment::module, nullptr});
 		auto endIter = hObstacleSet.upper_bound(
-				new obstacleSegment{higherT->placedPosition.y, 0, 0, obstacleSegment::obstacleType::module, nullptr});
+				new obstacleSegment{higherT->placedPosition.y, 0, 0, obstacleSegment::module, nullptr});
 		while (startIter != endIter) {
 			if (((*startIter)->end1 < lowerT->placedPosition.y && lowerT->placedPosition.y < (*startIter)->end1) &&
-					((*startIter)->type == obstacleSegment::obstacleType::module ||
-							((*startIter)->type == obstacleSegment::obstacleType::net) &&
+					((*startIter)->type == obstacleSegment::module ||
+							((*startIter)->type == obstacleSegment::net) &&
 									((*startIter)->end1 == lowerT->placedPosition.y ||
 											(*startIter)->end2 == lowerT->placedPosition.y)))
 				return false;
 			++startIter;
 		}
 		vObstacleSet.insert(new obstacleSegment(lowerT->placedPosition.x, lowerT->placedPosition.y,
-				higherT->placedPosition.y, obstacleSegment::obstacleType::net, currentNet));
+				higherT->placedPosition.y, obstacleSegment::net, currentNet));
 		return true;
 	}
 }
@@ -306,7 +344,7 @@ void routing::newActives(activeSegment* actS, std::unordered_set<activeSegment*>
 		if (e->index + e->distance > eNextHighest->index + eNextHighest->distance) {
 			if (e->isUpRight())
 				nextActSSet.insert(
-						new activeSegment{actS->bends, e->crossovers, e->end2, e->baseSegment->index + e->index +,
+						new activeSegment{actS->bends, e->crossovers, e->end2, e->baseSegment->index + e->index,
 								e->baseSegment->index - e->index - e->distance, e->baseSegment->dir++, e->baseSegment});
 			else
 				nextActSSet.insert(new activeSegment{actS->bends, e->crossovers, e->end2,
@@ -349,13 +387,11 @@ void routing::reconstructPath(activeSegment* actS, int x) {
 		switch (actS->prevSegment->dir) {
 			case up:
 			case down:
-				vObstacleSet.insert(
-						new obstacleSegment{actS->index, min, max, obstacleSegment::obstacleType::net, currentNet});
+				vObstacleSet.insert(new obstacleSegment{actS->index, min, max, obstacleSegment::net, currentNet});
 				break;
 			case left:
 			case right:
-				hObstacleSet.insert(
-						new obstacleSegment{actS->index, min, max, obstacleSegment::obstacleType::net, currentNet});
+				hObstacleSet.insert(new obstacleSegment{actS->index, min, max, obstacleSegment::net, currentNet});
 				break;
 		}
 		actS = actS->prevSegment;
@@ -363,11 +399,46 @@ void routing::reconstructPath(activeSegment* actS, int x) {
 	}
 }
 
-int routing::pathLength(activeSegment* actS, int x) {
-	int length = 0;
+unsigned int routing::pathLength(activeSegment* actS, int x) {
+	unsigned int length = 0;
 	while (actS->prevSegment) {
-		length += std::abs(x - actS->index);
-		actS = actS->prevSegment;
+		// measures distance between actS and actS->prev
+		length += std::abs(x - actS->prevSegment->index);
 		x = actS->index;
+		actS = actS->prevSegment;
+	}
+	return length;
+}
+
+int calculateCost(int bends, int crossovers, int length) {
+	return 20 * bends + 10 * crossovers + length;
+}
+
+void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment* actSegment) {
+	int closestPoint;
+	activeSegment* otherActSegment = nullptr;
+	unsigned int length;
+	int totalBends = actSegment->bends, totalCrossovers = actSegment->crossedNets;
+	if (s.end1 - s.end2 < 2 * strokeWidth)  // No space for a new net
+		return;
+	else
+		closestPoint = std::min(s.end2 - strokeWidth - actSegment->prevSegment->index,
+				s.end1 + strokeWidth - actSegment->prevSegment->index);
+
+	if (obstacle->type == obstacleSegment::net) {
+		length = pathLength(actSegment, closestPoint) + std::abs(s.index - actSegment->index);
+	} else {
+		otherActSegment = static_cast<activeSegment*>(obstacle->sourcePtr);
+		length = pathLength(actSegment, closestPoint) + pathLength(otherActSegment, closestPoint) +
+				 std::abs(actSegment->index - obstacle->index);
+		totalBends += otherActSegment->bends;
+		// NOTE: DO WE NOT NEED TO CHECK THE SEGMENT INSTEAD??
+		totalCrossovers += otherActSegment->crossedNets;
+	}
+	if (soln.cost > calculateCost(totalBends, totalCrossovers, length)) {
+		soln.a = actSegment;
+		soln.b = otherActSegment;
+		soln.cost = calculateCost(totalBends, totalCrossovers, length);
+		soln.optimalEnd = closestPoint;
 	}
 }
