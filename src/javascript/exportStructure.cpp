@@ -8,6 +8,7 @@ std::string coreDesign::createDebugJsonSchematicFromJson(std::string jsonData) {
 	parseJsonString(jsonData);
 	initializeStructures();
 	placement placementObject;
+	doRouting();
 	placementObject.place(this, designParameters);
 
 	nlohmann::json outputJson;

@@ -1,3 +1,11 @@
+var draw;
+var cppfuncs = {};
+cppfuncs.createWire = function(x0,y0,x1,y1,width) {
+	'use strict';
+	console.log("tureaaaaaaa");
+	draw.line(x0,y0,x1,y1).stroke({ width: width, color: 'black' });
+};
+
 createDetailedSchematic = function(div, jsonString) {
 	'use strict';
 	var schematic = new Module.schematic();
@@ -10,7 +18,7 @@ createDetailedSchematic = function(div, jsonString) {
 	};
 
 
-	var draw = SVG(div).size(data.size_x + 6, data.size_y + 6);
+	draw = SVG(div).size(data.size_x + 6, data.size_y + 6);
 	var tRect = createRectChild(draw, 0, 0, data.size_x, data.size_y, 1);
 
 	for (var i = 0; i < data.partitions.length; i++) {
@@ -29,7 +37,6 @@ createDetailedSchematic = function(div, jsonString) {
 		}
 	}
 };
-
 createSchematic = function(div, jsonString) {
 	'use strict';
 	var schematic = new Module.schematic();
@@ -41,12 +48,12 @@ createSchematic = function(div, jsonString) {
 		return svgElem.nested().size(size_x, size_y).attr({x: x, y: y});
 	};
 
-	var draw = SVG(div).size(data.size_x + 6, data.size_y + 6);
+	draw = SVG(div).size(data.size_x + 6, data.size_y + 6);
 	var tRect = createRectChild(draw, 0, 0, data.size_x, data.size_y, 1);
 
 	for (var i = 0; i < data.modules.length; i++) {
 		var mod = data.modules[i];
 		var mRect = createRectChild(tRect, mod.pos_x, mod.pos_y, mod.size_x, mod.size_y, 1);
 	}
-
+	schematic.doRouting();
 };

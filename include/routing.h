@@ -7,13 +7,14 @@
 #include "net.h"
 
 class routing {
+	friend class coreDesign;
 	enum direction { left = 0, up = 1, right = 2, down = 3 };
 
-	direction operator++(const direction& d) {
-		return (d + 1) % 4;
+	direction cWRot(const direction& d) {
+		return static_cast<direction>((d + 1) % 4);
 	}
-	direction operator--(const direction& d) {
-		return (d + 3) % 4;
+	direction cCWRot(const direction& d) {
+		return static_cast<direction>((d + 3) % 4);
 	}
 
 	struct segment {
@@ -27,13 +28,13 @@ class routing {
 	};
 
 	struct obstacleSegment : segment {
-		enum obstacleType { module, net, startA, startB };
+		enum obstacleType { module, net, startA, startB, compare };
 		obstacleType type;
-		void* sourcePtr;
+		void* sourcePtr = nullptr;
 
-		obstacleSegment(int index, int end1, int end2, obstacleType oType, void* net)
-			: index(index), end1(end1), end2(end2), type(type), net(net) {}
-		obstacleSegment(int i) : index(i) {}
+		obstacleSegment(int index, int end1, int end2, obstacleType oType, void* sourcePtr)
+			: segment(index, end1, end2), type(oType), sourcePtr(sourcePtr) {}
+		obstacleSegment(int i) : segment(i, 0, 0), type(compare) {}
 	};
 
 	struct activeSegment : segment {
@@ -42,18 +43,12 @@ class routing {
 		int crossedNets = 0;
 		activeSegment* prevSegment;
 
-		activeSegment(int index, int end1, int end2, routing::direction dir, routing::activeSegment* prevSegment)
-			: index(index), end1(end1), end2(end2), dir(dir), prevSegment(prevSegment) {}
+		activeSegment(int index, int end1, int end2, direction dir, activeSegment* prevSegment)
+			: segment(index, end1, end2), dir(dir), prevSegment(prevSegment) {}
 
-		activeSegment(int bends, int crossedNets, int index, int end1, int end2, routing::direction dir,
-				routing::activeSegment* prevSegment)
-			: index(index),
-			  end1(end1),
-			  end2(end2),
-			  dir(dir),
-			  bends(bends),
-			  crossedNets(crossedNets),
-			  prevSegment(prevSegment) {}
+		activeSegment(
+				int bends, int crossedNets, int index, int end1, int end2, direction dir, activeSegment* prevSegment)
+			: segment(index, end1, end2), dir(dir), bends(bends), crossedNets(crossedNets), prevSegment(prevSegment) {}
 		bool isUpRight() {
 			return dir == right || dir == up;
 		}
@@ -69,14 +64,9 @@ class routing {
 		int crossovers;
 		activeSegment* baseSegment;
 		endSegment(int distance, int end1, int end2, int crossovers, activeSegment* baseSegment)
-			: index(0), end1(end1), end2(end2), distance(distance), crossovers(crossovers), baseSegment(baseSegment){};
+			: segment(0, end1, end2), distance(distance), crossovers(crossovers), baseSegment(baseSegment){};
 		endSegment(int index, int distance, int end1, int end2, int crossovers, activeSegment* baseSegment)
-			: index(index),
-			  end1(end1),
-			  end2(end2),
-			  distance(distance),
-			  crossovers(crossovers),
-			  baseSegment(baseSegment){};
+			: segment(index, end1, end2), distance(distance), crossovers(crossovers), baseSegment(baseSegment){};
 		bool isUpRight() {
 			return baseSegment->isUpRight();
 		}
@@ -88,7 +78,10 @@ class routing {
 	struct obstacleSegmentAscendingComparator {
 		bool operator()(const obstacleSegment* lhs, const obstacleSegment* rhs) const {
 			// I want to order it using index, but I want them to be equal only if pointers match
-			return lhs->index < rhs->index || lhs < rhs;
+			if (lhs->type == obstacleSegment::compare || rhs->type == obstacleSegment::compare)
+				return lhs->index < rhs->index;
+			else
+				return lhs->index < rhs->index || lhs < rhs;
 		}
 	};
 
@@ -103,7 +96,7 @@ class routing {
 
 	struct optimumSolution {
 		int cost = INT32_MAX;
-		int optimalEnd = 0;
+		intPair optimalPoint = {0,0};
 		activeSegment *a = nullptr, *b = nullptr;
 	} soln;
 
@@ -114,7 +107,6 @@ class routing {
 	coalescedNet* currentNet;
 	std::unordered_set<activeSegment *> activesA, activesB;
 	std::set<endSegment*, endSegmentLessComparator> E;
-	bool solutionFound;
 
 	void addObstacleBounding();
 
@@ -128,7 +120,7 @@ class routing {
 
 	void initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t);
 
-	void expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
+	bool expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
 			std::unordered_set<activeSegment*>& incrementedActSegmentSet);
 
 	void reconstructSolution();
@@ -138,8 +130,10 @@ class routing {
 
 	void reconstructPath(activeSegment* pSegment, int x);
 
-	unsigned int pathLength(routing::activeSegment* actS, int x);
+	unsigned int pathLength(activeSegment* actS, int x);
 
+	void addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegment* eNextHighest, activeSegment* actS,
+			std::unordered_set<activeSegment*>& nextActSSet);
 	void newActives(activeSegment* actS, std::unordered_set<activeSegment*>& newActSegmentSet);
 
 	void updateSolution(segment s, obstacleSegment* obstacle, activeSegment* actSegment);

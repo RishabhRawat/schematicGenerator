@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iterator>
 #include <sstream>
+#include "routing.h"
 
 coreDesign::~coreDesign() {
 
@@ -150,4 +151,10 @@ net& coreDesign::addNet(const std::string& netName, const int netWidth) {
 
 net& coreDesign::getNet(const std::string& netName) {
 	return *(internalNets.find(netName)->second);
+}
+
+void coreDesign::doRouting() {
+	routing routeObject(this);
+	routeObject.route();
+
 }

@@ -358,7 +358,7 @@ void placement::placeModule(box* b, unsigned int index, intPair& leftBottom, int
 }
 
 int placement::calculatePadding(unsigned int n) {
-	return (10 + 2 * n);
+	return (20 + 2 * n);
 }
 
 void placement::boxPlacement() {
@@ -728,6 +728,9 @@ void placement::flattenSchematic() {
 		for (box* b : p->partitionBoxes) {
 			for (module* m : b->boxModules) {
 				m->position = (m->position - b->offset) + (b->position - p->offset) + (p->position - core->offset);
+				for (auto&& moduleSplicedTerminal : m->moduleSplicedTerminals) {
+					moduleSplicedTerminal->placedPosition += m->position;
+				}
 			}
 		}
 	}

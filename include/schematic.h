@@ -12,7 +12,7 @@ public:
 	schematic();
 	void parseJsonFile(std::string jsonFile);
 	void doPlacement();
-
+	void doRouting();
 	std::string createDetailedJsonSchematicFromJson(std::string jsonData);
 	std::string createJsonSchematicFromJson(std::string jsonData);
 };
