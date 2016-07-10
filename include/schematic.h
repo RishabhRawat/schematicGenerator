@@ -10,6 +10,9 @@ private:
 public:
 	schematicParameters designParameters;
 	schematic();
+
+	virtual ~schematic();
+
 	void parseJsonFile(std::string jsonFile);
 	void doPlacement();
 	void doRouting();

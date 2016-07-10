@@ -156,5 +156,4 @@ net& coreDesign::getNet(const std::string& netName) {
 void coreDesign::doRouting() {
 	routing routeObject(this);
 	routeObject.route();
-
 }

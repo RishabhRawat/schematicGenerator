@@ -26,7 +26,9 @@ void schematic::doRouting() {
 	pSchematicGenerator->doRouting();
 }
 
-
+schematic::~schematic() {
+	delete pSchematicGenerator;
+}
 
 #ifdef WEB_COMPILATION
 EMSCRIPTEN_BINDINGS(schematic) {

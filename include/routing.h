@@ -60,12 +60,6 @@ class routing {
 			: segment(0, end1, end2), length(length), crossovers(crossovers), baseSegment(baseSegment){};
 		endSegment(int index, int length, int end1, int end2, int crossovers, activeSegment* baseSegment)
 			: segment(index, end1, end2), length(length), crossovers(crossovers), baseSegment(baseSegment){};
-		bool isUpRight() {
-			return baseSegment->isUpRight();
-		}
-		bool isVertical() {
-			return baseSegment->isVertical();
-		}
 	};
 
 	struct obstacleSegmentAscendingComparator {
@@ -111,6 +105,11 @@ class routing {
 
 	routing(coreDesign* core) : core(core) {}
 
+public:
+	virtual ~routing();
+
+private:
+
 	void initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t);
 
 	bool expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
@@ -120,8 +119,6 @@ class routing {
 
 	bool generateEndSegments(activeSegment* actSegment, segment s, int crossovers, orderedObstacleSet& obstacleSet);
 	bool straightLine(splicedTerminal* t0, splicedTerminal* t1);
-
-	void reconstructPath(activeSegment* pSegment, int x);
 
 	unsigned int pathLength(activeSegment* actS, int x);
 
