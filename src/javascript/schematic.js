@@ -2,7 +2,6 @@ var draw;
 var cppfuncs = {};
 cppfuncs.createWire = function(x0,y0,x1,y1,width) {
 	'use strict';
-	console.log("tureaaaaaaa");
 	draw.line(x0,y0,x1,y1).stroke({ width: width, color: 'black' });
 };
 

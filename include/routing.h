@@ -64,11 +64,11 @@ class routing {
 
 	struct obstacleSegmentAscendingComparator {
 		bool operator()(const obstacleSegment* lhs, const obstacleSegment* rhs) const {
-			// I want to order it using index, but I want them to be equal only if pointers match
+			// I want to order them using index, but I want them to be equal only if pointers match
 			if (lhs->type == obstacleSegment::compare || rhs->type == obstacleSegment::compare)
 				return lhs->index < rhs->index;
 			else
-				return lhs->index < rhs->index || lhs < rhs;
+				return (lhs->index != rhs->index) ? (lhs->index < rhs->index) : (lhs < rhs);
 		}
 	};
 
@@ -77,13 +77,13 @@ class routing {
 			// I want to order it using left ends, but they may overlap only if we have transparent obstacles (nets)
 			// In that case we want to order it according to the distance from base segment
 			// Note: two endSegments cannot overlap with the same index
-			return (lhs->end1 != rhs->end1)?(lhs->end1 < rhs->end1):(lhs->index < rhs->index);
+			return (lhs->end1 != rhs->end1) ? (lhs->end1 < rhs->end1) : (lhs->index < rhs->index);
 		}
 	};
 
 	struct optimumSolution {
 		int cost = INT16_MAX;
-		intPair optimalPoint = {0,0};
+		intPair optimalPoint = {0, 0};
 		activeSegment *a = nullptr, *b = nullptr;
 	} soln;
 
@@ -109,7 +109,6 @@ public:
 	virtual ~routing();
 
 private:
-
 	void initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t);
 
 	bool expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
