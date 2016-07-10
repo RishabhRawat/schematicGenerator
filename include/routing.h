@@ -88,7 +88,7 @@ class routing {
 	};
 
 	struct optimumSolution {
-		int cost = INT32_MAX;
+		int cost = INT16_MAX;
 		intPair optimalPoint = {0,0};
 		activeSegment *a = nullptr, *b = nullptr;
 	} soln;
