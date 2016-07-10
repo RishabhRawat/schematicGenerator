@@ -50,7 +50,7 @@ struct intPair {
 
 struct schematicParameters {
 	/*
-	 * This is the distance used in placing modules reserved for string wires
+	 * This is the length used in placing modules reserved for string wires
 	 */
 	unsigned int wireModuleDistance = 5;
 	// Important Layout Parameters, just guesses for now

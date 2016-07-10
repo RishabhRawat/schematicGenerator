@@ -10,13 +10,6 @@ class routing {
 	friend class coreDesign;
 	enum direction { left = 0, up = 1, right = 2, down = 3 };
 
-	direction cWRot(const direction& d) {
-		return static_cast<direction>((d + 1) % 4);
-	}
-	direction cCWRot(const direction& d) {
-		return static_cast<direction>((d + 3) % 4);
-	}
-
 	struct segment {
 		int index;
 		int end1;
@@ -59,14 +52,14 @@ class routing {
 	};
 
 	struct endSegment : segment {
-		// Index is distance from the baseSegment, in the direction of baseSegment->dir
-		int distance;
+		// Index is distance from the baseSegment index, in the direction of baseSegment->dir
+		int length;
 		int crossovers;
 		activeSegment* baseSegment;
-		endSegment(int distance, int end1, int end2, int crossovers, activeSegment* baseSegment)
-			: segment(0, end1, end2), distance(distance), crossovers(crossovers), baseSegment(baseSegment){};
-		endSegment(int index, int distance, int end1, int end2, int crossovers, activeSegment* baseSegment)
-			: segment(index, end1, end2), distance(distance), crossovers(crossovers), baseSegment(baseSegment){};
+		endSegment(int length, int end1, int end2, int crossovers, activeSegment* baseSegment)
+			: segment(0, end1, end2), length(length), crossovers(crossovers), baseSegment(baseSegment){};
+		endSegment(int index, int length, int end1, int end2, int crossovers, activeSegment* baseSegment)
+			: segment(index, end1, end2), length(length), crossovers(crossovers), baseSegment(baseSegment){};
 		bool isUpRight() {
 			return baseSegment->isUpRight();
 		}
@@ -90,7 +83,7 @@ class routing {
 			// I want to order it using left ends, but they may overlap only if we have transparent obstacles (nets)
 			// In that case we want to order it according to the distance from base segment
 			// Note: two endSegments cannot overlap with the same index
-			return lhs->end1 < rhs->end1 || lhs->index < rhs->index;
+			return (lhs->end1 != rhs->end1)?(lhs->end1 < rhs->end1):(lhs->index < rhs->index);
 		}
 	};
 

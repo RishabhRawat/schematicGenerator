@@ -54,6 +54,8 @@ createSchematic = function(div, jsonString) {
 	for (var i = 0; i < data.modules.length; i++) {
 		var mod = data.modules[i];
 		var mRect = createRectChild(tRect, mod.pos_x, mod.pos_y, mod.size_x, mod.size_y, 1);
+		for(var j = 0; j < mod.terminals.length; j++)
+			draw.circle(10).attr({cx: mod.terminals[j].pos_x, cy: mod.terminals[j].pos_y, color: 'red'});
 	}
 	schematic.doRouting();
 };
