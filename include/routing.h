@@ -123,8 +123,8 @@ private:
 	unsigned int pathLength(activeSegment* actS, int x);
 
 	void addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegment* eNextHighest, activeSegment* actS,
-			std::unordered_set<activeSegment*>& nextActSSet);
-	void newActives(activeSegment* actS, std::unordered_set<activeSegment*>& newActSegmentSet);
+			std::unordered_set<activeSegment*>& newActiveSegments);
+	void newActives(activeSegment* actS, std::unordered_set<activeSegment*>& newActiveSegments);
 
 	void updateSolution(segment s, obstacleSegment* obstacle, activeSegment* actSegment);
 };

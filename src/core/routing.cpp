@@ -48,16 +48,20 @@ void routing::route() {
 
 		// Clearing up the obstacles!!
 		for (auto&& iter = hObstacleSet.begin(); iter != hObstacleSet.end();) {
-			if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB)
+			if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB) {
+				obstacleSegment* element = *iter;
 				iter = hObstacleSet.erase(iter);
-			else
+				delete element;
+			} else
 				++iter;
 		}
 
 		for (auto&& iter = vObstacleSet.begin(); iter != vObstacleSet.end();) {
-			if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB)
+			if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB) {
+				obstacleSegment* element = *iter;
 				iter = vObstacleSet.erase(iter);
-			else
+				delete element;
+			} else
 				++iter;
 		}
 	}
@@ -362,7 +366,7 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 
 // Adds atmost two actives for each endSegment
 void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegment* eNextHighest, activeSegment* actS,
-		std::unordered_set<activeSegment*>& nextActSSet) {
+		std::unordered_set<activeSegment*>& newActiveSegments) {
 	obstacleSegment::obstacleType oType =
 			(activesA.find(actS) != activesA.end()) ? obstacleSegment::startA : obstacleSegment::startB;
 
@@ -397,7 +401,7 @@ void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegm
 				cClockwiseSegment->dir = right;
 				break;
 		}
-		nextActSSet.insert(cClockwiseSegment);
+		newActiveSegments.insert(cClockwiseSegment);
 		oSet.insert(new obstacleSegment{
 				cClockwiseSegment->index, cClockwiseSegment->end1, cClockwiseSegment->end2, oType, cClockwiseSegment});
 	}
@@ -430,13 +434,13 @@ void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegm
 				clockwiseSegment->dir = left;
 				break;
 		}
-		nextActSSet.insert(clockwiseSegment);
+		newActiveSegments.insert(clockwiseSegment);
 		oSet.insert(new obstacleSegment{
 				clockwiseSegment->index, clockwiseSegment->end1, clockwiseSegment->end2, oType, clockwiseSegment});
 	}
 };
 
-void routing::newActives(activeSegment* actS, std::unordered_set<activeSegment*>& nextActSSet) {
+void routing::newActives(activeSegment* actS, std::unordered_set<activeSegment*>& newActiveSegments) {
 	// Ends are already populated by this time.
 	// This will be the top element (other wise we have an errror)
 	auto iter = E.insert(new endSegment{0, actS->end1 - strokeWidth, actS->end1 - strokeWidth, actS->crossedNets, actS})
@@ -454,7 +458,7 @@ void routing::newActives(activeSegment* actS, std::unordered_set<activeSegment*>
 			eNext = *iterNext;
 
 		while (e->end1 != eNext->end1) {
-			addActiveFunction(ePrev, e, eNext, actS, nextActSSet);
+			addActiveFunction(ePrev, e, eNext, actS, newActiveSegments);
 			e = *++iter;
 		}
 		eNext = *iterNext;
