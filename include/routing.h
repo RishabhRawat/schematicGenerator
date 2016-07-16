@@ -31,23 +31,27 @@ class routing {
 	};
 
 	struct activeSegment : segment {
-		direction dir;
+		direction scanDirection;
 		int bends = -1;
 		int crossedNets = 0;
 		activeSegment* prevSegment;
 
-		activeSegment(int index, int end1, int end2, direction dir, activeSegment* prevSegment)
-			: segment(index, end1, end2), dir(dir), prevSegment(prevSegment) {}
+		activeSegment(int index, int end1, int end2, direction scanDirection, activeSegment* prevSegment)
+			: segment(index, end1, end2), scanDirection(scanDirection), prevSegment(prevSegment) {}
 
-		activeSegment(
-				int bends, int crossedNets, int index, int end1, int end2, direction dir, activeSegment* prevSegment)
-			: segment(index, end1, end2), dir(dir), bends(bends), crossedNets(crossedNets), prevSegment(prevSegment) {}
+		activeSegment(int bends, int crossedNets, int index, int end1, int end2, direction scanDirection,
+				activeSegment* prevSegment)
+			: segment(index, end1, end2),
+			  scanDirection(scanDirection),
+			  bends(bends),
+			  crossedNets(crossedNets),
+			  prevSegment(prevSegment) {}
 		bool isUpRight() {
-			return dir == right || dir == up;
+			return scanDirection == right || scanDirection == up;
 		}
 
-		bool isVertical() {
-			return dir == up || dir == down;
+		bool scansVertical() {
+			return scanDirection == up || scanDirection == down;
 		}
 	};
 
@@ -56,10 +60,16 @@ class routing {
 		int length;
 		int crossovers;
 		activeSegment* baseSegment;
-		endSegment(int length, int end1, int end2, int crossovers, activeSegment* baseSegment)
-			: segment(0, end1, end2), length(length), crossovers(crossovers), baseSegment(baseSegment){};
+		endSegment(int end1, int end2, activeSegment* baseSegment)
+			: segment(0, end1, end2), length(0), crossovers(0), baseSegment(baseSegment){};
 		endSegment(int index, int length, int end1, int end2, int crossovers, activeSegment* baseSegment)
 			: segment(index, end1, end2), length(length), crossovers(crossovers), baseSegment(baseSegment){};
+		int nearIndex() {
+			return baseSegment->index + (baseSegment->isUpRight() ? index : -index);
+		}
+		int farIndex() {
+			return baseSegment->index + (baseSegment->isUpRight() ? (index + length) : -(index + length));
+		}
 	};
 
 	struct obstacleSegmentAscendingComparator {
@@ -85,6 +95,12 @@ class routing {
 		int cost = INT16_MAX;
 		intPair optimalPoint = {0, 0};
 		activeSegment *a = nullptr, *b = nullptr;
+		void clear() {
+			cost = INT16_MAX;
+			optimalPoint = {0, 0};
+			a = nullptr;
+			b = nullptr;
+		}
 	} soln;
 
 	using orderedObstacleSet = std::set<obstacleSegment*, obstacleSegmentAscendingComparator>;

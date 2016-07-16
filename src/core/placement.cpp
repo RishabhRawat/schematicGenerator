@@ -358,7 +358,7 @@ void placement::placeModule(box* b, unsigned int index, intPair& leftBottom, int
 }
 
 int placement::calculatePadding(unsigned int n) {
-	return (20 + 2 * n);
+	return (30 + 2 * n);
 }
 
 void placement::boxPlacement() {
@@ -698,23 +698,24 @@ void placement::systemTerminalPlacement() {
 	for (moduleLinkPair& pair : core->systemModule.connectedModuleLinkMap) {
 		for (ulink* ul : pair.second) {
 			// NOTE: ASSUMING ONLY ONE LINK PER TERMINAL
+			// FIXME:handling the padding here, need to create a fix later
 			intPair gravity = calculateTerminalGravity(ul->linkSink);
 			// Currently only terminal directions are left and right, this can be easily changed here
 			switch (ul->linkSource->getType()) {
 				case terminalType::inType:
-					ul->linkSource->placedPosition = {core->offset.x, gravity.y};
+					ul->linkSource->placedPosition = {core->offset.x + 5, gravity.y};
 					ul->linkSource->baseTerminal->side = terminalSide::leftSide;
 					break;
 				case terminalType::outType:
-					ul->linkSource->placedPosition = {core->offset.x + core->size.x, gravity.y};
+					ul->linkSource->placedPosition = {core->offset.x + core->size.x - 5, gravity.y};
 					ul->linkSource->baseTerminal->side = terminalSide::rightSide;
 					break;
 				case terminalType::inoutType:
 					if (gravity.x > core->offset.x + core->size.x / 2) {
-						ul->linkSource->placedPosition = {core->offset.x + core->size.x, gravity.y};
+						ul->linkSource->placedPosition = {core->offset.x + core->size.x - 5, gravity.y};
 						ul->linkSource->baseTerminal->side = terminalSide::rightSide;
 					} else {
-						ul->linkSource->placedPosition = {core->offset.x, gravity.y};
+						ul->linkSource->placedPosition = {core->offset.x + 5, gravity.y};
 						ul->linkSource->baseTerminal->side = terminalSide::leftSide;
 					}
 					break;

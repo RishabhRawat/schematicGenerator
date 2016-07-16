@@ -41,7 +41,7 @@ createSchematic = function(div, jsonString) {
 	var schematic = new Module.schematic();
 	var string = JSON.stringify(jsonString);
 	var data = JSON.parse(schematic.createJsonSchematicFromJson(string));
-	console.log(data.modules[0]);
+	console.log(data);
 	var createRectChild = function(svgElem, x, y, size_x, size_y, strokeWidth) {
 		svgElem.rect(size_x, size_y).attr({x: x, y: y, fill: '#fff'}).stroke({width: strokeWidth});
 		return svgElem.nested().size(size_x, size_y).attr({x: x, y: y});
@@ -56,5 +56,8 @@ createSchematic = function(div, jsonString) {
 		for(var j = 0; j < mod.terminals.length; j++)
 			draw.circle(10).attr({cx: mod.terminals[j].pos_x, cy: mod.terminals[j].pos_y, color: 'red'});
 	}
+
+	for(var k = 0; k < data.systemTerminals.length; k++)
+		draw.circle(10).attr({cx: data.systemTerminals[k].pos_x, cy: data.systemTerminals[k].pos_y, color: 'red'});
 	schematic.doRouting();
 };

@@ -2,7 +2,7 @@
 #include <unordered_set>
 #include "coreDesign.h"
 #include "terminal.h"
-const int strokeWidth = 1;
+const int strokeWidth = 5;
 
 #ifdef WEB_COMPILATION
 #include <emscripten/val.h>
@@ -68,10 +68,14 @@ void routing::route() {
 }
 
 void routing::addObstacleBounding() {
-	hObstacleSet.insert(new obstacleSegment{INT16_MIN, INT16_MIN, INT16_MAX, obstacleSegment::module, nullptr});
-	hObstacleSet.insert(new obstacleSegment{INT16_MAX, INT16_MIN, INT16_MAX, obstacleSegment::module, nullptr});
-	vObstacleSet.insert(new obstacleSegment{INT16_MIN, INT16_MIN, INT16_MAX, obstacleSegment::module, nullptr});
-	vObstacleSet.insert(new obstacleSegment{INT16_MAX, INT16_MIN, INT16_MAX, obstacleSegment::module, nullptr});
+	hObstacleSet.insert(new obstacleSegment{
+			-strokeWidth, -strokeWidth, core->size.x + strokeWidth, obstacleSegment::module, nullptr});
+	hObstacleSet.insert(new obstacleSegment{
+			core->size.y + strokeWidth, -strokeWidth, core->size.x + strokeWidth, obstacleSegment::module, nullptr});
+	vObstacleSet.insert(new obstacleSegment{
+			-strokeWidth, -strokeWidth, core->size.y + strokeWidth, obstacleSegment::module, nullptr});
+	vObstacleSet.insert(new obstacleSegment{
+			core->size.x + strokeWidth, -strokeWidth, core->size.y + strokeWidth, obstacleSegment::module, nullptr});
 
 	for (auto&& m_pair : core->subModules) {
 		intPair mPos = m_pair.second->position;
@@ -112,20 +116,20 @@ void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
 void routing::initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t) {
 	switch (t->baseTerminal->side) {
 		case terminalSide::leftSide:
-			activeSet.insert(new activeSegment{t->placedPosition.x, t->placedPosition.y + strokeWidth,
-					t->placedPosition.y + strokeWidth, direction::left, nullptr});
+			activeSet.insert(new activeSegment{t->placedPosition.x, t->placedPosition.y, t->placedPosition.y,
+					t->isSystemTerminal() ? right : left, nullptr});
 			break;
 		case terminalSide::rightSide:
-			activeSet.insert(new activeSegment{t->placedPosition.x, t->placedPosition.y + strokeWidth,
-					t->placedPosition.y + strokeWidth, direction::right, nullptr});
+			activeSet.insert(new activeSegment{t->placedPosition.x, t->placedPosition.y, t->placedPosition.y,
+					t->isSystemTerminal() ? left : right, nullptr});
 			break;
 		case terminalSide::topSide:
-			activeSet.insert(new activeSegment{t->placedPosition.y, t->placedPosition.x + strokeWidth,
-					t->placedPosition.x + strokeWidth, direction::up, nullptr});
+			activeSet.insert(new activeSegment{t->placedPosition.y, t->placedPosition.x, t->placedPosition.x,
+					t->isSystemTerminal() ? down : up, nullptr});
 			break;
 		case terminalSide::bottomSide:
-			activeSet.insert(new activeSegment{t->placedPosition.y, t->placedPosition.x + strokeWidth,
-					t->placedPosition.x + strokeWidth, direction::down, nullptr});
+			activeSet.insert(new activeSegment{t->placedPosition.y, t->placedPosition.x, t->placedPosition.x,
+					t->isSystemTerminal() ? up : down, nullptr});
 			break;
 		case terminalSide::noneSide:
 			throw std::runtime_error("Cannot have a terminal without a side");
@@ -141,7 +145,7 @@ bool routing::expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
 
 	for (activeSegment* s : actSegmentSet) {
 		if (s->bends == j) {
-			if (!generateEndSegments(s, *s, s->crossedNets, s->isVertical() ? hObstacleSet : vObstacleSet))
+			if (!generateEndSegments(s, *s, s->crossedNets, s->scansVertical() ? hObstacleSet : vObstacleSet))
 				newActives(s, incrementedActSegmentSet);
 			else
 				solved = true;
@@ -171,32 +175,32 @@ void createLine(int x0, int y0, int x1, int y1) {
 }
 
 void routing::reconstructSolution() {
+	std::cout << "Current Solution" << std::endl;
 	activeSegment* s = soln.a;
 	intPair currentPoint = soln.optimalPoint;
-	while (s->prevSegment) {
-		if (s->isVertical()) {
-			createLine(s->index, currentPoint.y, currentPoint.x, currentPoint.y);
-			currentPoint = intPair{s->index, currentPoint.y};
-		} else {
+	while (s) {
+		if (s->scansVertical()) {
 			createLine(currentPoint.x, s->index, currentPoint.x, currentPoint.y);
 			currentPoint = intPair{currentPoint.x, s->index};
+		} else {
+			createLine(s->index, currentPoint.y, currentPoint.x, currentPoint.y);
+			currentPoint = intPair{s->index, currentPoint.y};
 		}
 		s = s->prevSegment;
 	}
-	if (soln.b) {
-		s = soln.a;
-		currentPoint = soln.optimalPoint;
-		while (s->prevSegment) {
-			if (s->isVertical()) {
-				createLine(s->index, currentPoint.y, currentPoint.x, currentPoint.y);
-				currentPoint = intPair{s->index, currentPoint.y};
-			} else {
-				createLine(currentPoint.x, s->index, currentPoint.x, currentPoint.y);
-				currentPoint = intPair{currentPoint.x, s->index};
-			}
-			s = s->prevSegment;
+	s = soln.b;
+	currentPoint = soln.optimalPoint;
+	while (s) {
+		if (s->scansVertical()) {
+			createLine(currentPoint.x, s->index, currentPoint.x, currentPoint.y);
+			currentPoint = intPair{currentPoint.x, s->index};
+		} else {
+			createLine(s->index, currentPoint.y, currentPoint.x, currentPoint.y);
+			currentPoint = intPair{s->index, currentPoint.y};
 		}
+		s = s->prevSegment;
 	}
+	soln.clear();
 }
 
 bool routing::generateEndSegments(
@@ -254,10 +258,10 @@ bool routing::generateEndSegments(
 						activesA.erase(a);
 						if (a->end1 < obstacle->end1)
 							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, a->end1,
-									obstacle->end1, actSegment->dir, actSegment->prevSegment});
+									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
 						if (obstacle->end2 < a->end2)
 							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, obstacle->end2,
-									a->end2, actSegment->dir, actSegment->prevSegment});
+									a->end2, actSegment->scanDirection, actSegment->prevSegment});
 						break;
 					}
 				}
@@ -274,10 +278,10 @@ bool routing::generateEndSegments(
 					if (b->index == obstacle->index && b->end1 <= obstacle->end1 && obstacle->end2 <= b->end2) {
 						if (b->end1 < obstacle->end1)
 							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, b->end1,
-									obstacle->end1, actSegment->dir, actSegment->prevSegment});
+									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
 						if (obstacle->end2 < b->end2)
 							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, obstacle->end2,
-									b->end2, actSegment->dir, actSegment->prevSegment});
+									b->end2, actSegment->scanDirection, actSegment->prevSegment});
 						activesB.erase(b);
 						break;
 					}
@@ -370,82 +374,44 @@ void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegm
 	obstacleSegment::obstacleType oType =
 			(activesA.find(actS) != activesA.end()) ? obstacleSegment::startA : obstacleSegment::startB;
 
-	orderedObstacleSet& oSet = actS->isVertical() ? vObstacleSet : hObstacleSet;
+	orderedObstacleSet& oSet = actS->scansVertical() ? vObstacleSet : hObstacleSet;
 
 	if (e->index + e->length > ePrevHighest->index + ePrevHighest->length) {
-		activeSegment* cClockwiseSegment =
-				new activeSegment{actS->bends + 1, e->crossovers, 0, 0, 0, left, e->baseSegment};
-		switch (actS->dir) {
-			case left:
-				cClockwiseSegment->index = e->end1;
-				cClockwiseSegment->end1 = actS->index - e->index - e->length;
-				cClockwiseSegment->end2 = actS->index - ePrevHighest->index - ePrevHighest->length - strokeWidth;
-				cClockwiseSegment->dir = down;
-				break;
-			case up:
-				cClockwiseSegment->index = e->end1;
-				cClockwiseSegment->end1 = actS->index + ePrevHighest->index + ePrevHighest->length + strokeWidth;
-				cClockwiseSegment->end2 = actS->index + e->index + e->length;
-				cClockwiseSegment->dir = left;
-				break;
-			case right:
-				cClockwiseSegment->index = e->end2;
-				cClockwiseSegment->end1 = actS->index + ePrevHighest->index + ePrevHighest->length + strokeWidth;
-				cClockwiseSegment->end2 = actS->index + e->index + e->length;
-				cClockwiseSegment->dir = up;
-				break;
-			case down:
-				cClockwiseSegment->index = e->end2;
-				cClockwiseSegment->end1 = actS->index - e->index - e->length;
-				cClockwiseSegment->end2 = actS->index - ePrevHighest->index - ePrevHighest->length - strokeWidth;
-				cClockwiseSegment->dir = right;
-				break;
+		activeSegment* leftSegment =
+				new activeSegment{actS->bends + 1, e->crossovers, e->end1, 0, 0, left, e->baseSegment};
+		leftSegment->scanDirection = actS->scansVertical() ? left : down;
+		if (actS->isUpRight()) {
+			leftSegment->end1 = ePrevHighest->farIndex() + strokeWidth;
+			leftSegment->end2 = e->farIndex();
+		} else {
+			leftSegment->end1 = e->farIndex();
+			leftSegment->end2 = ePrevHighest->farIndex() - strokeWidth;
 		}
-		newActiveSegments.insert(cClockwiseSegment);
-		oSet.insert(new obstacleSegment{
-				cClockwiseSegment->index, cClockwiseSegment->end1, cClockwiseSegment->end2, oType, cClockwiseSegment});
+		newActiveSegments.insert(leftSegment);
+		oSet.insert(new obstacleSegment{leftSegment->index, leftSegment->end1, leftSegment->end2, oType, leftSegment});
 	}
 	if (e->index + e->length > eNextHighest->index + eNextHighest->length) {
-		activeSegment* clockwiseSegment =
-				new activeSegment{actS->bends + 1, e->crossovers, 0, 0, 0, right, e->baseSegment};
-		switch (actS->dir) {
-			case left:
-				clockwiseSegment->index = e->end2;
-				clockwiseSegment->end1 = actS->index - e->index - e->length;
-				clockwiseSegment->end2 = actS->index - eNextHighest->index - eNextHighest->length - strokeWidth;
-				clockwiseSegment->dir = up;
-				break;
-			case up:
-				clockwiseSegment->index = e->end2;
-				clockwiseSegment->end1 = actS->index + eNextHighest->index + eNextHighest->length + strokeWidth;
-				clockwiseSegment->end2 = actS->index + e->index + e->length;
-				clockwiseSegment->dir = right;
-				break;
-			case right:
-				clockwiseSegment->index = e->end1;
-				clockwiseSegment->end1 = actS->index + eNextHighest->index + eNextHighest->length + strokeWidth;
-				clockwiseSegment->end2 = actS->index + e->index + e->length;
-				clockwiseSegment->dir = down;
-				break;
-			case down:
-				clockwiseSegment->index = e->end1;
-				clockwiseSegment->end1 = actS->index - e->index - e->length;
-				clockwiseSegment->end2 = actS->index - eNextHighest->index - eNextHighest->length - strokeWidth;
-				clockwiseSegment->dir = left;
-				break;
+		activeSegment* rightSegment =
+				new activeSegment{actS->bends + 1, e->crossovers, e->end2, 0, 0, right, e->baseSegment};
+		rightSegment->scanDirection = actS->scansVertical() ? right : up;
+		if (actS->isUpRight()) {
+			rightSegment->end1 = eNextHighest->farIndex() + strokeWidth;
+			rightSegment->end2 = e->farIndex();
+		} else {
+			rightSegment->end1 = e->farIndex();
+			rightSegment->end2 = eNextHighest->farIndex() - strokeWidth;
 		}
-		newActiveSegments.insert(clockwiseSegment);
-		oSet.insert(new obstacleSegment{
-				clockwiseSegment->index, clockwiseSegment->end1, clockwiseSegment->end2, oType, clockwiseSegment});
+		newActiveSegments.insert(rightSegment);
+		oSet.insert(
+				new obstacleSegment{rightSegment->index, rightSegment->end1, rightSegment->end2, oType, rightSegment});
 	}
 };
 
 void routing::newActives(activeSegment* actS, std::unordered_set<activeSegment*>& newActiveSegments) {
 	// Ends are already populated by this time.
 	// This will be the top element (other wise we have an errror)
-	auto iter = E.insert(new endSegment{0, actS->end1 - strokeWidth, actS->end1 - strokeWidth, actS->crossedNets, actS})
-						.first;
-	E.insert(new endSegment{0, actS->end2 + strokeWidth, actS->end2 + strokeWidth, actS->crossedNets, actS}).first;
+	auto iter = E.insert(new endSegment{actS->end1 - strokeWidth, actS->end1 - strokeWidth, actS}).first;
+	E.insert(new endSegment{actS->end2 + strokeWidth, actS->end2 + strokeWidth, actS});
 
 	endSegment* ePrev = *iter;
 	endSegment* e = *++iter;
@@ -459,7 +425,10 @@ void routing::newActives(activeSegment* actS, std::unordered_set<activeSegment*>
 
 		while (e->end1 != eNext->end1) {
 			addActiveFunction(ePrev, e, eNext, actS, newActiveSegments);
-			e = *++iter;
+			++iter;
+			if (e->end1 != (*iter)->end1)
+				ePrev = e;
+			e = *iter;
 		}
 		eNext = *iterNext;
 	}
@@ -488,10 +457,12 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 	if (s.end2 - s.end1 < 2 * strokeWidth)  // No space for a new net
 		return;
 	else
-		closestIndex = std::min(s.end2 - strokeWidth - actSegment->prevSegment->index,
-				s.end1 + strokeWidth - actSegment->prevSegment->index);
+		closestIndex = std::abs(s.end2 - strokeWidth - actSegment->prevSegment->index) >
+									   std::abs(s.end1 + strokeWidth - actSegment->prevSegment->index)
+							   ? s.end1 + strokeWidth
+							   : s.end2 - strokeWidth;
 
-	intPair joinPoint = actSegment->isVertical() ? intPair{s.index, closestIndex} : intPair{closestIndex, s.index};
+	intPair joinPoint = actSegment->scansVertical() ? intPair{closestIndex, s.index} : intPair{s.index, closestIndex};
 
 	if (obstacle->type == obstacleSegment::net) {
 		length = pathLength(actSegment, closestIndex) + std::abs(s.index - actSegment->index);
@@ -518,11 +489,8 @@ routing::~routing() {
 	for (auto&& o : hObstacleSet) {
 		delete o;
 	}
-	// NOTE: THis is cleanup but there should not be any actives left
-	for (auto&& a : activesA) {
-		delete a;
-	}
-	for (auto&& b : activesB) {
-		delete b;
-	}
+	if (!activesA.empty())
+		throw std::runtime_error("Incomplete memory deallocation in activesA");
+	if (!activesB.empty())
+		throw std::runtime_error("Incomplete memory deallocation in activesB");
 }
