@@ -1,8 +1,24 @@
 var draw;
 var cppfuncs = {};
+var actives;
+
 cppfuncs.createWire = function(x0,y0,x1,y1,width) {
 	'use strict';
 	draw.line(x0,y0,x1,y1).stroke({ width: width, color: 'black' });
+};
+
+cppfuncs.createRedActive = function(x0,y0,x1,y1,width) {
+	'use strict';
+	actives.line(x0,y0,x1,y1).stroke({ width: width, color: 'red' });
+};
+cppfuncs.createBlueActive = function(x0,y0,x1,y1,width) {
+	'use strict';
+	actives.line(x0,y0,x1,y1).stroke({ width: width, color: 'blue' });
+};
+
+cppfuncs.removeActives = function () {
+	'use strict';
+	actives.clear();
 };
 
 createDetailedSchematic = function(div, jsonString) {
@@ -49,6 +65,7 @@ createSchematic = function(div, jsonString) {
 
 	draw = SVG(div).size(data.size_x + 6, data.size_y + 6);
 	var tRect = createRectChild(draw, 0, 0, data.size_x, data.size_y, 1);
+	actives = draw.nested();
 
 	for (var i = 0; i < data.modules.length; i++) {
 		var mod = data.modules[i];

@@ -127,8 +127,8 @@ public:
 private:
 	void initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t);
 
-	bool expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
-			std::unordered_set<activeSegment*>& incrementedActSegmentSet);
+	bool expandActives(
+			std::unordered_set<activeSegment*>& actSegmentSet, std::unordered_set<activeSegment*>& newActiveSegments);
 
 	void reconstructSolution();
 
@@ -142,5 +142,9 @@ private:
 	void newActives(activeSegment* actS, std::unordered_set<activeSegment*>& newActiveSegments);
 
 	void updateSolution(segment s, obstacleSegment* obstacle, activeSegment* actSegment);
+
+	void clearActiveObstacles();
+
+	void clearActiveSet(std::unordered_set<activeSegment*>& set);
 };
 #endif  // ROUTING_H

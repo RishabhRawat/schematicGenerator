@@ -10,6 +10,18 @@ void line(int x0, int y0, int x1, int y1) {
 	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
 	cppfuncs.call<void>("createWire", x0, y0, x1, y1);
 }
+void activeALine(int x0, int y0, int x1, int y1) {
+	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
+	cppfuncs.call<void>("createRedActive", x0, y0, x1, y1, 3);
+}
+void activeBLine(int x0, int y0, int x1, int y1) {
+	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
+	cppfuncs.call<void>("createBlueActive", x0, y0, x1, y1, 3);
+}
+void clearActives() {
+	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
+	cppfuncs.call<void>("removeActives");
+}
 #endif  // WEB_COMPILATION
 
 void routing::route() {
@@ -31,38 +43,15 @@ void routing::route() {
 
 		splicedTerminal* t0 = tSet.pop();
 		splicedTerminal* t1 = tSet.pop();
+		std::cout << "T0 " << t0->placedPosition.x << " " << t0->placedPosition.y << std::endl;
+		std::cout << "T1 " << t1->placedPosition.x << " " << t1->placedPosition.y << std::endl;
 		initNet(t0, t1);
+
+#ifdef WEB_COMPILATION
+		clearActives();
+#endif  // WEB_COMPILATION
 		while (!tSet.empty()) {
-			//			expandNet(tSet.pop());
-		}
-
-		// Clearing up Actives
-		for (auto&& a : activesA) {
-			delete a;
-		}
-		activesA.clear();
-		for (auto&& b : activesB) {
-			delete b;
-		}
-		activesB.clear();
-
-		// Clearing up the obstacles!!
-		for (auto&& iter = hObstacleSet.begin(); iter != hObstacleSet.end();) {
-			if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB) {
-				obstacleSegment* element = *iter;
-				iter = hObstacleSet.erase(iter);
-				delete element;
-			} else
-				++iter;
-		}
-
-		for (auto&& iter = vObstacleSet.begin(); iter != vObstacleSet.end();) {
-			if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB) {
-				obstacleSegment* element = *iter;
-				iter = vObstacleSet.erase(iter);
-				delete element;
-			} else
-				++iter;
+			expandNet(tSet.pop());
 		}
 	}
 }
@@ -103,14 +92,29 @@ void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
 	while (!solutionFound) {
 		std::unordered_set<activeSegment*> A_new;
 		solutionFound |= expandActives(activesA, A_new);
-		for (activeSegment* a : A_new)
+		for (activeSegment* a : A_new) {
+#ifdef WEB_COMPILATION
+			activeALine(a->scansVertical() ? a->end1 : a->index, a->scansVertical() ? a->index : a->end1,
+					a->scansVertical() ? a->end2 : a->index, a->scansVertical() ? a->index : a->end2);
+#endif  // WEB_COMPILATION
 			activesA.insert(a);
+		}
+		if (solutionFound)
+			break;
 
 		std::unordered_set<activeSegment*> B_new;
 		solutionFound |= expandActives(activesB, B_new);
-		for (activeSegment* a : B_new)
+		for (activeSegment* a : B_new) {
+#ifdef WEB_COMPILATION
+			activeBLine(a->scansVertical() ? a->end1 : a->index, a->scansVertical() ? a->index : a->end1,
+					a->scansVertical() ? a->end2 : a->index, a->scansVertical() ? a->index : a->end2);
+#endif  // WEB_COMPILATION
 			activesB.insert(a);
+		}
 	}
+
+	clearActiveSet(activesA);
+	clearActiveSet(activesB);
 }
 
 void routing::initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t) {
@@ -136,8 +140,8 @@ void routing::initActives(std::unordered_set<activeSegment*>& activeSet, const s
 	}
 }
 
-bool routing::expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
-		std::unordered_set<activeSegment*>& incrementedActSegmentSet) {
+bool routing::expandActives(
+		std::unordered_set<activeSegment*>& actSegmentSet, std::unordered_set<activeSegment*>& newActiveSegments) {
 	int j = -1;
 	bool solved = false;
 	for (activeSegment* s : actSegmentSet)
@@ -146,25 +150,24 @@ bool routing::expandActives(std::unordered_set<activeSegment*>& actSegmentSet,
 	for (activeSegment* s : actSegmentSet) {
 		if (s->bends == j) {
 			if (!generateEndSegments(s, *s, s->crossedNets, s->scansVertical() ? hObstacleSet : vObstacleSet))
-				newActives(s, incrementedActSegmentSet);
+				newActives(s, newActiveSegments);
 			else
 				solved = true;
-			for (auto&& ends : E) {
+			for (endSegment* ends : E) {
 				delete ends;
 			}
 			E.clear();
 		}
 	}
 
-	if (!solved && incrementedActSegmentSet.empty())
+	if (!solved && newActiveSegments.empty())
 		throw std::runtime_error("No solution found!!");
 
 	if (solved) {
+		clearActiveObstacles();
 		reconstructSolution();
-		return true;
-	} else {
-		return false;
 	}
+	return solved;
 }
 
 void createLine(int x0, int y0, int x1, int y1) {
@@ -180,10 +183,18 @@ void routing::reconstructSolution() {
 	intPair currentPoint = soln.optimalPoint;
 	while (s) {
 		if (s->scansVertical()) {
-			createLine(currentPoint.x, s->index, currentPoint.x, currentPoint.y);
+			int smaller = s->index, larger = currentPoint.y;
+			if (larger < smaller)
+				std::swap(smaller, larger);
+			createLine(currentPoint.x, smaller, currentPoint.x, larger);
+			vObstacleSet.insert(new obstacleSegment{currentPoint.x, smaller, larger, obstacleSegment::net, currentNet});
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
-			createLine(s->index, currentPoint.y, currentPoint.x, currentPoint.y);
+			int smaller = s->index, larger = currentPoint.x;
+			if (larger < smaller)
+				std::swap(smaller, larger);
+			createLine(smaller, currentPoint.y, larger, currentPoint.y);
+			hObstacleSet.insert(new obstacleSegment{currentPoint.y, smaller, larger, obstacleSegment::net, currentNet});
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
 		s = s->prevSegment;
@@ -203,6 +214,26 @@ void routing::reconstructSolution() {
 	soln.clear();
 }
 
+void routing::clearActiveObstacles() {
+	for (auto&& iter = hObstacleSet.begin(); iter != hObstacleSet.end();) {
+		if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB) {
+			obstacleSegment* element = *iter;
+			iter = hObstacleSet.erase(iter);
+			delete element;
+		} else
+			++iter;
+	}
+
+	for (auto&& iter = vObstacleSet.begin(); iter != vObstacleSet.end();) {
+		if ((*iter)->type == obstacleSegment::startA || (*iter)->type == obstacleSegment::startB) {
+			obstacleSegment* element = *iter;
+			iter = vObstacleSet.erase(iter);
+			delete element;
+		} else
+			++iter;
+	}
+}
+
 bool routing::generateEndSegments(
 		activeSegment* actSegment, segment s, int crossovers, orderedObstacleSet& obstacleSet) {
 	bool solved = false;
@@ -220,12 +251,12 @@ bool routing::generateEndSegments(
 
 	if (s.end1 < obstacle->end1) {
 		solved |= generateEndSegments(
-				actSegment, segment{s.index, s.end1, obstacle->end1 - strokeWidth}, crossovers, obstacleSet);
+				actSegment, segment{s.index, s.end1, obstacle->end1 - strokeWidth}, crossovers, obstacles);
 		cutSegment.end1 = obstacle->end1;
 	}
 	if (obstacle->end2 < s.end2) {
 		solved |= generateEndSegments(
-				actSegment, segment{s.index, obstacle->end2 + strokeWidth, s.end2}, crossovers, obstacleSet);
+				actSegment, segment{s.index, obstacle->end2 + strokeWidth, s.end2}, crossovers, obstacles);
 		cutSegment.end2 = obstacle->end2;
 	}
 
@@ -245,6 +276,7 @@ bool routing::generateEndSegments(
 								cutSegment.end1, cutSegment.end2},
 						crossovers + 1, obstacleSet);
 			} else {
+				delete newEndSegment;
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
 			}
@@ -255,13 +287,15 @@ bool routing::generateEndSegments(
 			if (activesA.find(actSegment) != activesA.end()) {
 				for (auto&& a : activesA) {
 					if (a->index == obstacle->index && a->end1 <= obstacle->end1 && obstacle->end2 <= a->end2) {
-						activesA.erase(a);
-						if (a->end1 < obstacle->end1)
+						if (a->end1 < obstacle->end1) {
 							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, a->end1,
 									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
-						if (obstacle->end2 < a->end2)
+						}
+						if (obstacle->end2 < a->end2) {
 							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, obstacle->end2,
 									a->end2, actSegment->scanDirection, actSegment->prevSegment});
+						}
+						activesA.erase(a);
 						break;
 					}
 				}
@@ -318,22 +352,22 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 	};
 
 	if (tSide(t0) == terminalSide::rightSide && tSide(t1) == terminalSide::leftSide &&
-			t0->placedPosition.x < t1->placedPosition.x) {
+			t0->placedPosition.x < t1->placedPosition.x && t0->placedPosition.y == t1->placedPosition.y) {
 		horizontal = true;
 		lowerT = t0;
 		higherT = t1;
 	} else if (tSide(t1) == terminalSide::rightSide && tSide(t0) == terminalSide::leftSide &&
-			   t1->placedPosition.x < t0->placedPosition.x) {
+			   t1->placedPosition.x < t0->placedPosition.x && t0->placedPosition.y == t1->placedPosition.y) {
 		horizontal = true;
 		lowerT = t1;
 		higherT = t0;
 	} else if (tSide(t0) == terminalSide::topSide && tSide(t1) == terminalSide::bottomSide &&
-			   t0->placedPosition.y < t1->placedPosition.y) {
+			   t0->placedPosition.y < t1->placedPosition.y && t0->placedPosition.x == t1->placedPosition.x) {
 		horizontal = false;
 		lowerT = t0;
 		higherT = t1;
 	} else if (tSide(t1) == terminalSide::topSide && tSide(t0) == terminalSide::bottomSide &&
-			   t1->placedPosition.y < t0->placedPosition.y) {
+			   t1->placedPosition.y < t0->placedPosition.y && t0->placedPosition.x == t1->placedPosition.x) {
 		horizontal = false;
 		lowerT = t1;
 		higherT = t0;
@@ -348,6 +382,8 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 
 	auto stIt = perpendicularObstacles.upper_bound(&lowerScanEnd);
 	auto endIt = perpendicularObstacles.lower_bound(&higherScanEnd);
+
+	// Checking for obstacles
 	while (stIt != endIt) {
 		if (((*stIt)->end1 < lowerT->placedPosition.y && lowerT->placedPosition.y < (*stIt)->end2) &&
 				((*stIt)->type == obstacleSegment::module ||
@@ -357,6 +393,7 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 			return false;
 		++stIt;
 	}
+
 	if (horizontal) {
 		parallelObstacles.insert(new obstacleSegment{lowerT->placedPosition.y, lowerT->placedPosition.x,
 				higherT->placedPosition.x, obstacleSegment::net, currentNet});
@@ -365,6 +402,8 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 				higherT->placedPosition.y, obstacleSegment::net, currentNet});
 	}
 	createLine(t0->placedPosition.x, t0->placedPosition.y, t1->placedPosition.x, t1->placedPosition.y);
+
+	clearActiveObstacles();
 	return true;
 }
 
@@ -436,11 +475,13 @@ void routing::newActives(activeSegment* actS, std::unordered_set<activeSegment*>
 
 unsigned int routing::pathLength(activeSegment* actS, int x) {
 	unsigned int length = 0;
-	while (actS->prevSegment) {
-		// measures length between actS and actS->prev
-		length += std::abs(x - actS->prevSegment->index);
-		x = actS->index;
-		actS = actS->prevSegment;
+	if (actS) {
+		while (actS->prevSegment) {
+			// measures length between actS and actS->prev
+			length += std::abs(x - actS->prevSegment->index);
+			x = actS->index;
+			actS = actS->prevSegment;
+		}
 	}
 	return length;
 }
@@ -454,32 +495,57 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 	activeSegment* otherActSegment = nullptr;
 	unsigned int length;
 	int totalBends = actSegment->bends, totalCrossovers = actSegment->crossedNets;
-	if (s.end2 - s.end1 < 2 * strokeWidth)  // No space for a new net
-		return;
-	else
-		closestIndex = std::abs(s.end2 - strokeWidth - actSegment->prevSegment->index) >
-									   std::abs(s.end1 + strokeWidth - actSegment->prevSegment->index)
-							   ? s.end1 + strokeWidth
-							   : s.end2 - strokeWidth;
+	if (s.end2 - s.end1 > 2 * strokeWidth) {
+		// NOTE: need to work on how to decide the closest index
+		//		closestIndex = std::abs(s.end2 - strokeWidth - actSegment->prevSegment->index) >
+		//									   std::abs(s.end1 + strokeWidth - actSegment->prevSegment->index)
+		//							   ? s.end1 + strokeWidth
+		//							   : s.end2 - strokeWidth;
+
+		closestIndex = (s.end1 + s.end2) / 2;
+	} else {
+		// NOTE: Need to add another option to increase cost!!
+		totalBends += 10000;
+	}
 
 	intPair joinPoint = actSegment->scansVertical() ? intPair{closestIndex, s.index} : intPair{s.index, closestIndex};
 
-	if (obstacle->type == obstacleSegment::net) {
-		length = pathLength(actSegment, closestIndex) + std::abs(s.index - actSegment->index);
-	} else {
+	length = pathLength(actSegment, closestIndex) + pathLength(otherActSegment, closestIndex) +
+			 std::abs(actSegment->index - obstacle->index);
+
+	if (obstacle->type == obstacleSegment::startA || obstacle->type == obstacleSegment::startB) {
 		otherActSegment = static_cast<activeSegment*>(obstacle->sourcePtr);
-		length = pathLength(actSegment, closestIndex) + pathLength(otherActSegment, closestIndex) +
-				 std::abs(actSegment->index - obstacle->index);
-		totalBends += otherActSegment->bends;
 		// NOTE: DO WE NOT NEED TO CHECK THE SEGMENT INSTEAD??
+		totalBends += otherActSegment->bends;
 		totalCrossovers += otherActSegment->crossedNets;
 	}
+
 	if (soln.cost > calculateCost(totalBends, totalCrossovers, length)) {
 		soln.a = actSegment;
 		soln.b = otherActSegment;
 		soln.cost = calculateCost(totalBends, totalCrossovers, length);
 		soln.optimalPoint = joinPoint;
 	}
+}
+
+void routing::expandNet(splicedTerminal* t) {
+	initActives(activesA, t);
+	bool solutionFound = false;
+	while (!solutionFound) {
+		std::unordered_set<activeSegment*> A_new;
+		solutionFound |= expandActives(activesA, A_new);
+		for (activeSegment* a : A_new) {
+#ifdef WEB_COMPILATION
+			activeALine(a->scansVertical() ? a->end1 : a->index, a->scansVertical() ? a->index : a->end1,
+					a->scansVertical() ? a->end2 : a->index, a->scansVertical() ? a->index : a->end2);
+#endif  // WEB_COMPILATION
+			activesA.insert(a);
+		}
+	}
+	clearActiveSet(activesA);
+#ifdef WEB_COMPILATION
+	clearActives();
+#endif  // WEB_COMPILATION
 }
 
 routing::~routing() {
@@ -493,4 +559,11 @@ routing::~routing() {
 		throw std::runtime_error("Incomplete memory deallocation in activesA");
 	if (!activesB.empty())
 		throw std::runtime_error("Incomplete memory deallocation in activesB");
+}
+
+void routing::clearActiveSet(std::unordered_set<activeSegment*>& set) {
+	for (activeSegment* a : set) {
+		delete a;
+	}
+	set.clear();
 }

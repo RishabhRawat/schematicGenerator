@@ -358,7 +358,7 @@ void placement::placeModule(box* b, unsigned int index, intPair& leftBottom, int
 }
 
 int placement::calculatePadding(unsigned int n) {
-	return (30 + 2 * n);
+	return (40 + 2 * n);
 }
 
 void placement::boxPlacement() {
@@ -420,7 +420,7 @@ box* placement::selectNextBox(const hashlib::pool<box*>& remainingBoxes, const h
 		}
 	}
 
-	if (maxCount == 0)
+	if (!nextBox)
 		throw std::runtime_error("no good next box found??");
 
 	return nextBox;
@@ -607,7 +607,7 @@ void placement::partitionPlacement() {
 	placedPartitions.insert(largestPartition);
 
 	while (!remainingPartitions.empty()) {
-		partition* p = selectNextParition(remainingPartitions, placedPartitions);
+		partition* p = selectNextPartition(remainingPartitions, placedPartitions);
 		remainingPartitions.erase(p);
 		intPair optimumPosition = calculateOptimumPartitionPosition(p, placedPartitions);
 		p->position = calculateActualPosition(p->size, optimumPosition, layoutData);
@@ -624,7 +624,7 @@ void placement::partitionPlacement() {
 	core->size = rightTop - leftBottom;
 	core->offset = leftBottom;
 }
-partition* placement::selectNextParition(
+partition* placement::selectNextPartition(
 		hashlib::pool<partition*> remainingPartition, hashlib::pool<partition*> placedPartition) {
 	unsigned int max = 0;
 	partition* maxConnectedPartition = nullptr;
@@ -687,9 +687,9 @@ void placement::systemTerminalPlacement() {
 		intPair grav{0, 0};
 		int count = 0;
 		for (splicedTerminal* sT : *sinkT) {
-			grav += sT->placedPosition + sT->getParent()->position + sT->getParent()->parentBox->offset +
-					sT->getParent()->parentBox->position + sT->getParent()->parentBox->parentPartition->offset +
-					sT->getParent()->parentBox->parentPartition->position + core->offset;
+			grav += sT->placedPosition + (sT->getParent()->position - sT->getParent()->parentBox->offset) +
+					(sT->getParent()->parentBox->position - sT->getParent()->parentBox->parentPartition->offset) +
+					(sT->getParent()->parentBox->parentPartition->position - core->offset);
 			count++;
 		}
 		return grav / count;

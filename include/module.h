@@ -25,7 +25,7 @@ private:
 
 	moduleLinkMap connectedModuleLinkMap;
 
-	mutable box* parentBox;
+	mutable box* parentBox = nullptr;
 
 	splicedTerminal* addSplicedTerminal(
 			const terminal* const baseTerminal, const std::string& terminalName, net* const attachedNet);

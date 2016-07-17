@@ -57,7 +57,7 @@ class placement {
 	intPair calculateActualPosition(
 			const intPair size, const intPair optimumPosition, hashlib::dict<T*, positionalStructure<T>>& layoutData);
 	void partitionPlacement();  // SHARING BOUNDARIES IS PERFECTLY LEGAL
-	partition* selectNextParition(
+	partition* selectNextPartition(
 			hashlib::pool<partition*> remainingPartition, hashlib::pool<partition*> placedPartition);
 	intPair calculateOptimumPartitionPosition(partition* p, hashlib::pool<partition*>& placedPartition);
 
