@@ -108,7 +108,7 @@ class routing {
 	const coreDesign* core;
 
 	coalescedNet* currentNet;
-	std::unordered_set<activeSegment *> activesA, activesB;
+	std::unordered_set<activeSegment *> activesA, activesB, inactives;
 	std::set<endSegment*, endSegmentLessComparator> E;
 
 	void addObstacleBounding();

@@ -115,6 +115,7 @@ void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
 
 	clearActiveSet(activesA);
 	clearActiveSet(activesB);
+	clearActiveSet(inactives);
 }
 
 void routing::initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t) {
@@ -295,6 +296,7 @@ bool routing::generateEndSegments(
 							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, obstacle->end2,
 									a->end2, actSegment->scanDirection, actSegment->prevSegment});
 						}
+						inactives.insert(a);
 						activesA.erase(a);
 						break;
 					}
@@ -316,6 +318,7 @@ bool routing::generateEndSegments(
 						if (obstacle->end2 < b->end2)
 							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, obstacle->end2,
 									b->end2, actSegment->scanDirection, actSegment->prevSegment});
+						inactives.insert(b);
 						activesB.erase(b);
 						break;
 					}
@@ -506,16 +509,17 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 	} else {
 		// NOTE: Need to add another option to increase cost!!
 		totalBends += 10000;
+		closestIndex = (s.end1 + s.end2) / 2;
 	}
 
 	intPair joinPoint = actSegment->scansVertical() ? intPair{closestIndex, s.index} : intPair{s.index, closestIndex};
 
-	length = pathLength(actSegment, closestIndex) + pathLength(otherActSegment, closestIndex) +
-			 std::abs(actSegment->index - obstacle->index);
+	length = pathLength(actSegment, closestIndex) + std::abs(actSegment->index - obstacle->index);
 
 	if (obstacle->type == obstacleSegment::startA || obstacle->type == obstacleSegment::startB) {
 		otherActSegment = static_cast<activeSegment*>(obstacle->sourcePtr);
 		// NOTE: DO WE NOT NEED TO CHECK THE SEGMENT INSTEAD??
+		length += pathLength(otherActSegment, closestIndex);
 		totalBends += otherActSegment->bends;
 		totalCrossovers += otherActSegment->crossedNets;
 	}
@@ -543,6 +547,7 @@ void routing::expandNet(splicedTerminal* t) {
 		}
 	}
 	clearActiveSet(activesA);
+	clearActiveSet(inactives);
 #ifdef WEB_COMPILATION
 	clearActives();
 #endif  // WEB_COMPILATION
