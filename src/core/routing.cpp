@@ -204,10 +204,18 @@ void routing::reconstructSolution() {
 	currentPoint = soln.optimalPoint;
 	while (s) {
 		if (s->scansVertical()) {
-			createLine(currentPoint.x, s->index, currentPoint.x, currentPoint.y);
+			int smaller = s->index, larger = currentPoint.y;
+			if (larger < smaller)
+				std::swap(smaller, larger);
+			createLine(currentPoint.x, smaller, currentPoint.x, larger);
+			vObstacleSet.insert(new obstacleSegment{currentPoint.x, smaller, larger, obstacleSegment::net, currentNet});
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
-			createLine(s->index, currentPoint.y, currentPoint.x, currentPoint.y);
+			int smaller = s->index, larger = currentPoint.x;
+			if (larger < smaller)
+				std::swap(smaller, larger);
+			createLine(smaller, currentPoint.y, larger, currentPoint.y);
+			hObstacleSet.insert(new obstacleSegment{currentPoint.y, smaller, larger, obstacleSegment::net, currentNet});
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
 		s = s->prevSegment;
@@ -522,6 +530,11 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 		length += pathLength(otherActSegment, closestIndex);
 		totalBends += otherActSegment->bends;
 		totalCrossovers += otherActSegment->crossedNets;
+	} else if (obstacle->type == obstacleSegment::net) {
+		length += std::abs(obstacle->index - s.index);
+		otherActSegment = *activesB.insert(new activeSegment{obstacle->index, closestIndex, closestIndex,
+												   actSegment->scanDirection, nullptr})
+								   .first;
 	}
 
 	if (soln.cost > calculateCost(totalBends, totalCrossovers, length)) {
@@ -547,6 +560,7 @@ void routing::expandNet(splicedTerminal* t) {
 		}
 	}
 	clearActiveSet(activesA);
+	clearActiveSet(activesB);
 	clearActiveSet(inactives);
 #ifdef WEB_COMPILATION
 	clearActives();

@@ -474,5 +474,6 @@ jsonData = {
 			}
 		}
 	}
-}
+};
 createSchematic('drawing',jsonData);
+// createDetailedSchematic('drawing',jsonData);
