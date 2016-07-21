@@ -7,7 +7,7 @@ OPTION(EMCC "emcc" OFF)
 IF (EMCC)
     SET(CMAKE_C_COMPILER "emcc")
     SET(CMAKE_CXX_COMPILER "em++")
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 --profiling")
 
 ELSE()
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")

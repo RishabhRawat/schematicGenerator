@@ -58,13 +58,13 @@ void routing::route() {
 
 void routing::addObstacleBounding() {
 	hObstacleSet.insert(new obstacleSegment{
-			-strokeWidth, -strokeWidth, core->size.x + strokeWidth, obstacleSegment::module, nullptr});
-	hObstacleSet.insert(new obstacleSegment{
-			core->size.y + strokeWidth, -strokeWidth, core->size.x + strokeWidth, obstacleSegment::module, nullptr});
+			-strokeWidth, -strokeWidth, core->size.x - core->offset.x + strokeWidth, obstacleSegment::module, nullptr});
+	hObstacleSet.insert(new obstacleSegment{core->size.y - core->offset.y + strokeWidth, -strokeWidth,
+			core->size.x - core->offset.x + strokeWidth, obstacleSegment::module, nullptr});
 	vObstacleSet.insert(new obstacleSegment{
-			-strokeWidth, -strokeWidth, core->size.y + strokeWidth, obstacleSegment::module, nullptr});
-	vObstacleSet.insert(new obstacleSegment{
-			core->size.x + strokeWidth, -strokeWidth, core->size.y + strokeWidth, obstacleSegment::module, nullptr});
+			-strokeWidth, -strokeWidth, core->size.y - core->offset.y + strokeWidth, obstacleSegment::module, nullptr});
+	vObstacleSet.insert(new obstacleSegment{core->size.x - core->offset.x + strokeWidth, -strokeWidth,
+			core->size.y - core->offset.y + strokeWidth, obstacleSegment::module, nullptr});
 
 	for (auto&& m_pair : core->subModules) {
 		intPair mPos = m_pair.second->position;
@@ -258,7 +258,6 @@ bool routing::generateEndSegments(
 
 	segment cutSegment = s;
 
-
 	if (s.end1 < obstacle->end1) {
 		solved |= generateEndSegments(
 				actSegment, segment{s.index, s.end1, obstacle->end1 - strokeWidth}, crossovers, obstacles);
@@ -295,21 +294,26 @@ bool routing::generateEndSegments(
 			E.insert(newEndSegment);
 
 			if (activesA.find(actSegment) != activesA.end()) {
-//				for (auto&& a : activesA) {
-//					if (a->index == obstacle->index && a->end1 <= obstacle->end1 && obstacle->end2 <= a->end2) {
-//						if (a->end1 < obstacle->end1) {
-//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, a->end1,
-//									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
-//						}
-//						if (obstacle->end2 < a->end2) {
-//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, obstacle->end2,
-//									a->end2, actSegment->scanDirection, actSegment->prevSegment});
-//						}
-//						inactives.insert(a);
-//						activesA.erase(a);
-//						break;
-//					}
-//				}
+				//				for (auto&& a : activesA) {
+				//					if (a->index == obstacle->index && a->end1 <= obstacle->end1 && obstacle->end2 <=
+				//a->end2)
+				//{
+				//						if (a->end1 < obstacle->end1) {
+				//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index,
+				// a->end1,
+				//									obstacle->end1, actSegment->scanDirection,
+				// actSegment->prevSegment});
+				//						}
+				//						if (obstacle->end2 < a->end2) {
+				//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index,
+				// obstacle->end2,
+				//									a->end2, actSegment->scanDirection, actSegment->prevSegment});
+				//						}
+				//						inactives.insert(a);
+				//						activesA.erase(a);
+				//						break;
+				//					}
+				//				}
 			} else {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
@@ -319,19 +323,24 @@ bool routing::generateEndSegments(
 			E.insert(newEndSegment);
 
 			if (activesB.find(actSegment) != activesB.end()) {
-//				for (activeSegment* b : activesB) {
-//					if (b->index == obstacle->index && b->end1 <= obstacle->end1 && obstacle->end2 <= b->end2) {
-//						if (b->end1 < obstacle->end1)
-//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, b->end1,
-//									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
-//						if (obstacle->end2 < b->end2)
-//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, obstacle->end2,
-//									b->end2, actSegment->scanDirection, actSegment->prevSegment});
-//						inactives.insert(b);
-//						activesB.erase(b);
-//						break;
-//					}
-//				}
+				//				for (activeSegment* b : activesB) {
+				//					if (b->index == obstacle->index && b->end1 <= obstacle->end1 && obstacle->end2 <=
+				//b->end2)
+				//{
+				//						if (b->end1 < obstacle->end1)
+				//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index,
+				// b->end1,
+				//									obstacle->end1, actSegment->scanDirection,
+				// actSegment->prevSegment});
+				//						if (obstacle->end2 < b->end2)
+				//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index,
+				// obstacle->end2,
+				//									b->end2, actSegment->scanDirection, actSegment->prevSegment});
+				//						inactives.insert(b);
+				//						activesB.erase(b);
+				//						break;
+				//					}
+				//				}
 			} else {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
