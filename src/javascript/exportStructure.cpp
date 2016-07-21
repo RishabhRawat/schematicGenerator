@@ -1,15 +1,13 @@
 #include <box.h>
 #include "coreDesign.h"
-#include "json/json.hpp"
 #include "partition.h"
 #include "placement.h"
 
-std::string coreDesign::createDebugJsonSchematicFromJson(std::string jsonData) {
-	parseJsonString(jsonData);
+std::string coreDesign::createDebugJsonSchematicFromJson() {
 	initializeStructures();
 	placement placementObject;
-	doRouting();
 	placementObject.place(this, designParameters);
+	doRouting();
 
 	nlohmann::json outputJson;
 	outputJson["name"] = systemModule.moduleIdentifier;
@@ -46,7 +44,7 @@ std::string coreDesign::createDebugJsonSchematicFromJson(std::string jsonData) {
 			bS["size_y"] = b->size.y;
 			bS["offset_x"] = b->offset.x;
 			bS["offset_y"] = b->offset.y;
-			for (module* m : b->boxModules) {
+			for (moduleImpl* m : b->boxModules) {
 				nlohmann::json mS;
 				mS["name"] = m->moduleIdentifier;
 				mS["pos_x"] = m->position.x;
@@ -69,10 +67,7 @@ std::string coreDesign::createDebugJsonSchematicFromJson(std::string jsonData) {
 	return outputJson.dump(2);
 }
 
-std::string coreDesign::createJsonSchematicFromJson(std::string jsonData) {
-	parseJsonString(jsonData);
-	doPlacement();
-
+std::string coreDesign::createJsonSchematicFromJson() {
 	nlohmann::json outputJson;
 	outputJson["name"] = systemModule.moduleIdentifier;
 	outputJson["size_x"] = size.x;

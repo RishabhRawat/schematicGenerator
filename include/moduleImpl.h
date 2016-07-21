@@ -1,13 +1,16 @@
 #ifndef MODULES_H
 #define MODULES_H
 #include "common.h"
-#include "terminal.h"  //for terminal vector
+#include "terminalImpl.h"
 
-class module {
+class moduleImpl {
 	friend class coreDesign;
 	friend class placement;
 	friend class routing;
 	friend class box;
+	friend class module;
+	friend class terminalImpl;
+	friend class net;
 
 private:
 	std::string moduleType;
@@ -27,9 +30,6 @@ private:
 
 	mutable box* parentBox = nullptr;
 
-	splicedTerminal* addSplicedTerminal(
-			const terminal* const baseTerminal, const std::string& terminalName, net* const attachedNet);
-
 	void setParentBox(box* b) const {
 		parentBox = b;
 	}
@@ -37,20 +37,17 @@ private:
 	void rotateModule(clockwiseRotation newRotValue);
 
 public:
-	~module();
+	~moduleImpl();
 
-	module(const std::string& moduleIdentifier) : moduleIdentifier(moduleIdentifier) {}
+	moduleImpl(const std::string moduleIdentifier) : moduleIdentifier(moduleIdentifier) {}
 
 	std::string getIdentifier() const {
 		return moduleIdentifier;
 	}
-	intPair getSize() const {
-		return size;
-	}
+	terminalImpl* addTerminal(
+			const std::string& terminalName, const termType type, const int width, const bool isSystemTerminal);
 
-	terminal& addTerminal(const std::string& terminalName, const terminalType type, const int width);
-
-	terminal& getTerminal(const std::string& basic_string);
+	terminalImpl* getTerminal(const std::string& basic_string);
 
 	// Clockwise from bottom left
 	intPair getVertex(const int index) {

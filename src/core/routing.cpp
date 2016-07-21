@@ -1,7 +1,7 @@
 #include "routing.h"
 #include <unordered_set>
 #include "coreDesign.h"
-#include "terminal.h"
+#include "terminalImpl.h"
 const int strokeWidth = 5;
 
 #ifdef WEB_COMPILATION
@@ -26,7 +26,7 @@ void clearActives() {
 
 void routing::route() {
 	addObstacleBounding();
-	for (coalescedNet* internalCoalescedNet : core->internalCoalescedNets) {
+	for (net* internalCoalescedNet : core->internalNets) {
 		currentNet = internalCoalescedNet;
 		splicedTerminalSet tSet;
 		for (auto&& mT_pair : internalCoalescedNet->connectedModuleSplicedTerminalMap) {
@@ -104,12 +104,12 @@ void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
 
 		std::unordered_set<activeSegment*> B_new;
 		solutionFound |= expandActives(activesB, B_new);
-		for (activeSegment* a : B_new) {
+		for (activeSegment* b : B_new) {
 #ifdef WEB_COMPILATION
-			activeBLine(a->scansVertical() ? a->end1 : a->index, a->scansVertical() ? a->index : a->end1,
-					a->scansVertical() ? a->end2 : a->index, a->scansVertical() ? a->index : a->end2);
+			activeBLine(b->scansVertical() ? b->end1 : b->index, b->scansVertical() ? b->index : b->end1,
+					b->scansVertical() ? b->end2 : b->index, b->scansVertical() ? b->index : b->end2);
 #endif  // WEB_COMPILATION
-			activesB.insert(a);
+			activesB.insert(b);
 		}
 	}
 
@@ -119,25 +119,25 @@ void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
 }
 
 void routing::initActives(std::unordered_set<activeSegment*>& activeSet, const splicedTerminal* t) {
-	switch (t->baseTerminal->side) {
-		case terminalSide::leftSide:
+	switch (t->placedSide) {
+		case leftSide:
 			activeSet.insert(new activeSegment{t->placedPosition.x, t->placedPosition.y, t->placedPosition.y,
 					t->isSystemTerminal() ? right : left, nullptr});
 			break;
-		case terminalSide::rightSide:
+		case rightSide:
 			activeSet.insert(new activeSegment{t->placedPosition.x, t->placedPosition.y, t->placedPosition.y,
 					t->isSystemTerminal() ? left : right, nullptr});
 			break;
-		case terminalSide::topSide:
+		case topSide:
 			activeSet.insert(new activeSegment{t->placedPosition.y, t->placedPosition.x, t->placedPosition.x,
 					t->isSystemTerminal() ? down : up, nullptr});
 			break;
-		case terminalSide::bottomSide:
+		case bottomSide:
 			activeSet.insert(new activeSegment{t->placedPosition.y, t->placedPosition.x, t->placedPosition.x,
 					t->isSystemTerminal() ? up : down, nullptr});
 			break;
-		case terminalSide::noneSide:
-			throw std::runtime_error("Cannot have a terminal without a side");
+		case noneSide:
+			throw std::runtime_error("Cannot have a terminalImpl without a side");
 	}
 }
 
@@ -258,6 +258,7 @@ bool routing::generateEndSegments(
 
 	segment cutSegment = s;
 
+
 	if (s.end1 < obstacle->end1) {
 		solved |= generateEndSegments(
 				actSegment, segment{s.index, s.end1, obstacle->end1 - strokeWidth}, crossovers, obstacles);
@@ -278,7 +279,7 @@ bool routing::generateEndSegments(
 			E.insert(newEndSegment);
 			break;
 		case obstacleSegment::net:
-			if (static_cast<coalescedNet*>(obstacle->sourcePtr) != currentNet) {
+			if (static_cast<net*>(obstacle->sourcePtr) != currentNet) {
 				E.insert(newEndSegment);
 				solved |= generateEndSegments(actSegment,
 						segment{actSegment->isUpRight() ? obstacle->index + strokeWidth : obstacle->index - strokeWidth,
@@ -294,21 +295,21 @@ bool routing::generateEndSegments(
 			E.insert(newEndSegment);
 
 			if (activesA.find(actSegment) != activesA.end()) {
-				for (auto&& a : activesA) {
-					if (a->index == obstacle->index && a->end1 <= obstacle->end1 && obstacle->end2 <= a->end2) {
-						if (a->end1 < obstacle->end1) {
-							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, a->end1,
-									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
-						}
-						if (obstacle->end2 < a->end2) {
-							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, obstacle->end2,
-									a->end2, actSegment->scanDirection, actSegment->prevSegment});
-						}
-						inactives.insert(a);
-						activesA.erase(a);
-						break;
-					}
-				}
+//				for (auto&& a : activesA) {
+//					if (a->index == obstacle->index && a->end1 <= obstacle->end1 && obstacle->end2 <= a->end2) {
+//						if (a->end1 < obstacle->end1) {
+//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, a->end1,
+//									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
+//						}
+//						if (obstacle->end2 < a->end2) {
+//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index, obstacle->end2,
+//									a->end2, actSegment->scanDirection, actSegment->prevSegment});
+//						}
+//						inactives.insert(a);
+//						activesA.erase(a);
+//						break;
+//					}
+//				}
 			} else {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
@@ -318,19 +319,19 @@ bool routing::generateEndSegments(
 			E.insert(newEndSegment);
 
 			if (activesB.find(actSegment) != activesB.end()) {
-				for (auto&& b : activesB) {
-					if (b->index == obstacle->index && b->end1 <= obstacle->end1 && obstacle->end2 <= b->end2) {
-						if (b->end1 < obstacle->end1)
-							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, b->end1,
-									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
-						if (obstacle->end2 < b->end2)
-							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, obstacle->end2,
-									b->end2, actSegment->scanDirection, actSegment->prevSegment});
-						inactives.insert(b);
-						activesB.erase(b);
-						break;
-					}
-				}
+//				for (activeSegment* b : activesB) {
+//					if (b->index == obstacle->index && b->end1 <= obstacle->end1 && obstacle->end2 <= b->end2) {
+//						if (b->end1 < obstacle->end1)
+//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, b->end1,
+//									obstacle->end1, actSegment->scanDirection, actSegment->prevSegment});
+//						if (obstacle->end2 < b->end2)
+//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index, obstacle->end2,
+//									b->end2, actSegment->scanDirection, actSegment->prevSegment});
+//						inactives.insert(b);
+//						activesB.erase(b);
+//						break;
+//					}
+//				}
 			} else {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
@@ -347,38 +348,38 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 	splicedTerminal* higherT;
 
 	auto tSide = [](splicedTerminal* t) {
-		switch (t->baseTerminal->side) {
-			case terminalSide::leftSide:
-				return t->isSystemTerminal() ? terminalSide::rightSide : terminalSide::leftSide;
-			case terminalSide::topSide:
-				return t->isSystemTerminal() ? terminalSide::bottomSide : terminalSide::topSide;
-			case terminalSide::rightSide:
-				return t->isSystemTerminal() ? terminalSide::leftSide : terminalSide::rightSide;
-			case terminalSide::bottomSide:
-				return t->isSystemTerminal() ? terminalSide::topSide : terminalSide::bottomSide;
-			case terminalSide::noneSide:
+		switch (t->placedSide) {
+			case leftSide:
+				return t->isSystemTerminal() ? rightSide : leftSide;
+			case topSide:
+				return t->isSystemTerminal() ? bottomSide : topSide;
+			case rightSide:
+				return t->isSystemTerminal() ? leftSide : rightSide;
+			case bottomSide:
+				return t->isSystemTerminal() ? topSide : bottomSide;
+			case noneSide:
 				break;
 		}
 		throw std::runtime_error("Uninitialized Terminals!!");
 	};
 
-	if (tSide(t0) == terminalSide::rightSide && tSide(t1) == terminalSide::leftSide &&
-			t0->placedPosition.x < t1->placedPosition.x && t0->placedPosition.y == t1->placedPosition.y) {
+	if (tSide(t0) == rightSide && tSide(t1) == leftSide && t0->placedPosition.x < t1->placedPosition.x &&
+			t0->placedPosition.y == t1->placedPosition.y) {
 		horizontal = true;
 		lowerT = t0;
 		higherT = t1;
-	} else if (tSide(t1) == terminalSide::rightSide && tSide(t0) == terminalSide::leftSide &&
-			   t1->placedPosition.x < t0->placedPosition.x && t0->placedPosition.y == t1->placedPosition.y) {
+	} else if (tSide(t1) == rightSide && tSide(t0) == leftSide && t1->placedPosition.x < t0->placedPosition.x &&
+			   t0->placedPosition.y == t1->placedPosition.y) {
 		horizontal = true;
 		lowerT = t1;
 		higherT = t0;
-	} else if (tSide(t0) == terminalSide::topSide && tSide(t1) == terminalSide::bottomSide &&
-			   t0->placedPosition.y < t1->placedPosition.y && t0->placedPosition.x == t1->placedPosition.x) {
+	} else if (tSide(t0) == topSide && tSide(t1) == bottomSide && t0->placedPosition.y < t1->placedPosition.y &&
+			   t0->placedPosition.x == t1->placedPosition.x) {
 		horizontal = false;
 		lowerT = t0;
 		higherT = t1;
-	} else if (tSide(t1) == terminalSide::topSide && tSide(t0) == terminalSide::bottomSide &&
-			   t1->placedPosition.y < t0->placedPosition.y && t0->placedPosition.x == t1->placedPosition.x) {
+	} else if (tSide(t1) == topSide && tSide(t0) == bottomSide && t1->placedPosition.y < t0->placedPosition.y &&
+			   t0->placedPosition.x == t1->placedPosition.x) {
 		horizontal = false;
 		lowerT = t1;
 		higherT = t0;

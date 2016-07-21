@@ -1,43 +1,43 @@
-#include "module.h"
+#include "moduleImpl.h"
 
-terminal& module::addTerminal(const std::string& terminalName, const terminalType type, const int width) {
+terminalImpl* moduleImpl::addTerminal(
+		const std::string& terminalName, const termType type, const int width, const bool isSystemTerminal) {
 	// FIXME: I need to check whether the returned reference is correct
-	return *(
-			moduleTerminals.insert({terminalName, new terminal(terminalName, type, width, this, false)}).first->second);
+	return moduleTerminals.insert({terminalName, new terminalImpl(terminalName, type, width, this, isSystemTerminal)})
+			.first->second;
 }
 
-terminal& module::getTerminal(const std::string& terminalName) {
-	return *moduleTerminals.find(terminalName)->second;
+terminalImpl* moduleImpl::getTerminal(const std::string& terminalName) {
+	return moduleTerminals.find(terminalName)->second;
 }
 
-splicedTerminal* module::addSplicedTerminal(
-		const terminal* const baseTerminal, const std::string& terminalName, net* const attachedNet) {
-	return *(moduleSplicedTerminals.insert(new splicedTerminal(baseTerminal, terminalName, attachedNet)).first);
-}
-
-void module::rotateModule(clockwiseRotation newRotValue) {
+void moduleImpl::rotateModule(clockwiseRotation newRotValue) {
 	for (splicedTerminal* t : moduleSplicedTerminals) {
 		intPair temp;
 		switch (newRotValue) {
 			case clockwiseRotation::d_0:
 				t->placedPosition = t->originalPosition;
+				t->placedSide = t->baseTerminal->side;
 				break;
 			case clockwiseRotation::d_90:
 				temp = (t->originalPosition - size / 2);
 				t->placedPosition = intPair{-temp.y, temp.x} + size / 2;
+				t->placedSide = static_cast<terminalSide>((t->baseTerminal->side + 1) % 4);
 				break;
 			case clockwiseRotation::d_180:
 				t->placedPosition = size - t->originalPosition;
+			t->placedSide = static_cast<terminalSide>((t->baseTerminal->side + 2) % 4);
 				break;
 			case clockwiseRotation::d_270:
 				temp = (t->originalPosition - size / 2);
 				t->placedPosition = intPair{temp.y, -temp.x} + size / 2;
+				t->placedSide = static_cast<terminalSide>((t->baseTerminal->side + 3) % 4);
 				break;
 		}
 	}
 }
 
-module::~module() {
+moduleImpl::~moduleImpl() {
 	for (auto&& item : moduleTerminals) {
 		delete item.second;
 	}

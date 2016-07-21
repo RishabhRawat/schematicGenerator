@@ -1,92 +1,61 @@
 #include "json/json.hpp"
 #include <fstream>
 #include <system_error>
-#include "coreDesign.h"
-namespace schematic {
+#include "schematic.h"
+
 terminalType parseTerminalType(std::string t) {
 	if (t == "in" || t == "input")
-		return terminalType::inType;
+		return terminalType::in;
 	else if (t == "output" || t == "out")
-		return terminalType::outType;
+		return terminalType::out;
 	else if (t == "inoutType")
-		return terminalType::inoutType;
+		return terminalType::inout;
 	else
 		throw std::invalid_argument("unknown port direction");
 }
-}
 
-void coreDesign::parseJsonFile(std::string fName) {
-	std::ifstream jsonFile(fName);
+void schematic::parseJsonFile(std::string fileName) {
+	std::ifstream jsonFile(fileName);
 	if (!jsonFile)
 		throw std::system_error(errno, std::system_category());
 
-	nlohmann::json parsedJson;
-	jsonFile >> parsedJson;
-	parseJson(parsedJson);
+	std::string jsonText((std::istreambuf_iterator<char>(jsonFile)), (std::istreambuf_iterator<char>()));
+	parseYosysJson(jsonText);
 }
-void coreDesign::parseJsonString(std::string jsonText) {
-	parseJson(nlohmann::json::parse(jsonText));
-}
-void coreDesign::parseJson(nlohmann::json parsedJson) {
+void schematic::parseYosysJson(std::string jsonText) {
+	nlohmann::json parsedJson = nlohmann::json::parse(jsonText);
 	unsigned int netNumberGuess = 50;
 	unsigned int netIncrementNumberGuess = 10;
 
 	if (parsedJson["modules"].size() > 1)
 		// FIXME: better message?
-		throw std::length_error("Only one module systems are supported");
+		throw std::length_error("Only one top level moduleImpl systems are supported");
 
-	struct netStruct {
-		unsigned int index;
-		net* baseNet;
-	};
+	std::vector<std::pair<terminal, bool>> netData(netNumberGuess,std::pair<terminal, bool>{terminal{"0"},false});
 
-	std::vector<netStruct> netData(netNumberGuess);
+	for (auto m_iter = parsedJson["modules"].begin(); m_iter != parsedJson["modules"].end(); ++m_iter) {
+		for (auto c_iter = m_iter.value()["cells"].begin(); c_iter != m_iter.value()["cells"].end(); ++c_iter) {
+			module m = addModule(c_iter.key());
 
-	for (nlohmann::json::iterator m_iter = parsedJson["modules"].begin(); m_iter != parsedJson["modules"].end();
-			++m_iter) {
-		for (nlohmann::json::iterator n_iter = m_iter.value()["netnames"].begin();
-				n_iter != m_iter.value()["netnames"].end(); ++n_iter) {
-			net& n = addNet(n_iter.key(), n_iter.value()["bits"].size());
+			for (auto t_iter = c_iter.value()["port_directions"].begin();
+					t_iter != c_iter.value()["port_directions"].end(); ++t_iter) {
+				terminal t =
+						m.addTerminal(t_iter.key(), parseTerminalType(c_iter.value()["port_directions"][t_iter.key()]),
+								c_iter.value()["connections"][t_iter.key()].size());
 
-			for (unsigned int i = 0; i < n_iter.value()["bits"].size(); ++i) {
-				unsigned int bit;
-				try {
-					bit = n_iter.value()["bits"][i].get<int>();
-				} catch (std::domain_error ex) {
-					// FIXME: Take care of the constants :/
-					bit = (unsigned)std::stoi(n_iter.value()["bits"][i].get<std::string>());
-				}
-				try {
-					netData.at(bit) = netStruct{i, &n};
-				} catch (std::out_of_range ex) {
-					netData.resize(bit + netIncrementNumberGuess);
-					netData.at(bit) = netStruct{i, &n};
-				}
-			}
-		}
-
-		for (nlohmann::json::iterator cell_iter = m_iter.value()["cells"].begin();
-				cell_iter != m_iter.value()["cells"].end(); ++cell_iter) {
-			module& m = addModule(cell_iter.key());
-
-			for (nlohmann::json::iterator t_iter = cell_iter.value()["port_directions"].begin();
-					t_iter != cell_iter.value()["port_directions"].end(); ++t_iter) {
-				terminal& t = m.addTerminal(t_iter.key(),
-						schematic::parseTerminalType(cell_iter.value()["port_directions"][t_iter.key()]),
-						cell_iter.value()["connections"][t_iter.key()].size());
-
-				for (int i = 0; i < t.terminalWidth; ++i) {
+				for (unsigned int i = 0; i < t.getWidth(); ++i) {
 					unsigned int bit;
 					try {
-						bit = cell_iter.value()["connections"][t_iter.key()][i].get<int>();
-						t[i].connect((*netData[bit].baseNet)[netData[bit].index]);
+						bit = c_iter.value()["connections"][t_iter.key()][i].get<int>();
+						if (bit > netData.size() || !netData.at(bit).second) {
+							netNumberGuess += netIncrementNumberGuess;
+							netData.resize(netNumberGuess,std::pair<terminal, bool>{terminal{"0"},false});
+							netData.at(bit) = std::pair<terminal,bool>{t.partial(i, i), true};
+						} else
+							t.partial(i, i).connect(netData.at(bit).first);
 					} catch (std::domain_error ex) {
-						// FIXME: Take care of the constants :/
-						std::string temp = cell_iter.value()["connections"][t_iter.key()][i].get<std::string>();
-						if (temp == "0" || temp == "x" || temp == "z" )
-							bit = 0;
-						else
-							bit = 1;
+						std::string temp = c_iter.value()["connections"][t_iter.key()][i].get<std::string>();
+						t.partial(i, i).connect(temp);
 					}
 				}
 			}
@@ -94,17 +63,22 @@ void coreDesign::parseJson(nlohmann::json parsedJson) {
 
 		for (nlohmann::json::iterator sysT_iter = m_iter.value()["ports"].begin();
 				sysT_iter != m_iter.value()["ports"].end(); ++sysT_iter) {
-			terminal& t = addSystemTerminal(sysT_iter.key(),
-					schematic::parseTerminalType(sysT_iter.value()["direction"]), sysT_iter.value()["bits"].size());
+			terminal t = addSystemTerminal(sysT_iter.key(), parseTerminalType(sysT_iter.value()["direction"]),
+					sysT_iter.value()["bits"].size());
 
-			for (int i = 0; i < t.terminalWidth; ++i) {
+			for (int i = 0; i < t.getWidth(); ++i) {
 				unsigned int bit;
 				try {
 					bit = sysT_iter.value()["bits"][i].get<int>();
-					t[i].connect((*netData[bit].baseNet)[netData[bit].index]);
+					if (bit > netData.size() || !netData.at(bit).second) {
+						netNumberGuess += netIncrementNumberGuess;
+						netData.resize(netNumberGuess,std::pair<terminal, bool>{terminal{"0"},false});
+						netData.at(bit) = std::pair<terminal,bool>{t.partial(i, i), true};
+					} else
+						t.partial(i, i).connect(netData.at(bit).first);
 				} catch (std::domain_error ex) {
-					// FIXME: Take care of the constants :/
-					bit = (unsigned)std::stoi(sysT_iter.value()["bits"][i].get<std::string>());
+					std::string temp = sysT_iter.value()["bits"][i].get<std::string>();
+					t.partial(i, i).connect(temp);
 				}
 			}
 		}

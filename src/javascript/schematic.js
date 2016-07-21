@@ -55,9 +55,9 @@ createDetailedSchematic = function(div, jsonString) {
 createSchematic = function(div, jsonString) {
 	'use strict';
 	var schematic = new Module.schematic();
-	var string = JSON.stringify(jsonString);
-	var data = JSON.parse(schematic.createJsonSchematicFromJson(string));
-	console.log(data);
+	var result = schematic.createJsonSchematicFromJson(JSON.stringify(jsonString))
+	console.log(result);
+	var data = JSON.parse(result);
 	var createRectChild = function(svgElem, x, y, size_x, size_y, strokeWidth) {
 		svgElem.rect(size_x, size_y).attr({x: x, y: y, fill: '#fff'}).stroke({width: strokeWidth});
 		return svgElem.nested().size(size_x, size_y).attr({x: x, y: y});

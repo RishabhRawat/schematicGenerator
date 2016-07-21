@@ -4,7 +4,6 @@
 #include <set>
 #include <unordered_set>
 #include "common.h"
-#include "net.h"
 
 class routing {
 	friend class coreDesign;
@@ -107,7 +106,7 @@ class routing {
 	orderedObstacleSet hObstacleSet, vObstacleSet;
 	const coreDesign* core;
 
-	coalescedNet* currentNet;
+	net* currentNet;
 	std::unordered_set<activeSegment *> activesA, activesB, inactives;
 	std::set<endSegment*, endSegmentLessComparator> E;
 

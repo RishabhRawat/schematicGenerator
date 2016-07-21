@@ -6,7 +6,7 @@ void partition::add(box* b) {
 	partitionBoxes.emplace_back(b);
 }
 
-void partition::addModule(module* m) {
+void partition::addModule(moduleImpl* m) {
 	partitionModules.insert(m);
 }
 
@@ -15,6 +15,6 @@ partition::~partition() {
 		delete b;
 }
 
-bool partition::contains(module* m) {
+bool partition::contains(moduleImpl* m) {
 	return partitionModules.find(m) != partitionModules.end();
 }
