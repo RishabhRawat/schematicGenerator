@@ -102,7 +102,7 @@ class routing {
 		}
 	} soln;
 
-	using orderedObstacleSet = std::set<obstacleSegment*, obstacleSegmentAscendingComparator>;
+	using orderedObstacleSet = std::vector<obstacleSegment*>;
 	orderedObstacleSet hObstacleSet, vObstacleSet;
 	const coreDesign* core;
 
@@ -145,5 +145,11 @@ private:
 	void clearActiveObstacles();
 
 	void clearActiveSet(std::unordered_set<activeSegment*>& set);
+
+	obstacleSegment* addObstacle(
+			int index, int end1, int end2, obstacleSegment::obstacleType oType, void* sourcePtr, bool horizontal);
+
+	obstacleSegment*
+	findObstacle(segment s, bool direction, orderedObstacleSet& reducedObstacleSet, orderedObstacleSet& obstacleSet);
 };
 #endif  // ROUTING_H
