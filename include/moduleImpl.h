@@ -18,7 +18,7 @@ private:
 	intPair position;
 
 	/* First along x-axis then along y-axis*/
-	intPair size = {50, 100};  // Default size
+	intPair size = {70, 120};  // Default size
 
 	mutable clockwiseRotation moduleRotation = clockwiseRotation::d_0;
 

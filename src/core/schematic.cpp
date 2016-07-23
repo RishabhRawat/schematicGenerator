@@ -96,10 +96,10 @@ terminal module::addTerminal(const std::string& terminalName, const terminalType
 			t = modulePointer->addTerminal(terminalName, termType::inType, width, false);
 			break;
 		case terminalType::out:
-			t = modulePointer->addTerminal(terminalName, termType::inType, width, false);
+			t = modulePointer->addTerminal(terminalName, termType::outType, width, false);
 			break;
 		case terminalType::inout:
-			t = modulePointer->addTerminal(terminalName, termType::inType, width, false);
+			t = modulePointer->addTerminal(terminalName, termType::inoutType, width, false);
 			break;
 	}
 	return {t, t->highestIndex, t->lowestIndex};
