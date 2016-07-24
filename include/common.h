@@ -2,6 +2,7 @@
 #define COMMON_H
 #include <string>
 #include <vector>
+#include <deque>
 #include "hashlib.h"
 
 enum class termType { inType, outType, inoutType };
@@ -43,6 +44,16 @@ struct intPair {
 		// returns y component of evaluating true
 		return a ? intPair{0, y} : intPair{x, 0};
 	}
+
+	bool operator==(const intPair& rhs) const {
+		return x==rhs.x &&
+				y==rhs.y;
+	}
+
+	bool operator!=(const intPair& rhs) const {
+		return !(rhs==*this);
+	}
+
 	static unsigned int L2norm_sq(const intPair a, const intPair b) {
 		return static_cast<unsigned int>((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 	}
@@ -124,6 +135,8 @@ typedef std::pair<moduleImpl*, std::vector<splicedTerminal*>> moduleSplicedTermi
 typedef hashlib::pool<splicedTerminal*> splicedTerminalSet;
 typedef hashlib::pool<moduleImpl*> moduleSet;
 typedef hashlib::pool<net*> netSet;
+
+typedef std::deque<intPair> line;
 
 struct exportStructure;
 

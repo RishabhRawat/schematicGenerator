@@ -1,6 +1,6 @@
 #include "terminalImpl.h"
-#include "moduleImpl.h"
 #include <functional>
+#include "moduleImpl.h"
 //
 // void terminalImpl::setRelativePosition(int x, int y){
 //	terminalPosition = {x, y};
@@ -42,9 +42,7 @@ terminalImpl::terminalImpl(const std::string& terminalIdentifier, const termType
 		bitTerminals.at(index).index = index;
 }
 
-terminalImpl::~terminalImpl() {
-
-}
+terminalImpl::~terminalImpl() {}
 
 void terminalImpl::joinbitTerminals(bitTerminal& a, bitTerminal& b) {
 	if (a.isConst && b.isConst) {
@@ -120,9 +118,20 @@ void terminalImpl::createSplicedTerminals() {
 			joinable = true;
 		else if (t0.isConst || t1.isConst)
 			joinable = false;
-		else
-			joinable = (t0.connectedBitNet->connectedBitTerminals == t1.connectedBitNet->connectedBitTerminals &&
-						t0.index + 1 == t1.index);
+		else {
+			joinable = true;
+			std::unordered_set<bitTerminal*> lowerBitTerminal;
+			for (auto&& cBT : t1.connectedBitNet->connectedBitTerminals) {
+				int lesserIndex = cBT->index;
+				lesserIndex--;
+				if (lesserIndex < 0) {
+					joinable = false;
+					break;
+				} else
+					lowerBitTerminal.insert(&cBT->baseTerminal->bitTerminals.at(lesserIndex));
+			}
+			joinable &= (t0.connectedBitNet->connectedBitTerminals == lowerBitTerminal);
+		}
 
 		if (joinable)
 			hI++;
@@ -138,3 +147,27 @@ void net::connectSplicedTerminal(splicedTerminal* t) {
 	t->attachedNet = this;
 	connectedModuleSplicedTerminalMap[t->baseTerminal->parentModule].push_back(t);
 }
+
+void net::addLineSegment(line* l, intPair p0, intPair p1) {
+	if(l->empty()) {
+		l->push_back(p0);
+		l->push_back(p1);
+	}
+	else {
+		if((l->back()) == p0) {
+			l->push_back(p1);
+		}
+		else if((l->back()) == p1) {
+			l->push_back(p0);
+		}
+		else if((l->front()) == p0) {
+			l->push_front(p1);
+		}
+		else if((l->front()) == p1) {
+			l->push_front(p0);
+		}
+		else
+			throw std::runtime_error("Incorrent point being added");
+	}
+}
+

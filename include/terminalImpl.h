@@ -91,6 +91,9 @@ class net {
 	friend class placement;
 	friend class routing;
 	moduleSplicedTerminalMap connectedModuleSplicedTerminalMap;
+	std::vector<line*> renderedLine;
+
+	static void addLineSegment(line* l, intPair p0, intPair p1);
 
 public:
 	void connectSplicedTerminal(splicedTerminal* t);

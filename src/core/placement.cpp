@@ -184,7 +184,12 @@ void placement::boxFormation() {
 		moduleSet* seeds = selectBoxSeeds(p);
 		if (seeds->empty())
 			throw std::runtime_error("No seeds");
-		while (!p->partitionModules.empty()) {  // FIXME: What if stuck in this loop
+		while (!p->partitionModules.empty()) {
+			if(seeds->empty()) {
+				for (moduleImpl* m : p->partitionModules) {
+					seeds->insert(m);
+				}
+			}
 			box* longestPath = nullptr;
 			for (moduleImpl* seed : *seeds) {
 				box* path = new box(seed);
@@ -202,7 +207,9 @@ void placement::boxFormation() {
 				m->setParentBox(longestPath);
 			}
 
-			seeds->erase(longestPath->boxModules.front());
+			for (moduleImpl* m : longestPath->boxModules) {
+				seeds->erase(m);
+			}
 			p->add(longestPath);
 		}
 		delete seeds;

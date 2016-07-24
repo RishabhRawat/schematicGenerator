@@ -6,7 +6,7 @@ const int strokeWidth = 5;
 
 #ifdef WEB_COMPILATION
 #include <emscripten/val.h>
-void line(int x0, int y0, int x1, int y1) {
+void createBlackLine(int x0, int y0, int x1, int y1) {
 	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
 	cppfuncs.call<void>("createWire", x0, y0, x1, y1);
 }
@@ -43,16 +43,14 @@ void routing::route() {
 
 		splicedTerminal* t0 = tSet.pop();
 		splicedTerminal* t1 = tSet.pop();
-		std::cout << "T0 " << t0->placedPosition.x << " " << t0->placedPosition.y << std::endl;
-		std::cout << "T1 " << t1->placedPosition.x << " " << t1->placedPosition.y << std::endl;
 		initNet(t0, t1);
 
 #ifdef WEB_COMPILATION
 		clearActives();
 #endif  // WEB_COMPILATION
-//		while (!tSet.empty()) {
-//			expandNet(tSet.pop());
-//		}
+		while (!tSet.empty()) {
+			expandNet(tSet.pop());
+		}
 	}
 }
 
@@ -171,13 +169,13 @@ bool routing::expandActives(
 
 void createLine(int x0, int y0, int x1, int y1) {
 #ifdef WEB_COMPILATION
-	line(x0, y0, x1, y1);
+//	createBlackLine(x0, y0, x1, y1);
 #endif  // WEB_COMPILATION
-	std::cout << x0 << " " << y0 << " " << x1 << " " << y1 << std::endl;
+//	std::cout << x0 << " " << y0 << " " << x1 << " " << y1 << std::endl;
 }
 
 void routing::reconstructSolution() {
-	std::cout << "Current Solution" << std::endl;
+	line* newLine = new line();
 	activeSegment* s = soln.a;
 	intPair currentPoint = soln.optimalPoint;
 	while (s) {
@@ -186,6 +184,7 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
+			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
@@ -193,6 +192,7 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);
+			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
@@ -206,6 +206,7 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
+			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
@@ -213,11 +214,13 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);
+			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
 		s = s->prevSegment;
 	}
+	currentNet->renderedLine.push_back(newLine);
 	soln.clear();
 }
 
@@ -262,9 +265,11 @@ routing::obstacleSegment* routing::findObstacle(
 	}
 	obstacleSegment obstacleScanner{s.index};
 
-	return direction ? *std::upper_bound(reducedObstacleSet.begin(), reducedObstacleSet.end(), &obstacleScanner, obstacleSegmentAscendingComparator())
-					 : *orderedObstacleSet::reverse_iterator(std::lower_bound(
-							   reducedObstacleSet.begin(), reducedObstacleSet.end(), &obstacleScanner,obstacleSegmentAscendingComparator()));
+	return direction
+				   ? *std::upper_bound(reducedObstacleSet.begin(), reducedObstacleSet.end(), &obstacleScanner,
+							 obstacleSegmentAscendingComparator())
+				   : *orderedObstacleSet::reverse_iterator(std::lower_bound(reducedObstacleSet.begin(),
+							 reducedObstacleSet.end(), &obstacleScanner, obstacleSegmentAscendingComparator()));
 }
 bool routing::generateEndSegments(
 		activeSegment* actSegment, segment s, int crossovers, orderedObstacleSet& obstacleSet) {
@@ -418,8 +423,10 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 	obstacleSegment lowerScanEnd{horizontal ? lowerT->placedPosition.x : lowerT->placedPosition.y};
 	obstacleSegment higherScanEnd{horizontal ? higherT->placedPosition.x : higherT->placedPosition.y};
 
-	auto stIt = std::upper_bound(perpendicularObstacles.begin(), perpendicularObstacles.end(), &lowerScanEnd);
-	auto endIt = std::lower_bound(perpendicularObstacles.begin(), perpendicularObstacles.end(), &higherScanEnd);
+	auto stIt = std::upper_bound(perpendicularObstacles.begin(), perpendicularObstacles.end(), &lowerScanEnd,
+			obstacleSegmentAscendingComparator());
+	auto endIt = std::lower_bound(perpendicularObstacles.begin(), perpendicularObstacles.end(), &higherScanEnd,
+			obstacleSegmentAscendingComparator());
 
 	// Checking for obstacles
 	while (stIt != endIt) {
@@ -440,6 +447,9 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 				currentNet, horizontal);
 	}
 	createLine(t0->placedPosition.x, t0->placedPosition.y, t1->placedPosition.x, t1->placedPosition.y);
+	line* newLine = new line{
+			intPair{t0->placedPosition.x, t0->placedPosition.y}, intPair{t1->placedPosition.x, t1->placedPosition.y}};
+	currentNet->renderedLine.push_back(newLine);
 
 	clearActiveObstacles();
 	return true;
@@ -534,12 +544,12 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 	int totalBends = actSegment->bends, totalCrossovers = actSegment->crossedNets;
 	if (s.end2 - s.end1 > 2 * strokeWidth) {
 		// NOTE: need to work on how to decide the closest index
-				closestIndex = std::abs(s.end2 - 3*strokeWidth - actSegment->prevSegment->index) >
-											   std::abs(s.end1 + 3*strokeWidth - actSegment->prevSegment->index)
-									   ? s.end1 + 3*strokeWidth
-									   : s.end2 - 3*strokeWidth;
+		closestIndex = std::abs(s.end2 - 3 * strokeWidth - actSegment->prevSegment->index) >
+									   std::abs(s.end1 + 3 * strokeWidth - actSegment->prevSegment->index)
+							   ? s.end1 + 3 * strokeWidth
+							   : s.end2 - 3 * strokeWidth;
 
-//		closestIndex = (s.end1 + s.end2) / 2;
+		//		closestIndex = (s.end1 + s.end2) / 2;
 	} else {
 		// NOTE: Need to add another option to increase cost!!
 		totalBends += 10000;

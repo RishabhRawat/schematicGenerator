@@ -27,7 +27,7 @@ std::string schematic::createJsonSchematicFromJson(std::string jsonData) {
 	return pSchematicGenerator->createJsonSchematicFromJson();
 }
 void schematic::doRouting() {
-	pSchematicGenerator->doRouting();
+	routedJsonFile = pSchematicGenerator->doRouting();
 }
 
 schematic::~schematic() {
@@ -62,6 +62,10 @@ module schematic::addModule(const std::string& moduleName) {
 
 module schematic::getModule(const std::string& moduleName) {
 	return {pSchematicGenerator->subModules.find(moduleName)->second};
+}
+
+std::string schematic::getRoutedNetsJson() {
+	return routedJsonFile;
 }
 
 module& module::setSize(const int width, const int height) {
@@ -147,6 +151,7 @@ EMSCRIPTEN_BINDINGS(schematic) {
 			.constructor<>()
 			.function("createJsonSchematicFromJson", &schematic::createJsonSchematicFromJson)
 			.function("createDetailedJsonSchematicFromJson", &schematic::createDetailedJsonSchematicFromJson)
-			.function("doRouting", &schematic::doRouting);
+			.function("doRouting", &schematic::doRouting)
+			.function("getRoutedNetsJson", &schematic::getRoutedNetsJson);
 }
 #endif  // WEB_COMPILATION

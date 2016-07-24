@@ -1,4 +1,5 @@
 #include <box.h>
+#include <routing.h>
 #include "coreDesign.h"
 #include "partition.h"
 #include "placement.h"
@@ -98,4 +99,21 @@ std::string coreDesign::createJsonSchematicFromJson() {
 		outputJson["modules"].push_back(mS);
 	}
 	return outputJson.dump(2);
+}
+std::string coreDesign::exportRoutingJson() {
+	nlohmann::json routing;
+	for (net* cN : internalNets) {
+		nlohmann::json completeNetObject;
+		for (line* iN : cN->renderedLine) {
+			nlohmann::json individualNetObject;
+			for (intPair p : *iN) {
+				individualNetObject["points"].push_back({p.x, p.y});
+			}
+			if (!iN->empty())
+				completeNetObject.push_back(individualNetObject);
+		}
+		if (!cN->renderedLine.empty())
+			routing.push_back(completeNetObject);
+	}
+	return routing.dump(2);
 }

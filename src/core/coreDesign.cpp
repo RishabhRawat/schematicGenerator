@@ -94,7 +94,8 @@ void coreDesign::initializeStructures() {
 	}
 }
 
-void coreDesign::doRouting() {
+std::string coreDesign::doRouting() {
 	routing routeObject(this);
 	routeObject.route();
+	return exportRoutingJson();
 }

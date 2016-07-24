@@ -24,10 +24,12 @@ class coreDesign {
 	void initializeStructures();
 
 	void doPlacement(schematicParameters parameters);
-	void doRouting();
+	std::string doRouting();
 
 	std::string createDebugJsonSchematicFromJson();
 	std::string createJsonSchematicFromJson();
+
+	std::string exportRoutingJson();
 };
 
 #endif  // PLACEMENT_H

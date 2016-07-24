@@ -56,6 +56,7 @@ public:
 class schematic {
 private:
 	coreDesign* pSchematicGenerator;
+	std::string routedJsonFile;
 
 public:
 	schematic();
@@ -79,6 +80,8 @@ public:
 
 	void parseJsonFile(std::string fileName);
 	void parseYosysJson(std::string jsonText);
+
+	std::string getRoutedNetsJson();
 
 	std::string createDetailedJsonSchematicFromJson(std::string jsonData);
 	std::string createJsonSchematicFromJson(std::string jsonData);
