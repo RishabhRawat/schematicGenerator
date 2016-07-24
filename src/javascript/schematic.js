@@ -61,8 +61,8 @@ var renderModule = function (mod, parent) {
 
 var renderWires = function (cWire,group) {
     'use strict';
+    var wireGroup = draw.g();
     for(var i = 0; i < cWire.length; i++) {
-        var wireGroup = draw.g();
         var linePoints = cWire[i]['points'];
         for(var j = 1; j < linePoints.length; j++) {
             var segment= draw.line(linePoints[j-1][0],linePoints[j-1][1],linePoints[j][0],linePoints[j][1]).attr({
@@ -72,9 +72,9 @@ var renderWires = function (cWire,group) {
             wireGroup.append(segment);
             wireGroup.addClass("netList")
         }
-        group.append(wireGroup)
     }
-}
+    group.append(wireGroup)
+};
 
 
 createDetailedSchematic = function (div, jsonString) {

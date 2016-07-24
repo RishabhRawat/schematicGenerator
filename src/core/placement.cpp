@@ -185,7 +185,7 @@ void placement::boxFormation() {
 		if (seeds->empty())
 			throw std::runtime_error("No seeds");
 		while (!p->partitionModules.empty()) {
-			if(seeds->empty()) {
+			if (seeds->empty()) {
 				for (moduleImpl* m : p->partitionModules) {
 					seeds->insert(m);
 				}
