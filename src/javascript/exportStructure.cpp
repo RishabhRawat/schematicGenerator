@@ -109,10 +109,10 @@ std::string coreDesign::exportRoutingJson() {
 			for (intPair p : *iN) {
 				individualNetObject["points"].push_back({p.x, p.y});
 			}
-			if (!iN->empty())
+			if (!individualNetObject.empty())
 				completeNetObject.push_back(individualNetObject);
 		}
-		if (!cN->renderedLine.empty())
+		if (!completeNetObject.empty())
 			routing.push_back(completeNetObject);
 	}
 	return routing.dump(2);

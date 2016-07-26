@@ -16,7 +16,6 @@ class coreDesign {
 
 	intPair size, offset;
 	netSet internalNets;
-	netSet constNets;
 
 	coreDesign() : systemModule("topModule") {}
 	~coreDesign();

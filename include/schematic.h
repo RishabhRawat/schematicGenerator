@@ -48,7 +48,7 @@ public:
 	terminal& connect(terminal t);
 
 public:
-	int getWidth() const {
+	unsigned getWidth() const {
 		return highestIndex - lowestIndex + 1;
 	}
 };

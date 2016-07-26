@@ -99,3 +99,10 @@ std::string coreDesign::doRouting() {
 	routeObject.route();
 	return exportRoutingJson();
 }
+
+net::~net() {
+	for (line* l : renderedLine) {
+		delete l;
+	}
+}
+

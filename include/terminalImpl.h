@@ -96,6 +96,7 @@ class net {
 	static void addLineSegment(line* l, intPair p0, intPair p1);
 
 public:
+	~net();
 	void connectSplicedTerminal(splicedTerminal* t);
 };
 

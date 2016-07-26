@@ -305,57 +305,38 @@ bool routing::generateEndSegments(
 		cutSegment.end2 = obstacle->end2;
 	}
 
-	endSegment* newEndSegment = new endSegment{std::abs(cutSegment.index - actSegment->index) + strokeWidth,
-			std::abs(obstacle->index - cutSegment.index) - 2 * strokeWidth, cutSegment.end1, cutSegment.end2,
-			actSegment->crossedNets, actSegment};
+	if(std::abs(obstacle->index - cutSegment.index)  - 2 * strokeWidth > 0) {
+		E.insert(new endSegment{std::abs(cutSegment.index-actSegment->index)+strokeWidth,
+				std::abs(obstacle->index-cutSegment.index)-2*strokeWidth, cutSegment.end1, cutSegment.end2,
+				actSegment->crossedNets, actSegment});
+	}
 
 	switch (obstacle->type) {
-		case obstacleSegment::module:
-			if (newEndSegment->length > 0)
-				E.insert(newEndSegment);
-			else
-				delete newEndSegment;
-			break;
 		case obstacleSegment::net:
 			if (static_cast<net*>(obstacle->sourcePtr) != currentNet) {
-				if (newEndSegment->length > 0)
-					E.insert(newEndSegment);
-				else
-					delete newEndSegment;
 				solved |= generateEndSegments(actSegment,
 						segment{actSegment->isUpRight() ? obstacle->index + strokeWidth : obstacle->index - strokeWidth,
 								cutSegment.end1, cutSegment.end2},
 						crossovers + 1, obstacleSet);
 			} else {
-				delete newEndSegment;
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
 			}
 			break;
 		case obstacleSegment::startA:
-			if (newEndSegment->length > 0)
-				E.insert(newEndSegment);
-			else
-				delete newEndSegment;
-
 			if (activesA.find(actSegment) == activesA.end()) {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
 			}
 			break;
 		case obstacleSegment::startB:
-			if (newEndSegment->length > 0)
-				E.insert(newEndSegment);
-			else
-				delete newEndSegment;
-
 			if (activesB.find(actSegment) == activesB.end()) {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
 			}
 			break;
-		case obstacleSegment::compare:
-			throw std::runtime_error("A compare type is to be never inserted!!");
+		default:
+			break;
 	}
 	sortObstacles();
 	return solved;

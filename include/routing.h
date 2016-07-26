@@ -110,6 +110,8 @@ class routing {
 	std::unordered_set<activeSegment *> activesA, activesB, inactives;
 	std::set<endSegment*, endSegmentLessComparator> E;
 
+	bool hSortNeeded = false, vSortNeeded = false;
+
 	void addObstacleBounding();
 
 	void initNet(splicedTerminal* t0, splicedTerminal* t1);
@@ -149,12 +151,9 @@ private:
 	obstacleSegment* addObstacle(
 			int index, int end1, int end2, obstacleSegment::obstacleType oType, void* sourcePtr, bool horizontal);
 
-	obstacleSegment*
-	findObstacle(segment s, bool direction, orderedObstacleSet& reducedObstacleSet, orderedObstacleSet& obstacleSet);
+	obstacleSegment* findObstacle(
+			segment s, bool direction, orderedObstacleSet& reducedObstacleSet, orderedObstacleSet& obstacleSet);
 
 	void sortObstacles();
-
-	bool hSortNeeded = false;
-	bool vSortNeeded = false;
 };
 #endif  // ROUTING_H

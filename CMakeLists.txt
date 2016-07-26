@@ -10,8 +10,8 @@ IF (EMCC)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0")
 
 ELSE()
-    SET(CMAKE_BUILD_TYPE  "Release")
-#SET(CMAKE_CXX_FLAGS_DEBUG "${CMAcKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
+#    SET(CMAKE_BUILD_TYPE  "Release")
+#SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
 #    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ")
 ENDIF ()
 

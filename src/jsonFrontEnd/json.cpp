@@ -66,7 +66,7 @@ void schematic::parseYosysJson(std::string jsonText) {
 			terminal t = addSystemTerminal(sysT_iter.key(), parseTerminalType(sysT_iter.value()["direction"]),
 					sysT_iter.value()["bits"].size());
 
-			for (int i = 0; i < t.getWidth(); ++i) {
+			for (unsigned int i = 0; i < t.getWidth(); ++i) {
 				unsigned int bit;
 				try {
 					bit = sysT_iter.value()["bits"][i].get<int>();
