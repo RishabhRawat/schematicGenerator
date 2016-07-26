@@ -151,5 +151,10 @@ private:
 
 	obstacleSegment*
 	findObstacle(segment s, bool direction, orderedObstacleSet& reducedObstacleSet, orderedObstacleSet& obstacleSet);
+
+	void sortObstacles();
+
+	bool hSortNeeded = false;
+	bool vSortNeeded = false;
 };
 #endif  // ROUTING_H

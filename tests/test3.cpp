@@ -11,5 +11,6 @@ int main(int argc, char** argv) {
 //	myPlacementObject.createJsonSchematicFromJson(str);
 	std::cout << myPlacementObject.createJsonSchematicFromJson(str) << std::endl;
 	myPlacementObject.doRouting();
+	std::cout<<myPlacementObject.getRoutedNetsJson()<<std::endl;
 	return 0;
 }

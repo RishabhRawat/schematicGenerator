@@ -79,6 +79,7 @@ void routing::addObstacleBounding() {
 		addObstacle(sysT->placedPosition.x, sysT->placedPosition.y, sysT->placedPosition.y, obstacleSegment::module,
 				nullptr, false);
 	}
+	sortObstacles();
 }
 
 void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
@@ -146,9 +147,10 @@ bool routing::expandActives(
 
 	for (activeSegment* s : actSegmentSet) {
 		if (s->bends == j) {
-			if (!generateEndSegments(s, *s, s->crossedNets, s->scansVertical() ? hObstacleSet : vObstacleSet))
+			if (!generateEndSegments(s, *s, s->crossedNets, s->scansVertical() ? hObstacleSet : vObstacleSet)) {
 				newActives(s, newActiveSegments);
-			else
+				sortObstacles();
+			} else
 				solved = true;
 			for (endSegment* ends : E) {
 				delete ends;
@@ -163,6 +165,7 @@ bool routing::expandActives(
 	if (solved) {
 		clearActiveObstacles();
 		reconstructSolution();
+		sortObstacles();
 	}
 	return solved;
 }
@@ -171,7 +174,7 @@ void createLine(int x0, int y0, int x1, int y1) {
 #ifdef WEB_COMPILATION
 //	createBlackLine(x0, y0, x1, y1);
 #endif  // WEB_COMPILATION
-//	std::cout << x0 << " " << y0 << " " << x1 << " " << y1 << std::endl;
+		//	std::cout << x0 << " " << y0 << " " << x1 << " " << y1 << std::endl;
 }
 
 void routing::reconstructSolution() {
@@ -249,12 +252,23 @@ routing::obstacleSegment* routing::addObstacle(
 	obstacleSegment* obstacle = new obstacleSegment(index, end1, end2, oType, sourcePtr);
 	if (horizontal) {
 		hObstacleSet.push_back(obstacle);
-		std::sort(hObstacleSet.begin(), hObstacleSet.end(), obstacleSegmentAscendingComparator());
+		hSortNeeded = true;
 	} else {
 		vObstacleSet.push_back(obstacle);
-		std::sort(vObstacleSet.begin(), vObstacleSet.end(), obstacleSegmentAscendingComparator());
+		vSortNeeded = true;
 	}
 	return obstacle;
+}
+
+void routing::sortObstacles() {
+	if (hSortNeeded) {
+		std::sort(hObstacleSet.begin(), hObstacleSet.end(), obstacleSegmentAscendingComparator());
+		hSortNeeded = false;
+	}
+	if (vSortNeeded) {
+		std::sort(vObstacleSet.begin(), vObstacleSet.end(), obstacleSegmentAscendingComparator());
+		vSortNeeded = false;
+	}
 }
 
 routing::obstacleSegment* routing::findObstacle(
@@ -297,11 +311,17 @@ bool routing::generateEndSegments(
 
 	switch (obstacle->type) {
 		case obstacleSegment::module:
-			E.insert(newEndSegment);
+			if (newEndSegment->length > 0)
+				E.insert(newEndSegment);
+			else
+				delete newEndSegment;
 			break;
 		case obstacleSegment::net:
 			if (static_cast<net*>(obstacle->sourcePtr) != currentNet) {
-				E.insert(newEndSegment);
+				if (newEndSegment->length > 0)
+					E.insert(newEndSegment);
+				else
+					delete newEndSegment;
 				solved |= generateEndSegments(actSegment,
 						segment{actSegment->isUpRight() ? obstacle->index + strokeWidth : obstacle->index - strokeWidth,
 								cutSegment.end1, cutSegment.end2},
@@ -313,57 +333,23 @@ bool routing::generateEndSegments(
 			}
 			break;
 		case obstacleSegment::startA:
-			E.insert(newEndSegment);
+			if (newEndSegment->length > 0)
+				E.insert(newEndSegment);
+			else
+				delete newEndSegment;
 
-			if (activesA.find(actSegment) != activesA.end()) {
-				//				for (auto&& a : activesA) {
-				//					if (a->index == obstacle->index && a->end1 <= obstacle->end1 && obstacle->end2 <=
-				// a->end2)
-				//{
-				//						if (a->end1 < obstacle->end1) {
-				//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index,
-				// a->end1,
-				//									obstacle->end1, actSegment->scanDirection,
-				// actSegment->prevSegment});
-				//						}
-				//						if (obstacle->end2 < a->end2) {
-				//							activesA.insert(new activeSegment{a->bends, a->crossedNets, a->index,
-				// obstacle->end2,
-				//									a->end2, actSegment->scanDirection, actSegment->prevSegment});
-				//						}
-				//						inactives.insert(a);
-				//						activesA.erase(a);
-				//						break;
-				//					}
-				//				}
-			} else {
+			if (activesA.find(actSegment) == activesA.end()) {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
 			}
 			break;
 		case obstacleSegment::startB:
-			E.insert(newEndSegment);
+			if (newEndSegment->length > 0)
+				E.insert(newEndSegment);
+			else
+				delete newEndSegment;
 
-			if (activesB.find(actSegment) != activesB.end()) {
-				//				for (activeSegment* b : activesB) {
-				//					if (b->index == obstacle->index && b->end1 <= obstacle->end1 && obstacle->end2 <=
-				// b->end2)
-				//{
-				//						if (b->end1 < obstacle->end1)
-				//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index,
-				// b->end1,
-				//									obstacle->end1, actSegment->scanDirection,
-				// actSegment->prevSegment});
-				//						if (obstacle->end2 < b->end2)
-				//							activesB.insert(new activeSegment{b->bends, b->crossedNets, b->index,
-				// obstacle->end2,
-				//									b->end2, actSegment->scanDirection, actSegment->prevSegment});
-				//						inactives.insert(b);
-				//						activesB.erase(b);
-				//						break;
-				//					}
-				//				}
-			} else {
+			if (activesB.find(actSegment) == activesB.end()) {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
 			}
@@ -371,6 +357,7 @@ bool routing::generateEndSegments(
 		case obstacleSegment::compare:
 			throw std::runtime_error("A compare type is to be never inserted!!");
 	}
+	sortObstacles();
 	return solved;
 }
 
@@ -452,6 +439,7 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 	currentNet->renderedLine.push_back(newLine);
 
 	clearActiveObstacles();
+	sortObstacles();
 	return true;
 }
 
@@ -466,11 +454,11 @@ void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegm
 				new activeSegment{actS->bends + 1, e->crossovers, e->end1, 0, 0, left, e->baseSegment};
 		leftSegment->scanDirection = actS->scansVertical() ? left : down;
 		if (actS->isUpRight()) {
-			leftSegment->end1 = ePrevHighest->farIndex() + strokeWidth;
+			leftSegment->end1 = std::max(e->nearIndex(), ePrevHighest->farIndex() + strokeWidth);
 			leftSegment->end2 = e->farIndex();
 		} else {
 			leftSegment->end1 = e->farIndex();
-			leftSegment->end2 = ePrevHighest->farIndex() - strokeWidth;
+			leftSegment->end2 = std::min(e->nearIndex(), ePrevHighest->farIndex() - strokeWidth);
 		}
 		newActiveSegments.insert(leftSegment);
 		addObstacle(
@@ -481,11 +469,11 @@ void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegm
 				new activeSegment{actS->bends + 1, e->crossovers, e->end2, 0, 0, right, e->baseSegment};
 		rightSegment->scanDirection = actS->scansVertical() ? right : up;
 		if (actS->isUpRight()) {
-			rightSegment->end1 = eNextHighest->farIndex() + strokeWidth;
+			rightSegment->end1 = std::max(e->nearIndex(), eNextHighest->farIndex() + strokeWidth);
 			rightSegment->end2 = e->farIndex();
 		} else {
 			rightSegment->end1 = e->farIndex();
-			rightSegment->end2 = eNextHighest->farIndex() - strokeWidth;
+			rightSegment->end2 = std::min(e->nearIndex(), eNextHighest->farIndex() - strokeWidth);
 		}
 		newActiveSegments.insert(rightSegment);
 		addObstacle(rightSegment->index, rightSegment->end1, rightSegment->end2, oType, rightSegment,
