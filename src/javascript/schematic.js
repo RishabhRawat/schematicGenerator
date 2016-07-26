@@ -63,15 +63,25 @@ var renderWires = function (cWire,group) {
     'use strict';
     var wireGroup = draw.g();
     for(var i = 0; i < cWire.length; i++) {
+        var svgPath = '';
         var linePoints = cWire[i]['points'];
-        for(var j = 1; j < linePoints.length; j++) {
-            var segment= draw.line(linePoints[j-1][0],linePoints[j-1][1],linePoints[j][0],linePoints[j][1]).attr({
-                'stroke-width': 1,
-                'stroke': 'black'
-            });
-            wireGroup.append(segment);
-            wireGroup.addClass("netList")
+        for(var j = 0; j < linePoints.length; j++) {
+        if(j == 0){
+            svgPath += 'M'
         }
+        else {
+            svgPath +='L'
+        }
+        svgPath += linePoints[j][0] + ' '+ linePoints[j][1];
+
+        }
+        var path = draw.path(svgPath).attr({
+            'stroke-width': 1,
+            'stroke': 'black',
+            'fill': 'none'
+        });
+        wireGroup.append(path);
+        wireGroup.addClass('netList');
     }
     group.append(wireGroup)
 };

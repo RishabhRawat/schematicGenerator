@@ -521,7 +521,7 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 		//		closestIndex = (s.end1 + s.end2) / 2;
 	} else {
 		// NOTE: Need to add another option to increase cost!!
-		totalBends += 10000;
+		totalBends += 1000;
 		closestIndex = (s.end1 + s.end2) / 2;
 	}
 
