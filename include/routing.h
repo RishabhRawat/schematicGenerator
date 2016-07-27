@@ -133,7 +133,6 @@ private:
 
 	void reconstructSolution();
 
-	bool generateEndSegments(activeSegment* actSegment, segment s, int crossovers, orderedObstacleSet& obstacleSet);
 	bool straightLine(splicedTerminal* t0, splicedTerminal* t1);
 
 	unsigned int pathLength(activeSegment* actS, int x);
@@ -151,11 +150,10 @@ private:
 	obstacleSegment* addObstacle(
 			int index, int end1, int end2, obstacleSegment::obstacleType oType, void* sourcePtr, bool horizontal);
 
-	obstacleSegment* findObstacle(
-			segment s, bool direction, orderedObstacleSet& reducedObstacleSet, orderedObstacleSet& obstacleSet);
-
 	void sortObstacles();
 
-	int optimalIndexForSegment(activeSegment* s);
+	obstacleSegment* findObstacle(segment s, bool direction, orderedObstacleSet& obstacleSet);
+
+	bool generateEndSegments(activeSegment* actSegment, orderedObstacleSet& obstacleSet);
 };
 #endif  // ROUTING_H

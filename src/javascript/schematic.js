@@ -1,6 +1,7 @@
 var draw;
 var cppfuncs = {};
 var actives;
+var completeYosysSchematic;
 
 cppfuncs.createWire = function (x0, y0, x1, y1, width) {
     'use strict';
@@ -45,7 +46,12 @@ var renderTerminal = function (term, parent) {
 
 var renderModule = function (mod, parent) {
     'use strict';
-    var text = '<svg><foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' + mod.size_y + '"><style> .thisDiv { display: table; font-size: 0.7rem; width: ' + mod.size_x + 'px; height: ' + mod.size_y + 'px; }</style> <div class="thisDiv"> <p class="centerStuffP">' + mod.name + '</p>  </div> </foreignObject></svg>';
+    var name = mod.name;
+    var completeModule = completeYosysSchematic.modules[Object.keys(completeYosysSchematic.modules)[0]].cells[mod.name];
+    if (completeModule.hide_name) {
+        name = completeModule.type;
+    }
+    var text = '<svg><foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' + mod.size_y + '"><style> .thisDiv { display: table; font-size: 0.7rem; width: ' + mod.size_x + 'px; height: ' + mod.size_y + 'px; }</style> <div class="thisDiv"> <p class="centerStuffP">' + name + '</p>  </div> </foreignObject></svg>';
     var t = Snap.parse(text);
     parent.append(t);
     var m = draw.rect(mod.pos_x, mod.pos_y, mod.size_x, mod.size_y);
@@ -53,26 +59,33 @@ var renderModule = function (mod, parent) {
         fill: 'transparent',
         stroke: 'black'
     });
-    var title = Snap.parse('<title>' + mod.name + '</title>');
+
+    var tooltipString = mod.name + '\n' + completeModule.type + '\n\n' + 'PARAMETERS:';
+    var paramKeys = Object.keys(completeModule.parameters);
+    for (var i = 0; i < paramKeys.length; i++) {
+        tooltipString += '\n' + paramKeys[i] + ': '+ completeModule.parameters[paramKeys[i]];
+    }
+
+    var title = Snap.parse('<title>' + tooltipString + '</title>');
     m.append(title);
     for (var j = 0; j < mod.terminals.length; j++)
         renderTerminal(mod.terminals[j], parent)
 };
 
-var renderWires = function (cWire,group) {
+var renderWires = function (cWire, group) {
     'use strict';
     var wireGroup = draw.g();
-    for(var i = 0; i < cWire.length; i++) {
+    for (var i = 0; i < cWire.length; i++) {
         var svgPath = '';
         var linePoints = cWire[i]['points'];
-        for(var j = 0; j < linePoints.length; j++) {
-        if(j == 0){
-            svgPath += 'M '
-        }
-        else {
-            svgPath +='L '
-        }
-        svgPath += linePoints[j][0] + ' '+ linePoints[j][1] + ' ';
+        for (var j = 0; j < linePoints.length; j++) {
+            if (j == 0) {
+                svgPath += 'M '
+            }
+            else {
+                svgPath += 'L '
+            }
+            svgPath += linePoints[j][0] + ' ' + linePoints[j][1] + ' ';
 
         }
         var path = draw.path(svgPath).attr({
@@ -85,7 +98,6 @@ var renderWires = function (cWire,group) {
     }
     group.append(wireGroup)
 };
-
 
 createDetailedSchematic = function (div, jsonString) {
     'use strict';
@@ -115,9 +127,9 @@ createDetailedSchematic = function (div, jsonString) {
 };
 createSchematic = function (div, jsonString) {
     'use strict';
+    completeYosysSchematic = jsonString;
     var schematic = new Module.schematic();
     var data = JSON.parse(schematic.createJsonSchematicFromJson(JSON.stringify(jsonString)))
-    console.log(JSON.stringify(data));
     var svg = Snap(data.size_x + 6, data.size_y + 6);
     var tRect = svg.rect(3, 3, data.size_x, data.size_y);
     actives = svg.svg(3, 3, data.size_x, data.size_y);
