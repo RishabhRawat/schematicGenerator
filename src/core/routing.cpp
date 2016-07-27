@@ -187,11 +187,7 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
-			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
-			if (corner.x || corner.y) {
-				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
-				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
-			}
+			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
@@ -199,11 +195,7 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);
-			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
-			if (corner.x || corner.y) {
-				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
-				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
-			}
+			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
@@ -217,11 +209,7 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
-			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
-			if (corner.x || corner.y) {
-				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
-				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
-			}
+			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
@@ -229,11 +217,7 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);
-			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
-			if (corner.x || corner.y) {
-				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
-				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
-			}
+			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
@@ -290,7 +274,7 @@ void routing::sortObstacles() {
 routing::obstacleSegment* routing::findObstacle(
 		segment s, bool direction, orderedObstacleSet& reducedObstacleSet, orderedObstacleSet& obstacleSet) {
 	for (auto&& o : obstacleSet) {
-		if (!(o->end1 > s.end2 || o->end2 < s.end1))
+		if (!(o->end1 + strokeWidth > s.end2 || o->end2 - strokeWidth < s.end1))
 			reducedObstacleSet.push_back(o);
 	}
 	obstacleSegment obstacleScanner{s.index};
@@ -301,6 +285,7 @@ routing::obstacleSegment* routing::findObstacle(
 				   : *orderedObstacleSet::reverse_iterator(std::lower_bound(reducedObstacleSet.begin(),
 							 reducedObstacleSet.end(), &obstacleScanner, obstacleSegmentAscendingComparator()));
 }
+
 bool routing::generateEndSegments(
 		activeSegment* actSegment, segment s, int crossovers, orderedObstacleSet& obstacleSet) {
 	bool solved = false;

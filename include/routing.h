@@ -155,5 +155,7 @@ private:
 			segment s, bool direction, orderedObstacleSet& reducedObstacleSet, orderedObstacleSet& obstacleSet);
 
 	void sortObstacles();
+
+	int optimalIndexForSegment(activeSegment* s);
 };
 #endif  // ROUTING_H
