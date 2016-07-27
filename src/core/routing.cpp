@@ -187,7 +187,11 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
-			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
+			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
+			if (corner.x || corner.y) {
+				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
+				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
+			}
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
@@ -195,7 +199,11 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);
-			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
+			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
+			if (corner.x || corner.y) {
+				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
+				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
+			}
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
@@ -209,7 +217,11 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
-			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
+			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
+			if (corner.x || corner.y) {
+				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
+				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
+			}
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
@@ -217,7 +229,11 @@ void routing::reconstructSolution() {
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);
-			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
+			intPair corner = net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
+			if (corner.x || corner.y) {
+				addObstacle(corner.x, corner.y, corner.y, obstacleSegment::module, nullptr, true);
+				addObstacle(corner.y, corner.x, corner.x, obstacleSegment::module, nullptr, false);
+			}
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
 			currentPoint = intPair{s->index, currentPoint.y};
 		}
@@ -297,27 +313,28 @@ bool routing::generateEndSegments(
 	if (s.end1 < obstacle->end1) {
 		solved |= generateEndSegments(
 				actSegment, segment{s.index, s.end1, obstacle->end1 - strokeWidth}, crossovers, obstacles);
-		cutSegment.end1 = obstacle->end1;
+		cutSegment.end1 = obstacle->end1 + 2;
 	}
 	if (obstacle->end2 < s.end2) {
 		solved |= generateEndSegments(
 				actSegment, segment{s.index, obstacle->end2 + strokeWidth, s.end2}, crossovers, obstacles);
-		cutSegment.end2 = obstacle->end2;
+		cutSegment.end2 = obstacle->end2 - 2;
 	}
 
-	if(std::abs(obstacle->index - cutSegment.index)  - 2 * strokeWidth > 0) {
-		E.insert(new endSegment{std::abs(cutSegment.index-actSegment->index)+strokeWidth,
-				std::abs(obstacle->index-cutSegment.index)-2*strokeWidth, cutSegment.end1, cutSegment.end2,
+	if (std::abs(obstacle->index - cutSegment.index) - 2 * strokeWidth > 0) {
+		E.insert(new endSegment{std::abs(cutSegment.index - actSegment->index) + strokeWidth,
+				std::abs(obstacle->index - cutSegment.index) - 2 * strokeWidth, cutSegment.end1, cutSegment.end2,
 				actSegment->crossedNets, actSegment});
 	}
 
 	switch (obstacle->type) {
 		case obstacleSegment::net:
 			if (static_cast<net*>(obstacle->sourcePtr) != currentNet) {
+				if(cutSegment.end1 <= cutSegment.end2)
 				solved |= generateEndSegments(actSegment,
-						segment{actSegment->isUpRight() ? obstacle->index + strokeWidth : obstacle->index - strokeWidth,
+						segment{actSegment->isUpRight() ? obstacle->index + 1 : obstacle->index - 1,
 								cutSegment.end1, cutSegment.end2},
-						crossovers + 1, obstacleSet);
+						crossovers + 1, obstacles);
 			} else {
 				solved = true;
 				updateSolution(cutSegment, obstacle, actSegment);
@@ -511,7 +528,7 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 	activeSegment* otherActSegment = nullptr;
 	unsigned int length;
 	int totalBends = actSegment->bends, totalCrossovers = actSegment->crossedNets;
-	if (s.end2 - s.end1 > 2 * strokeWidth) {
+	if (s.end2 - s.end1 > 4 * strokeWidth) {
 		// NOTE: need to work on how to decide the closest index
 		closestIndex = std::abs(s.end2 - 3 * strokeWidth - actSegment->prevSegment->index) >
 									   std::abs(s.end1 + 3 * strokeWidth - actSegment->prevSegment->index)

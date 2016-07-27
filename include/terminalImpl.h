@@ -93,7 +93,7 @@ class net {
 	moduleSplicedTerminalMap connectedModuleSplicedTerminalMap;
 	std::vector<line*> renderedLine;
 
-	static void addLineSegment(line* l, intPair p0, intPair p1);
+	static intPair addLineSegment(line* l, intPair p0, intPair p1);
 
 public:
 	~net();

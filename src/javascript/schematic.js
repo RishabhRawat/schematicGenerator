@@ -37,7 +37,7 @@ var createRectChild = function (svgElem, x, y, size_x, size_y, strokeWidth) {
 
 var renderTerminal = function (term, parent) {
     'use strict';
-    var c = draw.circle(term.pos_x, term.pos_y, 5);
+    var c = draw.circle(term.pos_x, term.pos_y, 3);
     var title = Snap.parse('<title>' + term.name + '</title>');
     c.append(title);
     return c;
@@ -46,8 +46,8 @@ var renderTerminal = function (term, parent) {
 var renderModule = function (mod, parent) {
     'use strict';
     var text = '<svg><foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' + mod.size_y + '"><style> .thisDiv { display: table; font-size: 0.7rem; width: ' + mod.size_x + 'px; height: ' + mod.size_y + 'px; }</style> <div class="thisDiv"> <p class="centerStuffP">' + mod.name + '</p>  </div> </foreignObject></svg>';
-    var t = Snap.parse(text)
-    parent.append(t)
+    var t = Snap.parse(text);
+    parent.append(t);
     var m = draw.rect(mod.pos_x, mod.pos_y, mod.size_x, mod.size_y);
     m.attr({
         fill: 'transparent',
@@ -67,12 +67,12 @@ var renderWires = function (cWire,group) {
         var linePoints = cWire[i]['points'];
         for(var j = 0; j < linePoints.length; j++) {
         if(j == 0){
-            svgPath += 'M'
+            svgPath += 'M '
         }
         else {
-            svgPath +='L'
+            svgPath +='L '
         }
-        svgPath += linePoints[j][0] + ' '+ linePoints[j][1];
+        svgPath += linePoints[j][0] + ' '+ linePoints[j][1] + ' ';
 
         }
         var path = draw.path(svgPath).attr({
