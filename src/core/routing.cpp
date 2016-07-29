@@ -159,8 +159,10 @@ bool routing::expandActives(
 		}
 	}
 
-	if (!solved && newActiveSegments.empty())
+	if (!solved && newActiveSegments.empty()) {
+		std::cout<<"Now solutions found"<<std::endl;
 		throw std::runtime_error("No solution found!!");
+	}
 
 	if (solved) {
 		clearActiveObstacles();
@@ -174,7 +176,15 @@ void createLine(int x0, int y0, int x1, int y1) {
 #ifdef WEB_COMPILATION
 //	createBlackLine(x0, y0, x1, y1);
 #endif  // WEB_COMPILATION
-		//	std::cout << x0 << " " << y0 << " " << x1 << " " << y1 << std::endl;
+//	std::cout << x0 << " " << y0 << " " << x1 << " " << y1 << std::endl;
+}
+
+int routing::optimalCorners(activeSegment* s) {
+	activeSegment* prev = s->prevSegment;
+	if (prev) {
+		return s->index + (s->isUpRight() ? -strokeWidth : strokeWidth);
+	} else
+		return s->index;
 }
 
 void routing::reconstructSolution() {
@@ -183,7 +193,7 @@ void routing::reconstructSolution() {
 	intPair currentPoint = soln.optimalPoint;
 	while (s) {
 		if (s->scansVertical()) {
-			int smaller = s->index, larger = currentPoint.y;
+			int smaller = optimalCorners(s), larger = currentPoint.y;
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
@@ -191,7 +201,7 @@ void routing::reconstructSolution() {
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
-			int smaller = s->index, larger = currentPoint.x;
+			int smaller = optimalCorners(s), larger = currentPoint.x;
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);
@@ -205,7 +215,7 @@ void routing::reconstructSolution() {
 	currentPoint = soln.optimalPoint;
 	while (s) {
 		if (s->scansVertical()) {
-			int smaller = s->index, larger = currentPoint.y;
+			int smaller = optimalCorners(s), larger = currentPoint.y;
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(currentPoint.x, smaller, currentPoint.x, larger);
@@ -213,7 +223,7 @@ void routing::reconstructSolution() {
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
 			currentPoint = intPair{currentPoint.x, s->index};
 		} else {
-			int smaller = s->index, larger = currentPoint.x;
+			int smaller = optimalCorners(s), larger = currentPoint.x;
 			if (larger < smaller)
 				std::swap(smaller, larger);
 			createLine(smaller, currentPoint.y, larger, currentPoint.y);

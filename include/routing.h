@@ -131,6 +131,7 @@ private:
 	bool expandActives(
 			std::unordered_set<activeSegment*>& actSegmentSet, std::unordered_set<activeSegment*>& newActiveSegments);
 
+	int optimalCorners(activeSegment* s);
 	void reconstructSolution();
 
 	bool straightLine(splicedTerminal* t0, splicedTerminal* t1);

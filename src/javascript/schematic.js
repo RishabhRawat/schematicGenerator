@@ -1,29 +1,46 @@
 var draw;
 var cppfuncs = {};
+var standardSymbols = {};
 var actives;
 var completeYosysSchematic;
 
+standardSymbols.adder = function (pos_x, pos_y, size_x, size_y, padding) {
+    'use strict';
+    var x0 = pos_x + padding;
+    var y0 = pos_y + padding;
+    var x1 = x0 + size_x - 2*padding;
+    var y1 = y0 + size_y - 2*padding;
+    return draw.path('M ' + x0 + ' ' + y0 + ' L ' + x0 + ' ' + y1 + ' L ' + x1 + ' ' + ((y0 + y1) / 2) + ' Z');
+};
+
+standardSymbols.default = function (pos_x, pos_y, size_x, size_y, padding) {
+    return draw.rect(pos_x, pos_y, size_x, size_y);
+};
+
+standardSymbols.createSymbol = function(type, pos_x, pos_y, size_x, size_y, padding) {
+    var m;
+    if(type == 'not' || type == '$not' || type == '$logic_not') {
+         m = standardSymbols.default(pos_x, pos_y, size_x, size_y, padding);
+    }
+    else {
+        m = standardSymbols.default(pos_x, pos_y, size_x, size_y, padding);
+    }
+    m.attr({fill: 'none', stroke: 'black'});
+    return m;
+};
+
 cppfuncs.createWire = function (x0, y0, x1, y1, width) {
     'use strict';
-    draw.line(x0, y0, x1, y1).attr({
-        'stroke-width': width,
-        'stroke': 'black'
-    });
+    draw.line(x0, y0, x1, y1).attr({'stroke-width': width, 'stroke': 'black'});
 };
 
 cppfuncs.createRedActive = function (x0, y0, x1, y1, width) {
     'use strict';
-    actives.line(x0, y0, x1, y1).attr({
-        'stroke-width': width,
-        'stroke': 'red'
-    });
+    actives.line(x0, y0, x1, y1).attr({'stroke-width': width, 'stroke': 'red'});
 };
 cppfuncs.createBlueActive = function (x0, y0, x1, y1, width) {
     'use strict';
-    actives.line(x0, y0, x1, y1).attr({
-        'stroke-width': width,
-        'stroke': 'blue'
-    });
+    actives.line(x0, y0, x1, y1).attr({'stroke-width': width, 'stroke': 'blue'});
 };
 
 cppfuncs.removeActives = function () {
@@ -51,19 +68,19 @@ var renderModule = function (mod, parent) {
     if (completeModule.hide_name) {
         name = completeModule.type;
     }
-    var text = '<svg><foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' + mod.size_y + '"><style> .thisDiv { display: table; font-size: 0.7rem; width: ' + mod.size_x + 'px; height: ' + mod.size_y + 'px; }</style> <div class="thisDiv"> <p class="centerStuffP">' + name + '</p>  </div> </foreignObject></svg>';
+    var text = '<svg><foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' +
+        mod.size_y + '"><style> .thisDiv { display: table; font-size: 0.7rem; width: ' + mod.size_x +
+        'px; height: ' + mod.size_y + 'px; }</style> <div class="thisDiv"> <p class="centerStuffP">' + name +
+        '</p>  </div> </foreignObject></svg>';
     var t = Snap.parse(text);
     parent.append(t);
-    var m = draw.rect(mod.pos_x, mod.pos_y, mod.size_x, mod.size_y);
-    m.attr({
-        fill: 'transparent',
-        stroke: 'black'
-    });
+    var m = standardSymbols.createSymbol(completeModule.type,mod.pos_x, mod.pos_y, mod.size_x, mod.size_y, 10);
 
-    var tooltipString = mod.name + '\n' + completeModule.type + '\n\n' + 'PARAMETERS:';
+    var tooltipString = mod.name + '\n' + completeModule.type + '\n\n' +
+        'PARAMETERS:';
     var paramKeys = Object.keys(completeModule.parameters);
     for (var i = 0; i < paramKeys.length; i++) {
-        tooltipString += '\n' + paramKeys[i] + ': '+ completeModule.parameters[paramKeys[i]];
+        tooltipString += '\n' + paramKeys[i] + ': ' + completeModule.parameters[paramKeys[i]];
     }
 
     var title = Snap.parse('<title>' + tooltipString + '</title>');
@@ -81,18 +98,12 @@ var renderWires = function (cWire, group) {
         for (var j = 0; j < linePoints.length; j++) {
             if (j == 0) {
                 svgPath += 'M '
-            }
-            else {
+            } else {
                 svgPath += 'L '
             }
             svgPath += linePoints[j][0] + ' ' + linePoints[j][1] + ' ';
-
         }
-        var path = draw.path(svgPath).attr({
-            'stroke-width': 1,
-            'stroke': 'black',
-            'fill': 'none'
-        });
+        var path = draw.path(svgPath).attr({'stroke-width': 1, 'stroke': 'black', 'fill': 'none'});
         wireGroup.append(path);
         wireGroup.addClass('netList');
     }
@@ -130,13 +141,11 @@ createSchematic = function (div, jsonString) {
     completeYosysSchematic = jsonString;
     var schematic = new Module.schematic();
     var data = JSON.parse(schematic.createJsonSchematicFromJson(JSON.stringify(jsonString)))
-    var svg = Snap(data.size_x + 6, data.size_y + 6);
+    var svg =
+        Snap(data.size_x + 6, data.size_y + 6);
     var tRect = svg.rect(3, 3, data.size_x, data.size_y);
     actives = svg.svg(3, 3, data.size_x, data.size_y);
-    tRect.attr({
-        fill: 'white',
-        stroke: 'black'
-    });
+    tRect.attr({fill: 'white', stroke: 'black'});
 
     draw = svg.svg(3, 3, data.size_x, data.size_y);
     svg.append(draw);
@@ -149,7 +158,8 @@ createSchematic = function (div, jsonString) {
     for (var j = 0; j < data.systemTerminals.length; j++)
         renderTerminal(data.systemTerminals[j], draw)
     schematic.doRouting()
-    var nets = JSON.parse(schematic.getRoutedNetsJson());
+    var nets =
+        JSON.parse(schematic.getRoutedNetsJson());
     console.log(JSON.stringify(nets));
     for (var k = 0; k < nets.length; k++)
         renderWires(nets[k], draw)

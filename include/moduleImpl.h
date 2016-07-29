@@ -16,6 +16,7 @@ private:
 	std::string moduleType;
 	const std::string moduleIdentifier;
 	intPair position;
+	int cornerTerminalPadding = 10;
 
 	/* First along x-axis then along y-axis*/
 	intPair size = {70, 120};  // Default size

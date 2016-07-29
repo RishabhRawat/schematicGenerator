@@ -11,10 +11,15 @@ scripts.js
 .vscode
 .idea
 /*.files
-/*.includes
 /*.config
 /*.creator
 /*.creator.user
 /build
 Makefile
 .clang-format
+_build
+_static
+_templates
+_generatedDocs
+html
+latex

@@ -366,7 +366,7 @@ void placement::placeModule(box* b, unsigned int index, intPair& leftBottom, int
 }
 
 int placement::calculatePadding(unsigned int n) {
-	return (40 + 5 * n);
+	return (40 + 10 * n);
 }
 
 void placement::boxPlacement() {

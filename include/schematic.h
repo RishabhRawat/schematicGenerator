@@ -9,8 +9,14 @@ class module;
 class terminalImpl;
 class moduleImpl;
 
+/**
+ * @enum Enumerates the port type of a terminal
+ */
 enum class terminalType { in, out, inout };
 
+/**
+ * @class public side module class, used to create and access modules
+ */
 class module {
 	friend class schematic;
 	moduleImpl* const modulePointer;
@@ -27,6 +33,9 @@ public:
 	terminal getTerminal(const std::string& terminalIdentifier);
 };
 
+/**
+ * @class public side terinal class, used to create and access modules
+ */
 class terminal {
 	friend class schematic;
 	friend class module;
@@ -53,6 +62,9 @@ public:
 	}
 };
 
+/**
+ * @class Main class for schematic generation
+ */
 class schematic {
 private:
 	coreDesign* pSchematicGenerator;
