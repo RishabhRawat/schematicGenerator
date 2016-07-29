@@ -50,13 +50,12 @@ void coreDesign::initializeStructures() {
 			net* n = new net();
 			n->connectSplicedTerminal(t);
 			internalNets.insert(n);
-			std::unordered_set<bitTerminal*> &tSet = t->lowBitTerminal->connectedBitNet->connectedBitTerminals;
+			std::unordered_set<bitTerminal*>& tSet = t->lowBitTerminal->connectedBitNet->connectedBitTerminals;
 			for (bitTerminal* connBT : tSet) {
 				n->connectSplicedTerminal(connBT->actualTerminal);
 				sTSet.erase(connBT->actualTerminal);
 			}
-		}
-		else
+		} else
 			sTSet.erase(t);
 	}
 
@@ -84,11 +83,13 @@ void coreDesign::initializeStructures() {
 		}
 		int maxout = output + 1;
 		int maxin = input + 1;
+		int placingLength = m.second->size.y - 2 * m.second->cornerTerminalPadding;
+		int cornerPad = m.second->cornerTerminalPadding;
 		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
 			if (t->baseTerminal->type == termType::outType)
-				t->originalPosition = {m.second->size.x, (output-- * m.second->size.y) / maxout};
+				t->originalPosition = {m.second->size.x, cornerPad + (output-- * placingLength) / maxout};
 			else
-				t->originalPosition = {0, (input-- * m.second->size.y) / maxin};
+				t->originalPosition = {0, cornerPad + (input-- * placingLength) / maxin};
 			t->placedPosition = t->originalPosition;
 		}
 	}
@@ -105,4 +106,3 @@ net::~net() {
 		delete l;
 	}
 }
-

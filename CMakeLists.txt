@@ -44,7 +44,3 @@ ELSE ()
     TARGET_LINK_LIBRARIES(test3 PUBLIC schema-json)
 ENDIF ()
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
-
-ADD_CUSTOM_TARGET(formatting
-        clang-format-3.8 -i ${CORE} ${JSON_FRONTEND}
-        VERBATIM)
