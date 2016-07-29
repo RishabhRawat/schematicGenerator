@@ -37,8 +37,8 @@ class placement {
 	void place(coreDesign* inputDesign, schematicParameters& parameters);
 
 	void partitionFormation();
-	module* selectPartitionSeed(hashlib::pool<module*> moduleSet) const;
-	partition* createPartition(hashlib::pool<module*>& moduleSet, module* seed);
+	moduleImpl* selectPartitionSeed(hashlib::pool<moduleImpl*> moduleSet) const;
+	partition* createPartition(hashlib::pool<moduleImpl*>& moduleSet, moduleImpl* seed);
 
 	void boxFormation();
 	moduleSet* selectBoxSeeds(partition* p);
@@ -57,15 +57,13 @@ class placement {
 	intPair calculateActualPosition(
 			const intPair size, const intPair optimumPosition, hashlib::dict<T*, positionalStructure<T>>& layoutData);
 	void partitionPlacement();  // SHARING BOUNDARIES IS PERFECTLY LEGAL
-	partition* selectNextParition(
+	partition* selectNextPartition(
 			hashlib::pool<partition*> remainingPartition, hashlib::pool<partition*> placedPartition);
 	intPair calculateOptimumPartitionPosition(partition* p, hashlib::pool<partition*>& placedPartition);
 
 	void systemTerminalPlacement();
 
 	void flattenSchematic();
-
-	void printPartitions();
 };
 
 #endif  // SCHEMATICGENERATOR_PLACEMENT_H

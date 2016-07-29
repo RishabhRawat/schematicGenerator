@@ -1,7 +1,7 @@
 #ifndef BOX_H
 #define BOX_H
 #include "common.h"
-#include "module.h"
+#include "moduleImpl.h"
 
 class box {
 	friend class placement;
@@ -9,16 +9,16 @@ class box {
 
 private:
 	partition* parentPartition;
-	std::vector<module*> boxModules;  // NOTE: check if using vector is fine here
+	std::vector<moduleImpl*> boxModules;  // NOTE: check if using vector is fine here
 	std::vector<std::pair<splicedTerminal*, splicedTerminal*>> boxLink;
 	intPair offset, position, size;
 
 public:
-	box(module* m) {
+	box(moduleImpl* m) {
 		m->setParentBox(this);
 		boxModules.emplace_back(m);
 	}
-	void add(module* m, splicedTerminal* src, splicedTerminal* sink);
+	void add(moduleImpl* m, splicedTerminal* src, splicedTerminal* sink);
 	void setParentPartition(partition* p) {
 		parentPartition = p;
 	}

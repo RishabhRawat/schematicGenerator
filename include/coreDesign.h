@@ -2,50 +2,33 @@
 #define COREDESIGN_H
 
 #include <json/json.hpp>
-#include "module.h"
-#include "net.h"
+#include "moduleImpl.h"
 
 class coreDesign {
+	friend class schematic;
 	friend class placement;
 	friend class routing;
-private:
-	module systemModule;  // just a place holder
-	schematicParameters& designParameters;
 
+	moduleImpl systemModule;  // just a place holder
 	namedModuleCollection subModules;
-	namedNetCollection internalNets;
+
+	schematicParameters designParameters;
 
 	intPair size, offset;
-	hashlib::pool<coalescedNet*> internalCoalescedNets;
+	netSet internalNets;
+
+	coreDesign() : systemModule("topModule") {}
+	~coreDesign();
 
 	void initializeStructures();
 
-	void printInitialStructures();
+	void doPlacement(schematicParameters parameters);
+	std::string doRouting();
 
-	void printDerivedStructures();
+	std::string createDebugJsonSchematicFromJson();
+	std::string createJsonSchematicFromJson();
 
-public:
-	// API FUNCTIONS
-
-	coreDesign(schematicParameters& designParameters) : systemModule("topModule"), designParameters(designParameters) {}
-	~coreDesign();
-
-	void doPlacement();
-	void doRouting();
-
-	void parseJson(nlohmann::json parsedJson);
-	void parseJsonFile(std::string jsonFile);
-	void parseJsonString(std::string jsonText);
-	std::string createDebugJsonSchematicFromJson(std::string jsonData);
-	std::string createJsonSchematicFromJson(std::string jsonData);
-
-	terminal& addSystemTerminal(const std::string& terminalIdentifier, const terminalType type, const int width);
-	terminal& getSystemTerminal(const std::string& terminalIdentifier);
-	module& addModule(const std::string& moduleName);
-	module& getModule(const std::string& moduleName);
-	net& addNet(const std::string& netName, const int netWidth);
-
-	net& getNet(const std::string& netName);
+	std::string exportRoutingJson();
 };
 
 #endif  // PLACEMENT_H

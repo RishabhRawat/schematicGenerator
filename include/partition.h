@@ -12,8 +12,8 @@ private:
 	intPair offset, position, size;
 
 	// used after box formation
-	void addModule(module* m);
-	bool contains(module* m);
+	void addModule(moduleImpl* m);
+	bool contains(moduleImpl* m);
 
 public:
 	void add(box* b);
