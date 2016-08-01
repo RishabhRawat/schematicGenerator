@@ -13,6 +13,7 @@ schematic::schematic() {
 void schematic::doPlacement() {
 	schematicParameters designParameters{wireModuleDistance, maxPartitionSize, maxPartitionConnections, maxPathLength};
 	pSchematicGenerator->doPlacement(designParameters);
+	placedJsonData = pSchematicGenerator->createJsonSchematicFromJson();
 }
 
 std::string schematic::createDetailedJsonSchematicFromJson(std::string jsonData) {
@@ -27,7 +28,7 @@ std::string schematic::createJsonSchematicFromJson(std::string jsonData) {
 	return pSchematicGenerator->createJsonSchematicFromJson();
 }
 void schematic::doRouting() {
-	routedJsonFile = pSchematicGenerator->doRouting();
+	routedJsonData = pSchematicGenerator->doRouting();
 }
 
 schematic::~schematic() {
@@ -65,7 +66,11 @@ module schematic::getModule(const std::string& moduleName) {
 }
 
 std::string schematic::getRoutedNetsJson() {
-	return routedJsonFile;
+	return routedJsonData;
+}
+
+std::string schematic::getPlacedModulesJson() {
+	return placedJsonData;
 }
 
 module& module::setSize(const int width, const int height) {
@@ -151,7 +156,34 @@ EMSCRIPTEN_BINDINGS(schematic) {
 			.constructor<>()
 			.function("createJsonSchematicFromJson", &schematic::createJsonSchematicFromJson)
 			.function("createDetailedJsonSchematicFromJson", &schematic::createDetailedJsonSchematicFromJson)
+			.function("addModule", &schematic::addModule)
+			.function("getModule", &schematic::getModule)
+			.function("addSystemTerminal", &schematic::addSystemTerminal)
+			.function("getSystemTerminal", &schematic::getSystemTerminal)
+			.function("doPlacement", &schematic::doPlacement)
+			.function("getPlacedModulesJson", &schematic::getPlacedModulesJson)
 			.function("doRouting", &schematic::doRouting)
 			.function("getRoutedNetsJson", &schematic::getRoutedNetsJson);
+
+	emscripten::class_<module>("module")
+			.function("setSize", &module::setSize)
+			.function("setPosition", &module::setPosition)
+			.function("getWidth", &module::getWidth)
+			.function("getHeight", &module::getHeight)
+			.function("getPositionX", &module::getPositionX)
+			.function("getPositionY", &module::getPositionY)
+			.function("addTerminal", &module::addTerminal)
+			.function("getTerminal", &module::getTerminal);
+
+	emscripten::class_<terminal>("terminal")
+			.constructor<std::string>()
+			.function("partial", &terminal::partial)
+			.function("connect", &terminal::connect)
+			.function("getWidth", &terminal::getWidth);
+
+	emscripten::enum_<terminalType>("terminalType")
+			.value("in", terminalType::in)
+			.value("out", terminalType::out)
+			.value("inout", terminalType::inout);
 }
 #endif  // WEB_COMPILATION

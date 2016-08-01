@@ -192,4 +192,10 @@ jsonData = {
 		}
 	}
 };
-createSchematic('drawing', jsonData);
+
+var s = new schematik('drawing');
+s.processYosysJson(jsonData);
+s.doPlacement();
+s.drawPlacement();
+s.doRouting();
+s.drawRouting();
