@@ -160,7 +160,7 @@ bool routing::expandActives(
 	}
 
 	if (!solved && newActiveSegments.empty()) {
-		std::cout<<"Now solutions found"<<std::endl;
+		std::cout<<"No solutions found"<<std::endl;
 		throw std::runtime_error("No solution found!!");
 	}
 

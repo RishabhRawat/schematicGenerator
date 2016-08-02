@@ -1,27 +1,80 @@
 var standardSymbols = {
-    adder: function (svg, pos_x, pos_y, size_x, size_y, padding) {
-        'use strict';
-        var x0 = pos_x + padding;
-        var y0 = pos_y + padding;
-        var x1 = x0 + size_x - 2 * padding;
-        var y1 = y0 + size_y - 2 * padding;
-        return svg.path('M ' + x0 + ' ' + y0 + ' L ' + x0 + ' ' + y1 + ' L ' + x1 + ' ' + ((y0 + y1) / 2) + ' Z');
+    library: {
+        adder: {
+            width: 50,
+            height: 50,
+            inputs: [
+                {x: 10, y: 20},
+                {x: 10, y: 30}
+            ],
+            outputs: [
+                {x: 10, y: 20},
+                {x: 10, y: 30}
+            ]
+        },
+        inverter: {
+            width: 60,
+            height: 70,
+            inputs: [
+                {x: 10, y: 25}
+            ],
+            outputs: [
+                {x: 60, y: 25}
+            ],
+            pathString: 'm 10 15 l 0 40 l 40 -20 a 2.5 2.5 1 1 0 5 0 a 2.5 2.5 1 1 0 -5 0 Z'
+        },
+        and: {
+            width: 75,
+            height: 70,
+            inputs: [
+                {x: 10, y: 25}
+            ],
+            outputs: [
+                {x: 60, y: 25}
+            ],
+            pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 1 0 0 -50 Z'
+        },
+        multiplexer: {
+            width: 70,
+            height: 120,
+            inputs: [
+                {x: 10, y: 25}
+            ],
+            outputs: [
+                {x: 60, y: 25}
+            ],
+            pathString: 'm 10 10 l 0 100 l 50 -20 l 0 -60 Z'
+        },
+        plain: {
+            width: 70,
+            height: 120,
+            inputs: [],
+            outputs: [],
+            pathString: ' l 0 120 l 70 0 l 0 -120 Z'
+        }
     },
-
-    plain: function (svg, pos_x, pos_y, size_x, size_y, padding) {
-        return svg.rect(pos_x, pos_y, size_x, size_y);
+    createSymbol: function (svg, type, pos_x, pos_y) {
+        var m = svg.path('M ' + pos_x + ' ' + pos_y + ' ' + this.getLibraryElement(type).pathString);
+        m.attr({fill: 'transparent', stroke: 'black'});
+        return m;
     },
-
-    createSymbol: function (svg, type, pos_x, pos_y, size_x, size_y, padding) {
-        var m;
+    getSize: function (type) {
+        var m = this.getLibraryElement(type);
+        return [m.width, m.height];
+    },
+    getLibraryElement: function (type) {
         if (type == 'not' || type == '$not' || type == '$logic_not') {
-            m = this.plain(svg, pos_x, pos_y, size_x, size_y, padding);
+            return this.library.inverter;
+        }
+        else if (type == 'mux' || type == '$pmux' || type == '$mux') {
+            return this.library.multiplexer;
+        }
+        else if (type == 'and' || type == '$and') {
+            return this.library.and;
         }
         else {
-            m = this.plain(svg, pos_x, pos_y, size_x, size_y, padding);
+            return this.library.plain;
         }
-        m.attr({fill: 'none', stroke: 'black'});
-        return m;
     }
 };
 var actives;
@@ -63,6 +116,8 @@ schematik.prototype.processYosysJson = function (jsonData) {
 
     for (cell in this.tLM.cells) {
         var m = this.schematicInstance.addModule(cell.toString());
+        var s = standardSymbols.getSize(this.tLM.cells[cell].type);
+        m.setSize(s[0], s[1]);
         var t;
         for (t in this.tLM.cells[cell].port_directions) {
             var netArray = this.tLM.cells[cell].connections[t];
@@ -161,10 +216,12 @@ schematik.prototype.drawPlacement = function (placementData) {
     for (var j = 0; j < placementData.systemTerminals.length; j++)
         this.renderTerminal(placementData.systemTerminals[j], this.drawingArea)
 };
-schematik.prototype.drawRouting = function () {
-    var nets = JSON.parse(this.getRoutedNetsJson());
-    for (var k = 0; k < nets.length; k++)
-        this.renderWires(nets[k], this.drawingArea)
+schematik.prototype.drawRouting = function (routingData) {
+    if (routingData === undefined) {
+        routingData = JSON.parse(this.getRoutedNetsJson());
+    }
+    for (var k = 0; k < routingData.length; k++)
+        this.renderWires(routingData[k], this.drawingArea)
 };
 schematik.prototype.renderTerminal = function (term, parent) {
     'use strict';
@@ -181,14 +238,15 @@ schematik.prototype.renderModule = function (mod, parent) {
     if (completeModule.hide_name) {
         name = completeModule.type;
     }
-    var text = '<svg><foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' +
-        mod.size_y + '"><style> .thisDiv { display: table; font-size: 0.7rem; width: ' + mod.size_x +
-        'px; height: ' + mod.size_y + 'px; }</style> <div class="thisDiv"> <p class="centerStuffP">' + name +
-        '</p>  </div> </foreignObject></svg>';
+    var text = '<foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' +
+        mod.size_y + '">' +
+        '<div class="thisDiv"  style="width: ' + mod.size_x + 'px; height: ' + mod.size_y + 'px" > <p' +
+        ' class="centerStuffP">' +
+        name + '</p></div></foreignObject>';
     var t = Snap.parse(text);
     parent.append(t);
     var m = standardSymbols.createSymbol(this.drawingArea, completeModule.type, mod.pos_x, mod.pos_y, mod.size_x, mod.size_y, 10);
-
+    parent.append(m);
     var tooltipString = mod.name + '\n' + completeModule.type + '\n\n' +
         'PARAMETERS:';
     var paramKeys = Object.keys(completeModule.parameters);
