@@ -10,12 +10,14 @@ class terminalImpl;
 class moduleImpl;
 
 /**
- * @enum Enumerates the port type of a terminal
+ * @enum terminalType
+ * Enumerates the port type of a terminal
  */
 enum class terminalType { in, out, inout };
 
 /**
- * @class public side module class, used to create and access modules
+ * @class module
+ * public side module class, used to create and access modules
  */
 class module {
 	friend class schematic;
@@ -34,7 +36,8 @@ public:
 };
 
 /**
- * @class public side terminal class, used to create and access modules
+ * @class terminal
+ * public side terminal class, used to create and access modules
  */
 class terminal {
 	friend class schematic;
@@ -48,12 +51,29 @@ private:
 		: terminalPointer(terminalPointer), highestIndex(highestIndex), lowestIndex(lowestIndex), constantValue("") {}
 
 public:
+	/**
+	 * Constructor for constructing constant terminals, non-constant terminals need module::addTerminals or
+	 * schematic::addSystemTerminals
+	 * @param constValue
+	 * @return
+	 */
 	terminal(std::string constValue)
-			: terminalPointer(nullptr),
-			  highestIndex(static_cast<unsigned int>(constValue.length() - 1)),
-			  lowestIndex(0),
-			  constantValue(constValue) {}
+		: terminalPointer(nullptr),
+		  highestIndex(static_cast<unsigned int>(constValue.length() - 1)),
+		  lowestIndex(0),
+		  constantValue(constValue) {}
+	/**
+	 * Returns a partial terminal, useful for splicing terminals
+	 * @param highIndex
+	 * @param lowIndex
+	 * @return
+	 */
 	terminal partial(unsigned int highIndex, unsigned int lowIndex);
+	/**
+	 * Connects two terminals provided they are equal in width, If not use terminal::partial to splice them first
+	 * @param t
+	 * @return
+	 */
 	terminal& connect(terminal t);
 
 	unsigned int getWidth() const {
@@ -62,7 +82,8 @@ public:
 };
 
 /**
- * @class Main class for schematic generation
+ * @class schematic
+ * Main class for schematic generation
  */
 class schematic {
 private:
@@ -79,25 +100,60 @@ public:
 	unsigned int wireModuleDistance = 5;
 	unsigned int maxPartitionSize = 50;
 	unsigned int maxPartitionConnections = 20;
-
 	unsigned int maxPathLength = 10;
+
+	/**
+	 * Adds a module to the design
+	 * @param moduleName unique name for the module
+	 * @return
+	 */
 	module addModule(const std::string& moduleName);
-
+	/**
+	 * Retrieve a module with corrosponding name
+	 * @param moduleName
+	 * @return
+	 */
 	module getModule(const std::string& moduleName);
+
+	/**
+	 * Adds a top level terminal
+	 * @param terminalName
+	 * @param type
+	 * @param width
+	 * @return
+	 */
 	terminal addSystemTerminal(const std::string& terminalName, const terminalType type, const int width);
-
+	/**
+	 * Retrieve a toplevel terminal with corrosponding name
+	 * @param terminalIdentifier
+	 * @return
+	 */
 	terminal getSystemTerminal(const std::string& terminalIdentifier);
+
+	/**
+	 * Run Placement Algorithm
+	 */
 	void doPlacement();
-
+	/**
+	 * Run Routing Algorithm
+	 */
 	void doRouting();
+
 	void parseJsonFile(std::string fileName);
-
 	void parseYosysJson(std::string jsonText);
+
+	/**
+	 * Returns the placement results as a json string
+	 * @return
+	 */
 	std::string getPlacedModulesJson();
-
+	/**
+	 * Returns the routing results as a json string
+	 * @return
+	 */
 	std::string getRoutedNetsJson();
-	std::string createDetailedJsonSchematicFromJson(std::string jsonData);
 
+	std::string createDetailedJsonSchematicFromJson(std::string jsonData);
 	std::string createJsonSchematicFromJson(std::string jsonData);
 };
 

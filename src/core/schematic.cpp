@@ -152,7 +152,7 @@ terminal& terminal::connect(terminal t) {
 
 #ifdef WEB_COMPILATION
 EMSCRIPTEN_BINDINGS(schematic) {
-	emscripten::class_<schematic>("schematic")
+	emscripten::class_<schematic>("topDesign")
 			.constructor<>()
 			.function("createJsonSchematicFromJson", &schematic::createJsonSchematicFromJson)
 			.function("createDetailedJsonSchematicFromJson", &schematic::createDetailedJsonSchematicFromJson)

@@ -100,7 +100,7 @@ var cppfuncs = {
     }
 };
 schematik = function (div) {
-    this.schematicInstance = new Module.schematic();
+    this.schematicInstance = new Module.topDesign();
     this.diagramBlock = div;
 };
 schematik.prototype.processYosysJson = function (jsonData) {
