@@ -10,5 +10,3 @@ Till then it might be a better idea to build from source.
     :maxdepth: 2
 	
     compilation
-    jsapi
-    cppapi

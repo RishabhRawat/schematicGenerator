@@ -163,7 +163,7 @@ schematik.prototype.processYosysJson = function (jsonData) {
 
     }
 };
-schematik.prototype.getTerminalDirection = function (string) {
+schematik.prototype.getTerminalDirection = function (direction) {
     if (string == "input")
         return Module.terminalType.in;
     else if (string == "output")
