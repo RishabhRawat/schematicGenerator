@@ -217,7 +217,6 @@ module
 Functions
 *********
 
-	emscripten::class_<module>("module")
 .. _module.setSize:
 .. js:function:: setSize(width, height)
 
@@ -234,10 +233,10 @@ Functions
     :param integer x: x position
     :param integer y: y position
 
-	Sets the position of the module
 
-	.. warning:: The position will be modified if the placement algorithm is run. This is useful if we of need to modify position of a module or for completely specifying the placement.
-	
+    Sets the position of the module
+
+    .. warning:: The position will be modified if the placement algorithm is run. This is useful if we of need to modify position of a module or for completely specifying the placement.
 
 .. _module.getWidth:
 .. js:function:: getWidth()

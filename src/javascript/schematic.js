@@ -1,19 +1,7 @@
 var standardSymbols = {
     library: {
-        adder: {
-            width: 50,
-            height: 50,
-            inputs: [
-                {x: 10, y: 20},
-                {x: 10, y: 30}
-            ],
-            outputs: [
-                {x: 10, y: 20},
-                {x: 10, y: 30}
-            ]
-        },
         inverter: {
-            width: 60,
+            width: 70,
             height: 70,
             inputs: [
                 {x: 10, y: 25}
@@ -21,7 +9,8 @@ var standardSymbols = {
             outputs: [
                 {x: 60, y: 25}
             ],
-            pathString: 'm 10 15 l 0 40 l 40 -20 a 2.5 2.5 1 1 0 5 0 a 2.5 2.5 1 1 0 -5 0 Z'
+            pathString: 'm 10 15 l 0 40 l 40 -20 a 4 4 1 1 0 8 0 a 4 4 1 1 0 -8 0 Z',
+            text: '     '
         },
         and: {
             width: 75,
@@ -32,7 +21,56 @@ var standardSymbols = {
             outputs: [
                 {x: 60, y: 25}
             ],
-            pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 1 0 0 -50 Z'
+            pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 1 0 0 -50 Z',
+            text: ' '
+        },
+        nand: {
+            width: 75,
+            height: 70,
+            inputs: [
+                {x: 10, y: 25}
+            ],
+            outputs: [
+                {x: 60, y: 25}
+            ],
+            pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 0 0 25 -25 a 4 4 1 1 0 8 0 a 4 4 1 1 0 -8 0 a 25 25 1 0 0 -25 -25 Z',
+            text: ' '
+        },
+        equality: {
+            width: 70,
+            height: 70,
+            inputs: [
+                {x: 10, y: 25}
+            ],
+            outputs: [
+                {x: 60, y: 25}
+            ],
+            pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 2 l 10 0 m 0 -4 l -10 0',
+            text: ' '
+        },
+        adder_circular: {
+            width: 70,
+            height: 70,
+            inputs: [
+                {x: 10, y: 25}
+            ],
+            outputs: [
+                {x: 60, y: 25}
+            ],
+            pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 0 l 10 0 m -5 -5 l 0 10',
+            text: ' '
+        },
+        subtracter_circular: {
+            width: 70,
+            height: 70,
+            inputs: [
+                {x: 10, y: 25}
+            ],
+            outputs: [
+                {x: 60, y: 25}
+            ],
+            pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 0 l 10 0',
+            text: ' '
         },
         multiplexer: {
             width: 70,
@@ -43,19 +81,21 @@ var standardSymbols = {
             outputs: [
                 {x: 60, y: 25}
             ],
-            pathString: 'm 10 10 l 0 100 l 50 -20 l 0 -60 Z'
+            pathString: 'm 10 10 l 0 100 l 50 -20 l 0 -60 Z',
+            text: ''
         },
         plain: {
             width: 70,
             height: 120,
             inputs: [],
             outputs: [],
-            pathString: ' l 0 120 l 70 0 l 0 -120 Z'
+            pathString: ' l 0 120 l 70 0 l 0 -120 Z',
+            text: ''
         }
     },
     createSymbol: function (svg, type, pos_x, pos_y) {
         var m = svg.path('M ' + pos_x + ' ' + pos_y + ' ' + this.getLibraryElement(type).pathString);
-        m.attr({fill: 'transparent', stroke: 'black'});
+        m.attr({fill: '#0000ff', 'fill-opacity': 0.2, stroke: 'black'});
         return m;
     },
     getSize: function (type) {
@@ -72,9 +112,21 @@ var standardSymbols = {
         else if (type == 'and' || type == '$and') {
             return this.library.and;
         }
+        else if (type == 'eqaulity' || type == '$eq') {
+            return this.library.equality;
+        }
+        else if (type == 'adder' || type == '$add') {
+            return this.library.adder_circular;
+        }
+        else if (type == 'subtractor' || type == '$sub') {
+            return this.library.subtracter_circular;
+        }
         else {
             return this.library.plain;
         }
+    },
+    getText: function (type) {
+        return this.getLibraryElement(type).text;
     }
 };
 var actives;
@@ -102,6 +154,7 @@ var cppfuncs = {
 schematik = function (div) {
     this.schematicInstance = new Module.topDesign();
     this.diagramBlock = div;
+    this.yAxisUp = false;
 };
 schematik.prototype.processYosysJson = function (jsonData) {
     'use strict';
@@ -164,11 +217,11 @@ schematik.prototype.processYosysJson = function (jsonData) {
     }
 };
 schematik.prototype.getTerminalDirection = function (direction) {
-    if (string == "input")
+    if (direction == "input")
         return Module.terminalType.in;
-    else if (string == "output")
+    else if (direction == "output")
         return Module.terminalType.out;
-    else if (string == "inout")
+    else if (direction == "inout")
         return Module.terminalType.inout;
     else {
         console.error("Unknown terminal direction");
@@ -227,6 +280,32 @@ schematik.prototype.renderTerminal = function (term, parent) {
     'use strict';
     var c = this.drawingArea.circle(term.pos_x, term.pos_y, 3);
     var title = Snap.parse('<title>' + term.name + '</title>');
+    if(term.const_value) {
+        var constantLine = [{"points":[[term.pos_x, term.pos_y]]}];
+        var nextPoint = [];
+        if(term.side == 0){
+            nextPoint = [term.pos_x - 17, term.pos_y];
+        }
+        else if(term.side == 1){
+            nextPoint = [term.pos_x, term.pos_y + 17];
+        }
+        else if(term.side == 2){
+            nextPoint = [term.pos_x + 17, term.pos_y];
+        }
+        else if(term.side == 3){
+            nextPoint = [term.pos_x, term.pos_y - 17];
+        }
+        else {
+            throw "Incorrect Terminals!!";
+        }
+        constantLine[0].points.push(nextPoint);
+        this.renderWires(constantLine, parent);
+        var constText = this.drawingArea.text(nextPoint[0]+2, nextPoint[1]-2, term.const_value);
+        constText.attr({
+            'font-size': '10px'
+        });
+        parent.append(constText);
+    }
     c.append(title);
     parent.append(c);
     return c;
@@ -236,7 +315,9 @@ schematik.prototype.renderModule = function (mod, parent) {
     var name = mod.name;
     var completeModule = this.tLM.cells[mod.name];
     if (completeModule.hide_name) {
-        name = completeModule.type;
+        name = standardSymbols.getText(completeModule.type);
+        if (name == '')
+            name = completeModule.type;
     }
     var text = '<foreignObject x="' + mod.pos_x + '" y="' + mod.pos_y + '" width="' + mod.size_x + '" height="' +
         mod.size_y + '">' +

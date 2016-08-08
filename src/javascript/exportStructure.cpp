@@ -94,6 +94,8 @@ std::string coreDesign::createJsonSchematicFromJson() {
 			tS["name"] = t->terminalIdentifier;
 			tS["pos_x"] = t->placedPosition.x;
 			tS["pos_y"] = t->placedPosition.y;
+			tS["side"] = t->placedSide;
+			tS["const_value"] = t->constTValue;
 			mS["terminals"].push_back(tS);
 		}
 		outputJson["modules"].push_back(mS);
