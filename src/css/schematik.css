@@ -1,0 +1,18 @@
+.schematikCenterP {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+    word-break: break-all;
+    font-size: 15px;
+}
+
+.schematikNetlist:hover > path {
+    stroke: rgb(255, 0, 0);
+    stroke-width: 3 !important;
+}
+
+.schematikTextDiv {
+    display: table;
+    font-size: 0.7rem;
+}

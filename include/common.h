@@ -1,8 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
+#include <deque>
 #include <string>
 #include <vector>
-#include <deque>
 #include "hashlib.h"
 
 /**
@@ -27,6 +27,11 @@ enum class clockwiseRotation { d_0 = 0, d_90 = 1, d_180 = 2, d_270 = 3 };
 struct intPair {
 	int x;
 	int y;
+
+	intPair() : x(0), y(0) {}
+
+	intPair(int x, int y) : x(x), y(y) {}
+
 	intPair operator+(const intPair& rhs) const {
 		return {x + rhs.x, y + rhs.y};
 	}
@@ -76,21 +81,11 @@ struct intPair {
 	}
 
 	bool operator==(const intPair& rhs) const {
-		return x==rhs.x &&
-				y==rhs.y;
+		return x == rhs.x && y == rhs.y;
 	}
 
 	bool operator!=(const intPair& rhs) const {
-		return !(rhs==*this);
-	}
-	/**
-	 * Returns the L2Norm of two intPair. Useful only if both parameters store coordinates
-	 * @param a First coordinate
-	 * @param b Second coordinate
-	 * @return distance between the two coordinates
-	 */
-	static unsigned int L2norm_sq(const intPair a, const intPair b) {
-		return static_cast<unsigned int>((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+		return !(rhs == *this);
 	}
 };
 
@@ -107,16 +102,22 @@ struct schematicParameters {
 	unsigned int maxPartitionSize;
 	unsigned int maxPartitionConnections;
 	unsigned int maxPathLength;
+	intPair aspectRatio;
 
 	schematicParameters(unsigned int wireModuleDistance, unsigned int maxPartitionSize,
-			unsigned int maxPartitionConnections, unsigned int maxPathLength)
+			unsigned int maxPartitionConnections, unsigned int maxPathLength, const intPair& aspectRatio)
 		: wireModuleDistance(wireModuleDistance),
 		  maxPartitionSize(maxPartitionSize),
 		  maxPartitionConnections(maxPartitionConnections),
-		  maxPathLength(maxPathLength) {}
+		  maxPathLength(maxPathLength),
+		  aspectRatio(aspectRatio) {}
 
 	schematicParameters()
-		: wireModuleDistance(5), maxPartitionSize(50), maxPartitionConnections(20), maxPathLength(10) {}
+		: wireModuleDistance(5),
+		  maxPartitionSize(50),
+		  maxPartitionConnections(20),
+		  maxPathLength(10),
+		  aspectRatio({4, 3}) {}
 };
 
 class coreDesign;
@@ -148,7 +149,7 @@ struct hash_ops<net*> : hash_ptr_ops {};
  * @struct ulink
  * Represents a unidirectional link, will soon be merged with net class
  */
-//TODO: Merge this with net class
+// TODO: Merge this with net class
 struct ulink {
 	net* linkNet;
 	splicedTerminal* linkSource;

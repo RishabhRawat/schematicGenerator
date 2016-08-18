@@ -64,6 +64,8 @@ class placement {
 	void systemTerminalPlacement();
 
 	void flattenSchematic();
+
+	unsigned int distanceCostFunction(const intPair a, const intPair b);
 };
 
 #endif  // SCHEMATICGENERATOR_PLACEMENT_H

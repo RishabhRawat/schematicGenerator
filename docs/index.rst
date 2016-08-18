@@ -21,3 +21,4 @@ It depends on Snapsvg.io for web svg rendering and thus needs you to import/incl
     started
     jsapi
     cppapi
+    customize

@@ -1,6 +1,18 @@
 #include "placement.h"
 #include "coreDesign.h"
 
+/**
+ * Returns the L2Norm of two intPair. Useful only if both parameters store coordinates
+ * @param a First coordinate
+ * @param b Second coordinate
+ * @return distance between the two coordinates
+ */
+unsigned int placement::distanceCostFunction(const intPair a, const intPair b) {
+	return static_cast<unsigned int>(
+			designParameters.aspectRatio.y * (a.x - b.x) * (a.x - b.x) +
+			designParameters.aspectRatio.x * (a.y - b.y) * (a.y - b.y));
+}
+
 void placement::place(coreDesign* inputDesign, schematicParameters& parameters) {
 	core = inputDesign;
 	designParameters = parameters;
@@ -493,13 +505,13 @@ intPair placement::calculateActualPosition(
 		if (p0[index] > optimumPosition[index]) {
 			intPair point = p0;
 			do {
-				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+				if (distanceCostFunction(point, optimumPosition) > bestDistance)
 					return;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
 					point[index] = ptr->size[index] + ptr->position[index] + 1;
 				else {
-					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestDistance = distanceCostFunction(point, optimumPosition);
 					bestPosition = point;
 					return;
 				}
@@ -507,26 +519,26 @@ intPair placement::calculateActualPosition(
 		} else if (p1[index] > optimumPosition[index]) {
 			intPair point = optimumPosition.component(index) + p0.component(1 - index);
 			do {
-				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+				if (distanceCostFunction(point, optimumPosition) > bestDistance)
 					break;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
 					point[index] = ptr->size[index] + ptr->position[index] + 1;
 				else {
-					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestDistance = distanceCostFunction(point, optimumPosition);
 					bestPosition = point;
 					break;
 				}
 			} while (point[index] <= p1[index]);
 			point = optimumPosition.component(index) + p0.component(1 - index);
 			do {
-				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+				if (distanceCostFunction(point, optimumPosition) > bestDistance)
 					return;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
 					point[index] = ptr->position[index] - size[index] - 1;
 				else {
-					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestDistance = distanceCostFunction(point, optimumPosition);
 					bestPosition = point;
 					return;
 				}
@@ -534,13 +546,13 @@ intPair placement::calculateActualPosition(
 		} else {
 			intPair point = p1;
 			do {
-				if (intPair::L2norm_sq(point, optimumPosition) > bestDistance)
+				if (distanceCostFunction(point, optimumPosition) > bestDistance)
 					return;
 				const T* const ptr = obstructionPointer(point, posStruct, orientation);
 				if (ptr)
 					point[index] = ptr->position[index] - size[index] - 1;
 				else {
-					bestDistance = intPair::L2norm_sq(point, optimumPosition);
+					bestDistance = distanceCostFunction(point, optimumPosition);
 					bestPosition = point;
 					return;
 				}

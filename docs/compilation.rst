@@ -1,4 +1,4 @@
-Building SchematiK
+Building Schematik
 ==================  
 
 SchematiK currently supports C++ for native applications and JS for web applications.

@@ -11,7 +11,8 @@ schematic::schematic() {
 }
 
 void schematic::doPlacement() {
-	schematicParameters designParameters{wireModuleDistance, maxPartitionSize, maxPartitionConnections, maxPathLength};
+	schematicParameters designParameters{wireModuleDistance, maxPartitionSize, maxPartitionConnections, maxPathLength,
+			{static_cast<int>(aspectRatioX), static_cast<int>(aspectRatioY)}};
 	pSchematicGenerator->doPlacement(designParameters);
 	placedJsonData = pSchematicGenerator->createJsonSchematicFromJson();
 }
@@ -23,7 +24,8 @@ std::string schematic::createDetailedJsonSchematicFromJson(std::string jsonData)
 
 std::string schematic::createJsonSchematicFromJson(std::string jsonData) {
 	parseYosysJson(jsonData);
-	schematicParameters designParameters{wireModuleDistance, maxPartitionSize, maxPartitionConnections, maxPathLength};
+	schematicParameters designParameters{wireModuleDistance, maxPartitionSize, maxPartitionConnections, maxPathLength,
+			{static_cast<int>(aspectRatioX), static_cast<int>(aspectRatioY)}};
 	pSchematicGenerator->doPlacement(designParameters);
 	return pSchematicGenerator->createJsonSchematicFromJson();
 }
@@ -71,6 +73,11 @@ std::string schematic::getRoutedNetsJson() {
 
 std::string schematic::getPlacedModulesJson() {
 	return placedJsonData;
+}
+
+void schematic::setAspectRatio(unsigned int x, unsigned int y) {
+	aspectRatioX = x;
+	aspectRatioY = y;
 }
 
 module& module::setSize(const int width, const int height) {

@@ -101,6 +101,7 @@ public:
 	unsigned int maxPartitionSize = 50;
 	unsigned int maxPartitionConnections = 20;
 	unsigned int maxPathLength = 10;
+	unsigned int aspectRatioX = 4, aspectRatioY = 3;
 
 	/**
 	 * Adds a module to the design
@@ -108,13 +109,13 @@ public:
 	 * @return
 	 */
 	module addModule(const std::string& moduleName);
+
 	/**
 	 * Retrieve a module with corrosponding name
 	 * @param moduleName
 	 * @return
 	 */
 	module getModule(const std::string& moduleName);
-
 	/**
 	 * Adds a top level terminal
 	 * @param terminalName
@@ -123,38 +124,55 @@ public:
 	 * @return
 	 */
 	terminal addSystemTerminal(const std::string& terminalName, const terminalType type, const int width);
+
 	/**
 	 * Retrieve a toplevel terminal with corrosponding name
 	 * @param terminalIdentifier
 	 * @return
 	 */
 	terminal getSystemTerminal(const std::string& terminalIdentifier);
-
 	/**
 	 * Run Placement Algorithm
 	 */
 	void doPlacement();
+
 	/**
 	 * Run Routing Algorithm
 	 */
 	void doRouting();
-
 	void parseJsonFile(std::string fileName);
-	void parseYosysJson(std::string jsonText);
 
+	void parseYosysJson(std::string jsonText);
 	/**
 	 * Returns the placement results as a json string
 	 * @return
 	 */
 	std::string getPlacedModulesJson();
+
 	/**
 	 * Returns the routing results as a json string
 	 * @return
 	 */
 	std::string getRoutedNetsJson();
-
+	/**
+	 * Deprecated
+	 * @param jsonData
+	 * @return
+	 */
 	std::string createDetailedJsonSchematicFromJson(std::string jsonData);
+	/**
+	 * Deprecated
+	 * @param jsonData
+	 * @return
+	 */
 	std::string createJsonSchematicFromJson(std::string jsonData);
+
+	/**
+	 * Sets the aspect ratio of the generated schematic. It influences the cost function of placement, and may not result in exactly same ratio, instead it is more like a suggestion to the algorithm.
+	 * @param x
+	 * @param y
+	 */
+	void setAspectRatio(unsigned int x, unsigned int y);
 };
 
 #endif  // SCHEMATIC_H
