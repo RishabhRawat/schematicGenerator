@@ -58,21 +58,6 @@ var standardSymbols = {
 		},
 		plain: {width: 70, height: 120, inputs: [], outputs: [], pathString: ' l 0 120 l 70 0 l 0 -120 Z', text: ''}
 	},
-	symbolMap: {
-		not: this.library.inverter,
-		$not: this.library.inverter,
-		$logic_not: this.library.inverter,
-		mux: this.library.multiplexer,
-		$pmux: this.library.multiplexer,
-		and: this.library.and,
-		$and: this.library.and,
-		equality: this.library.equality,
-		$eq: this.library.equality,
-		adder: this.library.adder_circular,
-		$add: this.library.adder_circular,
-		subtractor: this.library.subtracter_circular,
-		$sub: this.library.subtracter_circular
-	},
 	createSymbol: function (svg, type, pos_x, pos_y) {
 		var m = svg.path('M ' + pos_x + ' ' + pos_y + ' ' + this.getLibraryElement(type).pathString);
 		m.attr({fill: '#0000ff', 'fill-opacity': 0.2, stroke: 'black'});
@@ -92,6 +77,21 @@ var standardSymbols = {
 	getText: function (type) {
 		return this.getLibraryElement(type).text;
 	}
+};
+standardSymbols.symbolMap = {
+	not: standardSymbols.library.inverter,
+	$not: standardSymbols.library.inverter,
+	$logic_not: standardSymbols.library.inverter,
+	mux: standardSymbols.library.multiplexer,
+	$pmux: standardSymbols.library.multiplexer,
+	and: standardSymbols.library.and,
+	$and: standardSymbols.library.and,
+	equality: standardSymbols.library.equality,
+	$eq: standardSymbols.library.equality,
+	adder: standardSymbols.library.adder_circular,
+	$add: standardSymbols.library.adder_circular,
+	subtractor: standardSymbols.library.subtracter_circular,
+	$sub: standardSymbols.library.subtracter_circular
 };
 var actives;
 var cppfuncs = {
