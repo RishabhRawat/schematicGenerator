@@ -170,7 +170,8 @@ EMSCRIPTEN_BINDINGS(schematic) {
 			.function("doPlacement", &schematic::doPlacement)
 			.function("getPlacedModulesJson", &schematic::getPlacedModulesJson)
 			.function("doRouting", &schematic::doRouting)
-			.function("getRoutedNetsJson", &schematic::getRoutedNetsJson);
+			.function("getRoutedNetsJson", &schematic::getRoutedNetsJson)
+			.function("setAspectRatio", &schematic::setAspectRatio);
 
 	emscripten::class_<module>("module")
 			.function("setSize", &module::setSize)

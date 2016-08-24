@@ -7,6 +7,7 @@ OPTION(EMCC "emcc" OFF)
 IF (EMCC)
     SET(CMAKE_C_COMPILER "emcc")
     SET(CMAKE_CXX_COMPILER "em++")
+    add_definitions( -DDEBUG )
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0")
 
 ELSE()

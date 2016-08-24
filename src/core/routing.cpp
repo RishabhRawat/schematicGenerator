@@ -1,28 +1,43 @@
 #include "routing.h"
-#include <unordered_set>
 #include "coreDesign.h"
-#include "terminalImpl.h"
-const int strokeWidth = 5;
 
+const int strokeWidth = 5;
 #ifdef WEB_COMPILATION
 #include <emscripten/val.h>
-void createBlackLine(int x0, int y0, int x1, int y1) {
-	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
-	cppfuncs.call<void>("createWire", x0, y0, x1, y1);
-}
-void activeALine(int x0, int y0, int x1, int y1) {
-	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
-	cppfuncs.call<void>("createRedActive", x0, y0, x1, y1, 3);
-}
-void activeBLine(int x0, int y0, int x1, int y1) {
-	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
-	cppfuncs.call<void>("createBlueActive", x0, y0, x1, y1, 3);
-}
-void clearActives() {
-	emscripten::val cppfuncs = emscripten::val::global("cppfuncs");
-	cppfuncs.call<void>("removeActives");
-}
+#ifdef DEBUG
+emscripten::val cppfuncs = emscripten::val::global("cppDebugFunctions");
+#define highLightTerminal(x0, y0) cppfuncs.call<void>("highLightTerminal", x0, y0)
+#define createScannedRect(x0, y0, x1, y1) cppfuncs.call<void>("createScannedRect", x0, y0, x1, y1)
+#define createBlackLine(x0, y0, x1, y1) cppfuncs.call<void>("createWire", x0, y0, x1, y1)
+#define activeALine(x0, y0, x1, y1) cppfuncs.call<void>("createRedActive", x0, y0, x1, y1, 3)
+#define activeBLine(x0, y0, x1, y1) cppfuncs.call<void>("createBlueActive", x0, y0, x1, y1, 3);
+#define clearActives() cppfuncs.call<void>("removeActives");
+#endif  // DEBUG
 #endif  // WEB_COMPILATION
+
+#ifndef highLightTerminal
+#define highLightTerminal(x0, y0)
+#endif  // createBlackLine(x0, y0, x1, y1)
+
+#ifndef createScannedRect
+#define createScannedRect(x0, y0, x1, y1)
+#endif  // createBlackLine(x0, y0, x1, y1)
+
+#ifndef createBlackLine
+#define createBlackLine(x0, y0, x1, y1)
+#endif  // createBlackLine(x0, y0, x1, y1)
+
+#ifndef activeALine
+#define activeALine(x0, y0, x1, y1)
+#endif  // activeALine(x0, y0, x1, y1)
+
+#ifndef activeBLine
+#define activeBLine(x0, y0, x1, y1)
+#endif  // activeBLine(x0, y0, x1, y1)
+
+#ifndef clearActives
+#define clearActives()
+#endif  // clearActives()
 
 void routing::route() {
 	addObstacleBounding();
@@ -44,10 +59,7 @@ void routing::route() {
 		splicedTerminal* t0 = tSet.pop();
 		splicedTerminal* t1 = tSet.pop();
 		initNet(t0, t1);
-
-#ifdef WEB_COMPILATION
 		clearActives();
-#endif  // WEB_COMPILATION
 		while (!tSet.empty()) {
 			expandNet(tSet.pop());
 		}
@@ -90,10 +102,8 @@ void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
 		std::unordered_set<activeSegment*> A_new;
 		solutionFound |= expandActives(activesA, A_new);
 		for (activeSegment* a : A_new) {
-#ifdef WEB_COMPILATION
 			activeALine(a->scansVertical() ? a->end1 : a->index, a->scansVertical() ? a->index : a->end1,
 					a->scansVertical() ? a->end2 : a->index, a->scansVertical() ? a->index : a->end2);
-#endif  // WEB_COMPILATION
 			activesA.insert(a);
 		}
 		if (solutionFound)
@@ -102,10 +112,8 @@ void routing::initNet(splicedTerminal* t0, splicedTerminal* t1) {
 		std::unordered_set<activeSegment*> B_new;
 		solutionFound |= expandActives(activesB, B_new);
 		for (activeSegment* b : B_new) {
-#ifdef WEB_COMPILATION
 			activeBLine(b->scansVertical() ? b->end1 : b->index, b->scansVertical() ? b->index : b->end1,
 					b->scansVertical() ? b->end2 : b->index, b->scansVertical() ? b->index : b->end2);
-#endif  // WEB_COMPILATION
 			activesB.insert(b);
 		}
 	}
@@ -160,7 +168,7 @@ bool routing::expandActives(
 	}
 
 	if (!solved && newActiveSegments.empty()) {
-		std::cout<<"No solutions found"<<std::endl;
+		std::cout << "No solutions found" << std::endl;
 		throw std::runtime_error("No solution found!!");
 	}
 
@@ -172,19 +180,12 @@ bool routing::expandActives(
 	return solved;
 }
 
-void createLine(int x0, int y0, int x1, int y1) {
-#ifdef WEB_COMPILATION
-//	createBlackLine(x0, y0, x1, y1);
-#endif  // WEB_COMPILATION
-//	std::cout << x0 << " " << y0 << " " << x1 << " " << y1 << std::endl;
-}
-
 int routing::optimalCorners(activeSegment* s) {
-	activeSegment* prev = s->prevSegment;
-	if (prev) {
-		return s->index + (s->isUpRight() ? -strokeWidth : strokeWidth);
-	} else
-		return s->index;
+	//	activeSegment* prev = s->prevSegment;
+	//	if (prev) {
+	//		return s->index + (s->isUpRight() ? -strokeWidth : strokeWidth);
+	//	} else
+	return s->index;
 }
 
 void routing::reconstructSolution() {
@@ -196,18 +197,28 @@ void routing::reconstructSolution() {
 			int smaller = optimalCorners(s), larger = currentPoint.y;
 			if (larger < smaller)
 				std::swap(smaller, larger);
-			createLine(currentPoint.x, smaller, currentPoint.x, larger);
-			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
+			createBlackLine(currentPoint.x, smaller, currentPoint.x, larger);
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
-			currentPoint = intPair{currentPoint.x, s->index};
+
+			intPair nextPoint = {currentPoint.x, optimalCorners(s)};
+			//			addObstacle(currentPoint.y, currentPoint.x, currentPoint.x, obstacleSegment::net, currentNet,
+			// true);
+			highLightTerminal(currentPoint.x, currentPoint.y);
+			net::addLineSegment(newLine, currentPoint, nextPoint);
+			currentPoint = nextPoint;
 		} else {
 			int smaller = optimalCorners(s), larger = currentPoint.x;
 			if (larger < smaller)
 				std::swap(smaller, larger);
-			createLine(smaller, currentPoint.y, larger, currentPoint.y);
-			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
+			createBlackLine(smaller, currentPoint.y, larger, currentPoint.y);
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
-			currentPoint = intPair{s->index, currentPoint.y};
+
+			intPair nextPoint = {optimalCorners(s), currentPoint.y};
+			//			addObstacle(currentPoint.x, currentPoint.y, currentPoint.y, obstacleSegment::net, currentNet,
+			// false);
+			highLightTerminal(currentPoint.x, currentPoint.y);
+			net::addLineSegment(newLine, currentPoint, nextPoint);
+			currentPoint = nextPoint;
 		}
 		s = s->prevSegment;
 	}
@@ -216,20 +227,32 @@ void routing::reconstructSolution() {
 	while (s) {
 		if (s->scansVertical()) {
 			int smaller = optimalCorners(s), larger = currentPoint.y;
-			if (larger < smaller)
+			if (larger < smaller) {
 				std::swap(smaller, larger);
-			createLine(currentPoint.x, smaller, currentPoint.x, larger);
-			net::addLineSegment(newLine, currentPoint, intPair{currentPoint.x, s->index});
+			}
+			createBlackLine(currentPoint.x, smaller, currentPoint.x, larger);
 			addObstacle(currentPoint.x, smaller, larger, obstacleSegment::net, currentNet, false);
-			currentPoint = intPair{currentPoint.x, s->index};
+
+			intPair nextPoint = {currentPoint.x, optimalCorners(s)};
+			//			addObstacle(currentPoint.y, currentPoint.x, currentPoint.x, obstacleSegment::net, currentNet,
+			// true);
+			highLightTerminal(currentPoint.x, currentPoint.y);
+			net::addLineSegment(newLine, currentPoint, nextPoint);
+			currentPoint = nextPoint;
 		} else {
 			int smaller = optimalCorners(s), larger = currentPoint.x;
-			if (larger < smaller)
+			if (larger < smaller) {
 				std::swap(smaller, larger);
-			createLine(smaller, currentPoint.y, larger, currentPoint.y);
-			net::addLineSegment(newLine, currentPoint, intPair{s->index, currentPoint.y});
+			}
+			createBlackLine(smaller, currentPoint.y, larger, currentPoint.y);
 			addObstacle(currentPoint.y, smaller, larger, obstacleSegment::net, currentNet, true);
-			currentPoint = intPair{s->index, currentPoint.y};
+
+			intPair nextPoint = {optimalCorners(s), currentPoint.y};
+			//			addObstacle(currentPoint.x, currentPoint.y, currentPoint.y, obstacleSegment::net, currentNet,
+			// false);
+			highLightTerminal(currentPoint.x, currentPoint.y);
+			net::addLineSegment(newLine, currentPoint, nextPoint);
+			currentPoint = nextPoint;
 		}
 		s = s->prevSegment;
 	}
@@ -296,7 +319,7 @@ routing::obstacleSegment* routing::findObstacle(segment s, bool direction, order
 		auto it = orderedObstacleSet::reverse_iterator(std::lower_bound(
 				obstacleSet.begin(), obstacleSet.end(), &obstacleScanner, obstacleSegmentAscendingComparator()));
 		while (it != obstacleSet.rend()) {
-			if (s.end2 - strokeWidth > (*it)->end1 && s.end1 + strokeWidth < (*it)->end2)
+			if (s.end2 + strokeWidth > (*it)->end1 && s.end1 - strokeWidth < (*it)->end2)
 				return *it;
 			else
 				++it;
@@ -338,6 +361,25 @@ bool routing::generateEndSegments(activeSegment* actSegment, orderedObstacleSet&
 			E.insert(new endSegment{std::abs(cutSegment.index - actSegment->index) + strokeWidth,
 					std::abs(obstacle->index - cutSegment.index) - 2 * strokeWidth, cutSegment.end1, cutSegment.end2,
 					crossovers, actSegment});
+			switch (actSegment->scanDirection) {
+				case direction::up:
+					createScannedRect(cutSegment.end1, cutSegment.index + strokeWidth, cutSegment.end2,
+							obstacle->index - strokeWidth);
+					break;
+
+				case left:
+					createScannedRect(obstacle->index + strokeWidth, cutSegment.end1, cutSegment.index - strokeWidth,
+							cutSegment.end2);
+					break;
+				case right:
+					createScannedRect(cutSegment.index + strokeWidth, cutSegment.end1, obstacle->index - strokeWidth,
+							cutSegment.end2);
+					break;
+				case down:
+					createScannedRect(cutSegment.end1, obstacle->index + strokeWidth, cutSegment.end2,
+							cutSegment.index - strokeWidth);
+					break;
+			}
 		}
 
 		if ((obstacle->type == obstacleSegment::startB && activesA.find(actSegment) != activesA.end()) ||
@@ -345,23 +387,24 @@ bool routing::generateEndSegments(activeSegment* actSegment, orderedObstacleSet&
 				(obstacle->type == obstacleSegment::net && static_cast<net*>(obstacle->sourcePtr) == currentNet)) {
 			solved = true;
 			updateSolution(cutSegment, obstacle, actSegment);
+			break;
 		} else if (obstacle->type == obstacleSegment::net) {
 			segment proceedSegment = s;
 
 			if (obstacle->end1 + strokeWidth > s.end1) {
 				proceedSegment.end1 = obstacle->end1 + strokeWidth;
 				if (obstacle->end1 + strokeWidth > s.end2)
-					break;
+					continue;
 			}
 
 			if (obstacle->end2 - strokeWidth < s.end2) {
 				proceedSegment.end2 = obstacle->end2 - strokeWidth;
 				if (obstacle->end2 - strokeWidth < s.end1)
-					break;
+					continue;
 			}
 
 			if (proceedSegment.end2 < proceedSegment.end1)
-				break;
+				continue;
 
 			segmentStack.emplace_back(
 					obstacle->index + (actSegment->isUpRight() ? 1 : -1), proceedSegment.end1, proceedSegment.end2);
@@ -443,7 +486,7 @@ bool routing::straightLine(splicedTerminal* t0, splicedTerminal* t1) {
 		addObstacle(lowerT->placedPosition.x, lowerT->placedPosition.y, higherT->placedPosition.y, obstacleSegment::net,
 				currentNet, horizontal);
 	}
-	createLine(t0->placedPosition.x, t0->placedPosition.y, t1->placedPosition.x, t1->placedPosition.y);
+	createBlackLine(t0->placedPosition.x, t0->placedPosition.y, t1->placedPosition.x, t1->placedPosition.y);
 	line* newLine = new line{
 			intPair{t0->placedPosition.x, t0->placedPosition.y}, intPair{t1->placedPosition.x, t1->placedPosition.y}};
 	currentNet->renderedLine.push_back(newLine);
@@ -471,6 +514,10 @@ void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegm
 			leftSegment->end2 = std::min(e->nearIndex(), ePrevHighest->farIndex());
 		}
 		newActiveSegments.insert(leftSegment);
+		if (leftSegment->scansVertical())
+			activeALine(leftSegment->end1, leftSegment->index, leftSegment->end1, leftSegment->index);
+		else
+			activeALine(leftSegment->index, leftSegment->end1, leftSegment->index, leftSegment->end2);
 		addObstacle(
 				leftSegment->index, leftSegment->end1, leftSegment->end2, oType, leftSegment, !actS->scansVertical());
 	}
@@ -486,6 +533,10 @@ void routing::addActiveFunction(endSegment* ePrevHighest, endSegment* e, endSegm
 			rightSegment->end2 = std::min(e->nearIndex(), eNextHighest->farIndex());
 		}
 		newActiveSegments.insert(rightSegment);
+		if (rightSegment->scansVertical())
+			activeALine(rightSegment->end1, rightSegment->index, rightSegment->end1, rightSegment->index);
+		else
+			activeALine(rightSegment->index, rightSegment->end1, rightSegment->index, rightSegment->end2);
 		addObstacle(rightSegment->index, rightSegment->end1, rightSegment->end2, oType, rightSegment,
 				!actS->scansVertical());
 	}
@@ -579,25 +630,22 @@ void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment
 }
 
 void routing::expandNet(splicedTerminal* t) {
+	highLightTerminal(t->placedPosition.x, t->placedPosition.y);
 	initActives(activesA, t);
 	bool solutionFound = false;
 	while (!solutionFound) {
 		std::unordered_set<activeSegment*> A_new;
 		solutionFound |= expandActives(activesA, A_new);
 		for (activeSegment* a : A_new) {
-#ifdef WEB_COMPILATION
 			activeALine(a->scansVertical() ? a->end1 : a->index, a->scansVertical() ? a->index : a->end1,
 					a->scansVertical() ? a->end2 : a->index, a->scansVertical() ? a->index : a->end2);
-#endif  // WEB_COMPILATION
 			activesA.insert(a);
 		}
 	}
 	clearActiveSet(activesA);
 	clearActiveSet(activesB);
 	clearActiveSet(inactives);
-#ifdef WEB_COMPILATION
 	clearActives();
-#endif  // WEB_COMPILATION
 }
 
 routing::~routing() {

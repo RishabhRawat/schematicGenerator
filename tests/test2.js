@@ -147,10 +147,16 @@ jsonData = {
 				}
 			},
 			"netnames": {
-				"$0\\borrow_out[0:0]":
-						{"hide_name": 1, "bits": [38], "attributes": {"src": "tests/simple/fiedler-cooley.v:14"}},
-				"$0\\carry_out[0:0]":
-						{"hide_name": 1, "bits": [36], "attributes": {"src": "tests/simple/fiedler-cooley.v:14"}},
+				"$0\\borrow_out[0:0]": {
+					"hide_name": 1,
+					"bits": [38],
+					"attributes": {"src": "tests/simple/fiedler-cooley.v:14"}
+				},
+				"$0\\carry_out[0:0]": {
+					"hide_name": 1,
+					"bits": [36],
+					"attributes": {"src": "tests/simple/fiedler-cooley.v:14"}
+				},
 				"$0\\cnt_dn[9:0]": {
 					"hide_name": 1,
 					"bits": [51, 52, 53, 54, 55, 56, 57, 58, 59, 37],
@@ -166,8 +172,11 @@ jsonData = {
 					"bits": [39, 40, 41, 42, 43, 44, 45, 46, 47],
 					"attributes": {"src": "tests/simple/fiedler-cooley.v:14"}
 				},
-				"$0\\parity_out[0:0]":
-						{"hide_name": 1, "bits": [48], "attributes": {"src": "tests/simple/fiedler-cooley.v:14"}},
+				"$0\\parity_out[0:0]": {
+					"hide_name": 1,
+					"bits": [48],
+					"attributes": {"src": "tests/simple/fiedler-cooley.v:14"}
+				},
 				"$procmux$10_CMP": {"hide_name": 1, "bits": [49], "attributes": {}},
 				"$procmux$11_CMP": {"hide_name": 1, "bits": [50], "attributes": {}},
 				"$procmux$8_CMP": {"hide_name": 1, "bits": [60], "attributes": {}},
@@ -195,6 +204,7 @@ jsonData = {
 
 var s = new schematik('drawing');
 s.processYosysJson(jsonData);
+s.schematicInstance.setAspectRatio(4, 9);
 s.doPlacement();
 s.drawPlacement();
 s.doRouting();

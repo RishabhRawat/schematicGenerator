@@ -1,104 +1,110 @@
 var standardSymbols = {
-	library: {
-		inverter: {
-			width: 70,
-			height: 70,
-			inputs: [{x: 10, y: 25}],
-			outputs: [{x: 60, y: 25}],
-			pathString: 'm 10 15 l 0 40 l 40 -20 a 4 4 1 1 0 8 0 a 4 4 1 1 0 -8 0 Z',
-			text: ' '
+		library: {
+			inverter: {
+				width: 70,
+				height: 70,
+				inputs: [{x: 10, y: 25}],
+				outputs: [{x: 60, y: 25}],
+				pathString: 'm 10 15 l 0 40 l 40 -20 a 4 4 1 1 0 8 0 a 4 4 1 1 0 -8 0 Z',
+				text: ' '
+			},
+			and: {
+				width: 75,
+				height: 70,
+				inputs: [{x: 10, y: 25}],
+				outputs: [{x: 60, y: 25}],
+				pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 1 0 0 -50 Z',
+				text: ' '
+			},
+			nand: {
+				width: 75,
+				height: 70,
+				inputs: [{x: 10, y: 25}],
+				outputs: [{x: 60, y: 25}],
+				pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 0 0 25 -25 a 4 4 1 1 0 8 0 a 4 4 1 1 0 -8 0 a 25 25 1 0 0 -25 -25 Z',
+				text: ' '
+			},
+			equality: {
+				width: 70,
+				height: 70,
+				inputs: [{x: 10, y: 25}],
+				outputs: [{x: 60, y: 25}],
+				pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 2 l 10 0 m 0 -4 l -10 0',
+				text: ' '
+			},
+			adder_circular: {
+				width: 70,
+				height: 70,
+				inputs: [{x: 10, y: 25}],
+				outputs: [{x: 60, y: 25}],
+				pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 0 l 10 0 m -5 -5 l 0 10',
+				text: ' '
+			},
+			subtracter_circular: {
+				width: 70,
+				height: 70,
+				inputs: [{x: 10, y: 25}],
+				outputs: [{x: 60, y: 25}],
+				pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 0 l 10 0',
+				text: ' '
+			},
+			multiplexer: {
+				width: 70,
+				height: 120,
+				inputs: [{x: 10, y: 25}],
+				outputs: [{x: 60, y: 25}],
+				pathString: 'm 10 10 l 0 100 l 50 -20 l 0 -60 Z',
+				text: ' '
+			},
+			plain: {width: 70, height: 120, inputs: [], outputs: [], pathString: ' l 0 120 l 70 0 l 0 -120 Z', text: ''}
 		},
-		and: {
-			width: 75,
-			height: 70,
-			inputs: [{x: 10, y: 25}],
-			outputs: [{x: 60, y: 25}],
-			pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 1 0 0 -50 Z',
-			text: ' '
+		symbolMap: {
+			not: "inverter",
+			$not: "inverter",
+			$logic_not: "inverter",
+			mux: "multiplexer",
+			$pmux: "multiplexer",
+			and: "and",
+			$and: "and",
+			equality: "equality",
+			$eq: "equality",
+			adder: "adder_circular",
+			$add: "adder_circular",
+			subtractor: "subtracter_circular",
+			$sub: "subtracter_circular"
 		},
-		nand: {
-			width: 75,
-			height: 70,
-			inputs: [{x: 10, y: 25}],
-			outputs: [{x: 60, y: 25}],
-			pathString: 'm 10 10 l 0 50 l 30 0 a 25 25 1 0 0 25 -25 a 4 4 1 1 0 8 0 a 4 4 1 1 0 -8 0 a 25 25 1 0 0 -25 -25 Z',
-			text: ' '
-		},
-		equality: {
-			width: 70,
-			height: 70,
-			inputs: [{x: 10, y: 25}],
-			outputs: [{x: 60, y: 25}],
-			pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 2 l 10 0 m 0 -4 l -10 0',
-			text: ' '
-		},
-		adder_circular: {
-			width: 70,
-			height: 70,
-			inputs: [{x: 10, y: 25}],
-			outputs: [{x: 60, y: 25}],
-			pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 0 l 10 0 m -5 -5 l 0 10',
-			text: ' '
-		},
-		subtracter_circular: {
-			width: 70,
-			height: 70,
-			inputs: [{x: 10, y: 25}],
-			outputs: [{x: 60, y: 25}],
-			pathString: 'm 15 35 a 20 20 1 0 0 40 0 a 20 20 1 0 0 -40 0 Z m 15 0 l 10 0',
-			text: ' '
-		},
-		multiplexer: {
-			width: 70,
-			height: 120,
-			inputs: [{x: 10, y: 25}],
-			outputs: [{x: 60, y: 25}],
-			pathString: 'm 10 10 l 0 100 l 50 -20 l 0 -60 Z',
-			text: ' '
-		},
-		plain: {width: 70, height: 120, inputs: [], outputs: [], pathString: ' l 0 120 l 70 0 l 0 -120 Z', text: ''}
-	},
-	createSymbol: function (svg, type, pos_x, pos_y) {
-		var m = svg.path('M ' + pos_x + ' ' + pos_y + ' ' + this.getLibraryElement(type).pathString);
-		m.attr({fill: '#0000ff', 'fill-opacity': 0.2, stroke: 'black'});
-		return m;
-	},
-	getSize: function (type) {
-		var m = this.getLibraryElement(type);
-		return [m.width, m.height];
-	},
-	getLibraryElement: function (type) {
-		var element = this.symbolMap[type];
-		if (element)
-			return element;
-		else
-			return this.library.plain;
-	},
-	getText: function (type) {
-		return this.getLibraryElement(type).text;
+		createSymbol: function (svg, type, pos_x, pos_y) {
+			var m = svg.path('M ' + pos_x + ' ' + pos_y + ' ' + this.getLibraryElement(type).pathString);
+			m.attr({fill: '#0000ff', 'fill-opacity': 0.2, stroke: 'black'});
+			return m;
+		}
+		,
+		getSize: function (type) {
+			var m = this.getLibraryElement(type);
+			return [m.width, m.height];
+		}
+		,
+		getLibraryElement: function (type) {
+			var element = this.library[this.symbolMap[type]];
+			if (element)
+				return element;
+			else
+				return this.library.plain;
+		}
+		,
+		getText: function (type) {
+			return this.getLibraryElement(type).text;
+		}
 	}
-};
-standardSymbols.symbolMap = {
-	not: standardSymbols.library.inverter,
-	$not: standardSymbols.library.inverter,
-	$logic_not: standardSymbols.library.inverter,
-	mux: standardSymbols.library.multiplexer,
-	$pmux: standardSymbols.library.multiplexer,
-	and: standardSymbols.library.and,
-	$and: standardSymbols.library.and,
-	equality: standardSymbols.library.equality,
-	$eq: standardSymbols.library.equality,
-	adder: standardSymbols.library.adder_circular,
-	$add: standardSymbols.library.adder_circular,
-	subtractor: standardSymbols.library.subtracter_circular,
-	$sub: standardSymbols.library.subtracter_circular
-};
+	;
+
 var actives;
-var cppfuncs = {
+var wires;
+var cppDebugFunctions = {
 
 	createWire: function (x0, y0, x1, y1, width) {
 		'use strict';
-		draw.line(x0, y0, x1, y1).attr({'stroke-width': width, 'stroke': 'black'});
+		wires.line(x0, y0, x1, y1).attr({'stroke-width': width, 'stroke': 'black'});
 	},
 
 	createRedActive: function (x0, y0, x1, y1, width) {
@@ -109,7 +115,20 @@ var cppfuncs = {
 		'use strict';
 		actives.line(x0, y0, x1, y1).attr({'stroke-width': width, 'stroke': 'blue'});
 	},
-
+	createScannedRect: function (x0, y0, x1, y1) {
+		'use strict';
+		if (x0 == x1 || y0 == y1) {
+			actives.line(x0, y0, x1, y1).attr({'stroke-width': 3, 'stroke': 'green'});
+		}
+		actives.rect(x0, y0, x1 - x0, y1 - y0).attr({'fill': 'green'});
+	},
+	highLightTerminal: function (x0, y0) {
+		'use strict'
+		var c = actives.circle(x0, y0, 5);
+		c.attr({
+			fill: '#ff0000'
+		})
+	},
 	removeActives: function () {
 		'use strict';
 		actives.clear();
@@ -210,9 +229,9 @@ schematik.prototype.drawPlacement = function (placementData) {
 	}
 	var svg = Snap('#' + this.diagramBlock);
 	svg.attr({viewBox: '0, 0, ' + (placementData.size_x + 6) + ',' + (placementData.size_y + 6)});
-	// placementData.size_x + 6, placementData.size_y + 6
 	var tRect = svg.rect(3, 3, placementData.size_x, placementData.size_y).appendTo(svg);
 	actives = svg.svg(3, 3, placementData.size_x, placementData.size_y);
+	wires = svg.svg(3, 3, placementData.size_x, placementData.size_y);
 	tRect.attr({fill: 'white', stroke: 'black'});
 
 	this.drawingArea = svg.svg(3, 3, placementData.size_x, placementData.size_y);
