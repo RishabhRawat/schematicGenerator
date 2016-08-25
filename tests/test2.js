@@ -204,7 +204,7 @@ jsonData = {
 
 var s = new schematik('drawing');
 s.processYosysJson(jsonData);
-s.schematicInstance.setAspectRatio(4, 9);
+s.schematicInstance.setAspectRatio(16, 4);
 s.doPlacement();
 s.drawPlacement();
 s.doRouting();

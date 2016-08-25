@@ -15,6 +15,8 @@ emscripten::val cppfuncs = emscripten::val::global("cppDebugFunctions");
 #endif  // DEBUG
 #endif  // WEB_COMPILATION
 
+#define debugLog(str) std::cout << str << std::endl
+
 #ifndef highLightTerminal
 #define highLightTerminal(x0, y0)
 #endif  // createBlackLine(x0, y0, x1, y1)
@@ -83,6 +85,13 @@ void routing::addObstacleBounding() {
 		addObstacle(mPos.y + mSize.y, mPos.x, mPos.x + mSize.x, obstacleSegment::module, nullptr, true);
 		addObstacle(mPos.x, mPos.y, mPos.y + mSize.y, obstacleSegment::module, nullptr, false);
 		addObstacle(mPos.x + mSize.x, mPos.y, mPos.y + mSize.y, obstacleSegment::module, nullptr, false);
+		for (auto&& t : m_pair.second->moduleSplicedTerminals) {
+			intPair tPos = t->placedPosition;
+			addObstacle(
+					tPos.y, tPos.x - 2 * strokeWidth, tPos.x + 2 * strokeWidth, obstacleSegment::module, nullptr, true);
+			addObstacle(tPos.x, tPos.y - 2 * strokeWidth, mPos.y + 2 * strokeWidth, obstacleSegment::module, nullptr,
+					false);
+		}
 	}
 
 	for (splicedTerminal* sysT : core->systemModule.moduleSplicedTerminals) {
@@ -347,13 +356,13 @@ bool routing::generateEndSegments(activeSegment* actSegment, orderedObstacleSet&
 		if (obstacle->end1 - strokeWidth > s.end1) {
 			segmentStack.emplace_back(s.index, s.end1, obstacle->end1 - strokeWidth);
 			crossoverStack.emplace_back(crossovers);
-			cutSegment.end1 = obstacle->end1 - strokeWidth;
+			cutSegment.end1 = obstacle->end1 - strokeWidth - 1;
 		}
 
 		if (obstacle->end2 + strokeWidth < s.end2) {
 			segmentStack.emplace_back(s.index, obstacle->end2 + strokeWidth, s.end2);
 			crossoverStack.emplace_back(crossovers);
-			cutSegment.end2 = obstacle->end2 + strokeWidth;
+			cutSegment.end2 = obstacle->end2 + strokeWidth + 1;
 		}
 
 		if (std::abs(obstacle->index - cutSegment.index) - 2 * strokeWidth > 0) {
@@ -582,7 +591,7 @@ unsigned int routing::pathLength(activeSegment* actS, int x) {
 }
 
 int calculateCost(int bends, int crossovers, int length) {
-	return 20 * bends + 10 * crossovers + length;
+	return std::min(50 * bends + 100 * crossovers + length, INT16_MAX - 1);
 }
 
 void routing::updateSolution(segment s, obstacleSegment* obstacle, activeSegment* actSegment) {
@@ -643,7 +652,6 @@ void routing::expandNet(splicedTerminal* t) {
 		}
 	}
 	clearActiveSet(activesA);
-	clearActiveSet(activesB);
 	clearActiveSet(inactives);
 	clearActives();
 }

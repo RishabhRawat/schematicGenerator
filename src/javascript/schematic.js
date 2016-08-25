@@ -260,13 +260,13 @@ schematik.prototype.renderTerminal = function (term, parent) {
 		var constantLine = [{"points": [[term.pos_x, term.pos_y]]}];
 		var nextPoint = [];
 		if (term.side == 0) {
-			nextPoint = [term.pos_x - 17, term.pos_y];
+			nextPoint = [term.pos_x - 10, term.pos_y];
 		} else if (term.side == 1) {
-			nextPoint = [term.pos_x, term.pos_y + 17];
+			nextPoint = [term.pos_x, term.pos_y + 10];
 		} else if (term.side == 2) {
-			nextPoint = [term.pos_x + 17, term.pos_y];
+			nextPoint = [term.pos_x + 10, term.pos_y];
 		} else if (term.side == 3) {
-			nextPoint = [term.pos_x, term.pos_y - 17];
+			nextPoint = [term.pos_x, term.pos_y - 10];
 		} else {
 			throw "Incorrect Terminals!!";
 		}
