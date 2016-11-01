@@ -1,7 +1,7 @@
 #ifndef COREDESIGN_H
 #define COREDESIGN_H
 
-#include <json/json.hpp>
+#include "json.hpp"
 #include "moduleImpl.h"
 
 class coreDesign {

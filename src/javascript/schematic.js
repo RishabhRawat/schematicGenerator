@@ -95,8 +95,7 @@ var standardSymbols = {
 		getText: function (type) {
 			return this.getLibraryElement(type).text;
 		}
-	}
-	;
+	};
 
 var actives;
 var wires;
@@ -123,7 +122,7 @@ var cppDebugFunctions = {
 		actives.rect(x0, y0, x1 - x0, y1 - y0).attr({'fill': 'green'});
 	},
 	highLightTerminal: function (x0, y0) {
-		'use strict'
+		'use strict';
 		var c = actives.circle(x0, y0, 5);
 		c.attr({
 			fill: '#ff0000'
