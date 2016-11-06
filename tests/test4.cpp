@@ -14,3 +14,23 @@
  * SOFTWARE.
  *
  */
+
+#include <schematic.h>
+#include "simple_svg_1.0.0.hpp"
+
+void drawSchematicObject(schematic schematic);
+
+int main(int argc, char** argv) {
+	std::ifstream t("test.json");
+	std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+	schematic schematicObject;
+	schematicObject.createJsonSchematicFromJson(str);
+	drawSchematicObject(schematicObject);
+	schematicObject.doRouting();
+	std::cout<<schematicObject.getRoutedNetsJson()<<std::endl;
+	return 0;
+}
+
+void drawSchematicObject(schematic schematicObject){
+	std::cout<< schematic
+}

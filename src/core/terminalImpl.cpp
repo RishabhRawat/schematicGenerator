@@ -17,7 +17,7 @@
 
 #include "terminalImpl.h"
 #include <functional>
-#include "moduleImpl.h"
+#include "module.h"
 //
 // void terminalImpl::setRelativePosition(int x, int y){
 //	terminalPosition = {x, y};
@@ -38,15 +38,15 @@
 // parentModule->getSize().y)
 //			side = schematic::rightSide;
 //		else
-//			throw "INVALID TERMINAL POSITION: terminals can only be placed at moduleImpl edges";
+//			throw "INVALID TERMINAL POSITION: terminals can only be placed at module edges";
 //	}
 //	else
 //		side = schematic::noneSide;
 //}
 //
 
-terminalImpl::terminalImpl(const std::string& terminalIdentifier, const termType type, const unsigned int terminalWidth,
-		moduleImpl* const parentModule, const bool systemTerminal)
+terminalImpl::terminalImpl(const std::string& terminalIdentifier, const terminalType type,
+		const unsigned int terminalWidth, module* const parentModule, const bool systemTerminal)
 	: terminalIdentifier(terminalIdentifier),
 	  type(type),
 	  terminalWidth(terminalWidth),
@@ -166,50 +166,44 @@ void net::connectSplicedTerminal(splicedTerminal* t) {
 }
 
 intPair net::addLineSegment(line* l, intPair p0, intPair p1) {
-	intPair corner = {0,0};
+	intPair corner = {0, 0};
 	bool horizontal = (p0.x == p1.x);
-	if(l->empty()) {
+	if (l->empty()) {
 		l->push_back(p0);
 		l->push_back(p1);
-	}
-	else {
+	} else {
 		bool lBeginHorizontal = (l->at(0).x == l->at(1).x);
-		bool lEndHorizontal = (l->at(l->size()-1).x == l->at(l->size()-2).x);
-		if((l->back()) == p0) {
-			if(horizontal == lEndHorizontal)
+		bool lEndHorizontal = (l->at(l->size() - 1).x == l->at(l->size() - 2).x);
+		if ((l->back()) == p0) {
+			if (horizontal == lEndHorizontal)
 				l->back() = p1;
 			else {
 				l->push_back(p1);
 				corner = p0;
 			}
-		}
-		else if((l->back()) == p1) {
-			if(horizontal == lEndHorizontal)
+		} else if ((l->back()) == p1) {
+			if (horizontal == lEndHorizontal)
 				l->back() = p0;
 			else {
 				l->push_back(p0);
 				corner = p1;
 			}
-		}
-		else if((l->front()) == p0) {
-			if(horizontal == lBeginHorizontal)
+		} else if ((l->front()) == p0) {
+			if (horizontal == lBeginHorizontal)
 				l->front() = p1;
 			else {
 				l->push_front(p1);
 				corner = p0;
 			}
-		}
-		else if((l->front()) == p1) {
-			if(horizontal == lBeginHorizontal)
+		} else if ((l->front()) == p1) {
+			if (horizontal == lBeginHorizontal)
 				l->front() = p0;
 			else {
 				l->push_front(p0);
 				corner = p1;
 			}
-		}
-		else
+		} else
 			throw std::runtime_error("Incorrent point being added");
 	}
 	return corner;
 }
-

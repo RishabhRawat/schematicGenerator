@@ -21,7 +21,6 @@
 #endif
 #include <initializer_list>
 #include "coreDesign.h"
-#include "schematic.h"
 
 schematic::schematic() {
 	pSchematicGenerator = new coreDesign();
@@ -55,33 +54,19 @@ schematic::~schematic() {
 }
 
 terminal schematic::addSystemTerminal(const std::string& terminalName, const terminalType type, const int width) {
-	terminalImpl* t;
-	switch (type) {
-		case terminalType::in:
-			t = pSchematicGenerator->systemModule.addTerminal(terminalName, termType::inType, width, true);
-			break;
-		case terminalType::out:
-			t = pSchematicGenerator->systemModule.addTerminal(terminalName, termType::outType, width, true);
-			break;
-		case terminalType::inout:
-			t = pSchematicGenerator->systemModule.addTerminal(terminalName, termType::inoutType, width, true);
-			break;
-	}
-	return {t, t->highestIndex, t->lowestIndex};
+	return pSchematicGenerator->systemModule.addTerminal(terminalName, type, width, true);
 }
 
 terminal schematic::getSystemTerminal(const std::string& terminalIdentifier) {
-	terminalImpl* t = pSchematicGenerator->systemModule.getTerminal(terminalIdentifier);
-	return {t, t->highestIndex, t->lowestIndex};
+	return pSchematicGenerator->systemModule.getTerminal(terminalIdentifier);
 }
 
-module schematic::addModule(const std::string& moduleName) {
-	return {pSchematicGenerator->subModules.insert(std::make_pair(moduleName, new moduleImpl(moduleName)))
-					.first->second};
+module* schematic::addModule(const std::string& moduleName) {
+	return pSchematicGenerator->subModules.insert(std::make_pair(moduleName, new module(moduleName))).first->second;
 }
 
-module schematic::getModule(const std::string& moduleName) {
-	return {pSchematicGenerator->subModules.find(moduleName)->second};
+module* schematic::getModule(const std::string& moduleName) {
+	return pSchematicGenerator->subModules.find(moduleName)->second;
 }
 
 std::string schematic::getRoutedNetsJson() {
@@ -95,52 +80,6 @@ std::string schematic::getPlacedModulesJson() {
 void schematic::setAspectRatio(unsigned int x, unsigned int y) {
 	aspectRatioX = x;
 	aspectRatioY = y;
-}
-
-module& module::setSize(const int width, const int height) {
-	modulePointer->size = {width, height};
-	return *this;
-}
-module& module::setPosition(const int x, const int y) {
-	modulePointer->position = {x, y};
-	return *this;
-}
-
-int module::getHeight() {
-	return modulePointer->size.y;
-}
-
-int module::getWidth() {
-	return modulePointer->size.x;
-}
-
-int module::getPositionX() {
-	return modulePointer->position.x;
-}
-
-int module::getPositionY() {
-	return modulePointer->position.y;
-}
-
-terminal module::addTerminal(const std::string& terminalName, const terminalType type, const int width) {
-	terminalImpl* t;
-	switch (type) {
-		case terminalType::in:
-			t = modulePointer->addTerminal(terminalName, termType::inType, width, false);
-			break;
-		case terminalType::out:
-			t = modulePointer->addTerminal(terminalName, termType::outType, width, false);
-			break;
-		case terminalType::inout:
-			t = modulePointer->addTerminal(terminalName, termType::inoutType, width, false);
-			break;
-	}
-	return {t, t->highestIndex, t->lowestIndex};
-}
-
-terminal module::getTerminal(const std::string& terminalIdentifier) {
-	auto t = modulePointer->getTerminal(terminalIdentifier);
-	return {t, t->highestIndex, t->lowestIndex};
 }
 
 terminal terminal::partial(unsigned int highIndex, unsigned int lowIndex) {

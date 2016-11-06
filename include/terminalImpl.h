@@ -33,28 +33,32 @@ struct bitTerminal {
 	bitTerminal(terminalImpl* baseTerminal, unsigned int index) : baseTerminal(baseTerminal), index(index) {}
 };
 
+/**
+ * @class terminal
+ * Represents terminals of modules (connectivity points)
+ */
 class terminalImpl {
 	friend class splicedTerminal;
 	friend class coreDesign;
 	friend class placement;
 	friend class module;
-	friend class moduleImpl;
+	friend class module;
 	friend class terminal;
 	friend class schematic;
 	friend class net;
 
 	const std::string terminalIdentifier;
-	const termType type;
+	const terminalType type;
 	const int terminalWidth;
-	moduleImpl* const parentModule;
+	module* const parentModule;
 	std::vector<bitTerminal> bitTerminals;
 
 	const bool systemTerminal;
 	const unsigned int highestIndex;
 	const unsigned int lowestIndex;
 
-	terminalImpl(const std::string& terminalIdentifier, const termType type, const unsigned int terminalWidth,
-			moduleImpl* const parentModule, const bool systemTerminal);
+	terminalImpl(const std::string& terminalIdentifier, const terminalType type, const unsigned int terminalWidth,
+			module* const parentModule, const bool systemTerminal);
 	~terminalImpl();
 	static void setBitTerminalToConst(bitTerminal& t, char v);
 	static void joinbitTerminals(bitTerminal& a, bitTerminal& b);
@@ -72,7 +76,7 @@ class splicedTerminal {
 	friend class coreDesign;
 	friend class placement;
 	friend class routing;
-	friend class moduleImpl;
+	friend class module;
 	friend class terminalImpl;
 	friend class net;
 

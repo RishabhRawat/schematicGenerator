@@ -54,8 +54,8 @@ class placement {
 	void place(coreDesign* inputDesign, schematicParameters& parameters);
 
 	void partitionFormation();
-	moduleImpl* selectPartitionSeed(hashlib::pool<moduleImpl*> moduleSet) const;
-	partition* createPartition(hashlib::pool<moduleImpl*>& moduleSet, moduleImpl* seed);
+	module* selectPartitionSeed(hashlib::pool<module*> moduleSet) const;
+	partition* createPartition(hashlib::pool<module*>& moduleSet, module* seed);
 
 	void boxFormation();
 	moduleSet* selectBoxSeeds(partition* p);

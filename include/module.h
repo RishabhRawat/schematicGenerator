@@ -18,16 +18,21 @@
 #ifndef MODULES_H
 #define MODULES_H
 #include "common.h"
+#include "schematic.h"
 #include "terminalImpl.h"
 
-class moduleImpl {
+/**
+ * @class module
+ * Used to create and access modules
+ */
+class module {
 	friend class coreDesign;
 	friend class placement;
 	friend class routing;
 	friend class box;
-	friend class module;
 	friend class terminalImpl;
 	friend class net;
+	friend class schematic;
 
 private:
 	std::string moduleType;
@@ -54,20 +59,35 @@ private:
 
 	void rotateModule(clockwiseRotation newRotValue);
 
-public:
-	~moduleImpl();
+	terminal addTerminal(const std::string& terminalName, const terminalType type, const unsigned int width,
+			const bool isSystemTerminal);
 
-	moduleImpl(const std::string moduleIdentifier) : moduleIdentifier(moduleIdentifier) {}
+public:
+	~module();
+
+	module(const std::string moduleIdentifier) : moduleIdentifier(moduleIdentifier) {}
+
+	module(module const&) = delete;
+	void operator=(module const& x) = delete;
 
 	std::string getIdentifier() const {
 		return moduleIdentifier;
 	}
-	terminalImpl* addTerminal(
-			const std::string& terminalName, const termType type, const int width, const bool isSystemTerminal);
 
-	terminalImpl* getTerminal(const std::string& basic_string);
+	inline terminal addTerminal(const std::string& terminalName, const terminalType type, const unsigned int width) {
+		return addTerminal(terminalName, type, width, false);
+	}
 
-	// Clockwise from bottom left
+	terminal getTerminal(const std::string& basic_string);
+
+	inline void setSize(const int width, const int height) {
+		size = {width, height};
+	}
+	inline void setPosition(const intPair& position) {
+		module::position = position;
+	}
+
+	// Clockwise from bottom left-
 	intPair getVertex(const int index) {
 		switch (index) {
 			case 0:
@@ -82,5 +102,18 @@ public:
 				throw std::invalid_argument("Invalid index");
 		}
 	};
+
+	inline int getWidth() {
+		return size.x;
+	}
+	inline int getHeight() {
+		return size.y;
+	}
+	inline int getPositionX() {
+		return position.x;
+	}
+	inline int getPositionY() {
+		return position.y;
+	}
 };
 #endif  // MODULES_H

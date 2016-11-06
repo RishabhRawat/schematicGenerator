@@ -23,9 +23,9 @@
 #include "hashlib.h"
 
 /**
- * @enum termType Enumerates the type/direction of the terminal
+ * @enum terminalType Enumerates the type/direction of the terminal
  */
-enum class termType { inType, outType, inoutType };
+enum class terminalType { in, out, inout };
 
 /**
  * @enum terminalSide Enumerates the terminal positioning relative to the module
@@ -139,7 +139,7 @@ struct schematicParameters {
 
 class coreDesign;
 
-class moduleImpl;
+class module;
 class box;
 class partition;
 
@@ -151,7 +151,7 @@ struct bitNet;
 
 namespace hashlib {
 template <>
-struct hash_ops<moduleImpl*> : hash_ptr_ops {};
+struct hash_ops<module*> : hash_ptr_ops {};
 template <>
 struct hash_ops<box*> : hash_ptr_ops {};
 template <>
@@ -176,26 +176,26 @@ struct ulink {
 		: linkNet(linkNet), linkSource(linkSource), linkSink(linkSink) {}
 };
 
-typedef hashlib::dict<std::string, moduleImpl*> namedModuleCollection;
+typedef hashlib::dict<std::string, module*> namedModuleCollection;
 typedef hashlib::dict<std::string, terminalImpl*> namedTerminalCollection;
 
-typedef std::pair<std::string, moduleImpl*> namedModulePair;
+typedef std::pair<std::string, module*> namedModulePair;
 typedef std::pair<std::string, terminalImpl*> namedTerminalPair;
 
-typedef std::vector<moduleImpl*> moduleVector;
+typedef std::vector<module*> moduleVector;
 typedef std::vector<splicedTerminal*> splicedTerminalVector;
 typedef std::vector<ulink*> linkVector;
 typedef std::vector<box*> boxVector;
 typedef std::vector<partition*> partitionVector;
 
-typedef hashlib::dict<moduleImpl*, std::vector<ulink*>> moduleLinkMap;
-typedef hashlib::dict<moduleImpl*, std::vector<splicedTerminal*>> moduleSplicedTerminalMap;
+typedef hashlib::dict<module*, std::vector<ulink*>> moduleLinkMap;
+typedef hashlib::dict<module*, std::vector<splicedTerminal*>> moduleSplicedTerminalMap;
 
-typedef std::pair<moduleImpl*, std::vector<ulink*>> moduleLinkPair;
-typedef std::pair<moduleImpl*, std::vector<splicedTerminal*>> moduleSplicedTerminalPair;
+typedef std::pair<module*, std::vector<ulink*>> moduleLinkPair;
+typedef std::pair<module*, std::vector<splicedTerminal*>> moduleSplicedTerminalPair;
 
 typedef hashlib::pool<splicedTerminal*> splicedTerminalSet;
-typedef hashlib::pool<moduleImpl*> moduleSet;
+typedef hashlib::pool<module*> moduleSet;
 typedef hashlib::pool<net*> netSet;
 
 typedef std::deque<intPair> line;

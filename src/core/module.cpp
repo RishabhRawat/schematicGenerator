@@ -15,20 +15,22 @@
  *
  */
 
-#include "moduleImpl.h"
+#include "module.h"
 
-terminalImpl* moduleImpl::addTerminal(
-		const std::string& terminalName, const termType type, const int width, const bool isSystemTerminal) {
+terminal module::addTerminal(const std::string& terminalName, const terminalType type, const unsigned int width,
+		const bool isSystemTerminal) {
 	// FIXME: I need to check whether the returned reference is correct
-	return moduleTerminals.insert({terminalName, new terminalImpl(terminalName, type, width, this, isSystemTerminal)})
-			.first->second;
+	auto t = moduleTerminals.insert({terminalName, new terminalImpl(terminalName, type, width, this, isSystemTerminal)})
+					 .first->second;
+	return {t, t->highestIndex, t->lowestIndex};
 }
 
-terminalImpl* moduleImpl::getTerminal(const std::string& terminalName) {
-	return moduleTerminals.find(terminalName)->second;
+terminal module::getTerminal(const std::string& terminalName) {
+	auto t = moduleTerminals.find(terminalName)->second;
+	return {t, t->highestIndex, t->lowestIndex};
 }
 
-void moduleImpl::rotateModule(clockwiseRotation newRotValue) {
+void module::rotateModule(clockwiseRotation newRotValue) {
 	for (splicedTerminal* t : moduleSplicedTerminals) {
 		intPair temp;
 		switch (newRotValue) {
@@ -43,7 +45,7 @@ void moduleImpl::rotateModule(clockwiseRotation newRotValue) {
 				break;
 			case clockwiseRotation::d_180:
 				t->placedPosition = size - t->originalPosition;
-			t->placedSide = static_cast<terminalSide>((t->baseTerminal->side + 2) % 4);
+				t->placedSide = static_cast<terminalSide>((t->baseTerminal->side + 2) % 4);
 				break;
 			case clockwiseRotation::d_270:
 				temp = (t->originalPosition - size / 2);
@@ -54,7 +56,7 @@ void moduleImpl::rotateModule(clockwiseRotation newRotValue) {
 	}
 }
 
-moduleImpl::~moduleImpl() {
+module::~module() {
 	for (auto&& item : moduleTerminals) {
 		delete item.second;
 	}

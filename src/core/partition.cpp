@@ -23,7 +23,7 @@ void partition::add(box* b) {
 	partitionBoxes.emplace_back(b);
 }
 
-void partition::addModule(moduleImpl* m) {
+void partition::addModule(module* m) {
 	partitionModules.insert(m);
 }
 
@@ -32,6 +32,6 @@ partition::~partition() {
 		delete b;
 }
 
-bool partition::contains(moduleImpl* m) {
+bool partition::contains(module* m) {
 	return partitionModules.find(m) != partitionModules.end();
 }

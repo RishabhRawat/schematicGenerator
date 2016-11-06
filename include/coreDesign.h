@@ -2,14 +2,14 @@
 #define COREDESIGN_H
 
 #include "json.hpp"
-#include "moduleImpl.h"
+#include "module.h"
 
 class coreDesign {
 	friend class schematic;
 	friend class placement;
 	friend class routing;
 
-	moduleImpl systemModule;  // just a place holder
+	module systemModule;  // just a place holder
 	namedModuleCollection subModules;
 
 	schematicParameters designParameters;

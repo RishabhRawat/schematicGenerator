@@ -46,18 +46,18 @@ void schematic::parseYosysJson(std::string jsonText) {
 
 	if (parsedJson["modules"].size() > 1)
 		// FIXME: better message?
-		throw std::length_error("Only one top level moduleImpl systems are supported");
+		throw std::length_error("Only one top level module systems are supported");
 
 	std::vector<std::pair<terminal, bool>> netData(netNumberGuess,std::pair<terminal, bool>{terminal{"0"},false});
 
 	for (auto m_iter = parsedJson["modules"].begin(); m_iter != parsedJson["modules"].end(); ++m_iter) {
 		for (auto c_iter = m_iter.value()["cells"].begin(); c_iter != m_iter.value()["cells"].end(); ++c_iter) {
-			module m = addModule(c_iter.key());
+			auto m = addModule(c_iter.key());
 
 			for (auto t_iter = c_iter.value()["port_directions"].begin();
 					t_iter != c_iter.value()["port_directions"].end(); ++t_iter) {
 				terminal t =
-						m.addTerminal(t_iter.key(), parseTerminalType(c_iter.value()["port_directions"][t_iter.key()]),
+						m->addTerminal(t_iter.key(), parseTerminalType(c_iter.value()["port_directions"][t_iter.key()]),
 								c_iter.value()["connections"][t_iter.key()].size());
 
 				for (unsigned int i = 0; i < t.getWidth(); ++i) {

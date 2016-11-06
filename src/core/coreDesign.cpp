@@ -16,10 +16,6 @@
  */
 
 #include "coreDesign.h"
-#include <strings.h>
-#include <iostream>
-#include <iterator>
-#include <sstream>
 #include "placement.h"
 #include "routing.h"
 
@@ -46,7 +42,7 @@ void coreDesign::initializeStructures() {
 	// Iterates over all bitTerminal in the whole system
 	for (namedModulePair& m_pair : subModules) {
 		for (namedTerminalPair& t_pair : m_pair.second->moduleTerminals) {
-			if (t_pair.second->type == termType::outType)
+			if (t_pair.second->type == terminalType::out)
 				t_pair.second->side = terminalSide::rightSide;
 			else
 				t_pair.second->side = terminalSide::leftSide;
@@ -93,7 +89,7 @@ void coreDesign::initializeStructures() {
 		int input = 0;  // count inout on left side :/
 		int output = 0;
 		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
-			if (t->baseTerminal->type == termType::outType) {
+			if (t->baseTerminal->type == terminalType::out) {
 				output++;
 			} else
 				input++;
@@ -103,7 +99,7 @@ void coreDesign::initializeStructures() {
 		int placingLength = m.second->size.y - 2 * m.second->cornerTerminalPadding;
 		int cornerPad = m.second->cornerTerminalPadding;
 		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
-			if (t->baseTerminal->type == termType::outType)
+			if (t->baseTerminal->type == terminalType::out)
 				t->originalPosition = {m.second->size.x, cornerPad + (output-- * placingLength) / maxout};
 			else
 				t->originalPosition = {0, cornerPad + (input-- * placingLength) / maxin};

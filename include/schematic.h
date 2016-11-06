@@ -19,38 +19,12 @@
 #define SCHEMATIC_H
 
 #include <string>
+#include "terminalImpl.h"
 
 class coreDesign;
 class terminal;
 class module;
 class terminalImpl;
-class moduleImpl;
-
-/**
- * @enum terminalType
- * Enumerates the port type of a terminal
- */
-enum class terminalType { in, out, inout };
-
-/**
- * @class module
- * public side module class, used to create and access modules
- */
-class module {
-	friend class schematic;
-	moduleImpl* const modulePointer;
-	module(moduleImpl* const modulePointer) : modulePointer(modulePointer) {}
-
-public:
-	module& setSize(const int width, const int height);
-	module& setPosition(const int x, const int y);
-	int getWidth();
-	int getHeight();
-	int getPositionX();
-	int getPositionY();
-	terminal addTerminal(const std::string& terminalName, const terminalType type, const int width);
-	terminal getTerminal(const std::string& terminalIdentifier);
-};
 
 /**
  * @class terminal
@@ -98,6 +72,8 @@ public:
 	}
 };
 
+#include "module.h"
+
 /**
  * @class schematic
  * Main class for schematic generation
@@ -125,14 +101,14 @@ public:
 	 * @param moduleName unique name for the module
 	 * @return
 	 */
-	module addModule(const std::string& moduleName);
+	module* addModule(const std::string& moduleName);
 
 	/**
 	 * Retrieve a module with corrosponding name
 	 * @param moduleName
 	 * @return
 	 */
-	module getModule(const std::string& moduleName);
+	module* getModule(const std::string& moduleName);
 	/**
 	 * Adds a top level terminal
 	 * @param terminalName

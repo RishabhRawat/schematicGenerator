@@ -62,7 +62,7 @@ std::string coreDesign::createDebugJsonSchematicFromJson() {
 			bS["size_y"] = b->size.y;
 			bS["offset_x"] = b->offset.x;
 			bS["offset_y"] = b->offset.y;
-			for (moduleImpl* m : b->boxModules) {
+			for (module* m : b->boxModules) {
 				nlohmann::json mS;
 				mS["name"] = m->moduleIdentifier;
 				mS["pos_x"] = m->position.x;

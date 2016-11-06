@@ -18,7 +18,7 @@
 #ifndef BOX_H
 #define BOX_H
 #include "common.h"
-#include "moduleImpl.h"
+#include "module.h"
 
 /**
  * Box class is a container for modules, and comes below partitions in the partitioning heirarchy. A box is basically
@@ -30,7 +30,7 @@ class box {
 
 private:
 	partition* parentPartition;
-	std::vector<moduleImpl*> boxModules;
+	std::vector<module*> boxModules;
 	std::vector<std::pair<splicedTerminal*, splicedTerminal*>> boxLink;
 	intPair offset, position, size;
 
@@ -39,7 +39,7 @@ public:
 	 * Constructor to the class box
 	 * @param m Pointer to the first module of the box
 	 */
-	box(moduleImpl* m) {
+	box(module* m) {
 		m->setParentBox(this);
 		boxModules.emplace_back(m);
 	}
@@ -49,7 +49,7 @@ public:
 	 * @param src Pointer to the terminal of the last module in the box which connects it to this module
 	 * @param sink Pointer to the terminal of this module which connects to the last module in the box
 	 */
-	void add(moduleImpl* m, splicedTerminal* src, splicedTerminal* sink);
+	void add(module* m, splicedTerminal* src, splicedTerminal* sink);
 
 	/**
 	 * Sets the parent to this box

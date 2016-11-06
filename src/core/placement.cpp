@@ -25,9 +25,8 @@
  * @return distance between the two coordinates
  */
 unsigned int placement::distanceCostFunction(const intPair a, const intPair b) {
-	return static_cast<unsigned int>(
-			designParameters.aspectRatio.y * (a.x - b.x) * (a.x - b.x) +
-			designParameters.aspectRatio.x * (a.y - b.y) * (a.y - b.y));
+	return static_cast<unsigned int>(designParameters.aspectRatio.y * (a.x - b.x) * (a.x - b.x) +
+									 designParameters.aspectRatio.x * (a.y - b.y) * (a.y - b.y));
 }
 
 void placement::place(coreDesign* inputDesign, schematicParameters& parameters) {
@@ -42,8 +41,8 @@ void placement::place(coreDesign* inputDesign, schematicParameters& parameters) 
 }
 
 void placement::partitionFormation() {
-	moduleImpl* seed;
-	hashlib::pool<moduleImpl*> moduleSet;
+	module* seed;
+	hashlib::pool<module*> moduleSet;
 
 	for (namedModulePair& m : core->subModules)
 		moduleSet.insert(m.second);
@@ -55,12 +54,12 @@ void placement::partitionFormation() {
 	}
 }
 
-moduleImpl* placement::selectPartitionSeed(hashlib::pool<moduleImpl*> moduleSet) const {
+module* placement::selectPartitionSeed(hashlib::pool<module*> moduleSet) const {
 	// TODO: Improve this bruteforce Algorithm
 	int maxConnectionsInFreeSet = -1;
 	int minConnectionsOutFreeSet = INT32_MAX;
-	moduleImpl* seed = nullptr;
-	for (moduleImpl* m : moduleSet) {
+	module* seed = nullptr;
+	for (module* m : moduleSet) {
 		int connectionsInFreeSet = 0;
 		int connectionsOutFreeSet = 0;
 		// The choice is either to iterate over all modules connected to m
@@ -86,19 +85,19 @@ moduleImpl* placement::selectPartitionSeed(hashlib::pool<moduleImpl*> moduleSet)
 	return seed;
 }
 
-partition* placement::createPartition(hashlib::pool<moduleImpl*>& moduleSet, moduleImpl* seed) {
+partition* placement::createPartition(hashlib::pool<module*>& moduleSet, module* seed) {
 	partition* newPartition = new partition();
 	newPartition->addModule(seed);
 	unsigned int connections = 0;
 	unsigned int partitionEntries = 0;
 	while (!moduleSet.empty() && (partitionEntries < designParameters.maxPartitionSize) &&
 			(connections < designParameters.maxPartitionConnections)) {
-		moduleImpl* selectedModule = nullptr;
+		module* selectedModule = nullptr;
 		int maxConnectionsInPartition = 1;
 		int minConnectionsOutPartion = INT32_MAX;
 
-		// Algo to select moduleImpl
-		for (moduleImpl* m : moduleSet) {
+		// Algo to select module
+		for (module* m : moduleSet) {
 			int connectionsInPartition = 0;
 			int connectionsOutPartition = 0;
 			for (moduleLinkPair& pair : m->connectedModuleLinkMap) {
@@ -132,7 +131,7 @@ moduleSet* placement::selectBoxSeeds(partition* p) {
 	if (p->length() > 1)
 		throw std::runtime_error("Invalid Partition Error: placment::selectBoxSeeds");
 
-	moduleSet* roots = new hashlib::pool<moduleImpl*>();
+	moduleSet* roots = new hashlib::pool<module*>();
 	for (auto&& m : p->partitionModules) {
 		bool seed = false;
 		// FIXME: what about when there are no connectedModuleLinkMap entries ??
@@ -143,7 +142,7 @@ moduleSet* placement::selectBoxSeeds(partition* p) {
 			} else if (pair.first == &core->systemModule) {
 				for (ulink* l : pair.second) {
 					for (splicedTerminal* t : *(l->linkSink)) {
-						if (t->baseTerminal->type == termType::inType || t->baseTerminal->type == termType::inoutType) {
+						if (t->baseTerminal->type == terminalType::in || t->baseTerminal->type == terminalType::inout) {
 							seed = true;
 							break;
 						}
@@ -159,7 +158,7 @@ moduleSet* placement::selectBoxSeeds(partition* p) {
 		int outGoingNets = 0;
 		if (!seed) {
 			for (splicedTerminal* t : m->moduleSplicedTerminals) {
-				if (t->baseTerminal->type == termType::outType)
+				if (t->baseTerminal->type == terminalType::out)
 					outGoingNets++;
 				if (outGoingNets > 1)
 					break;
@@ -173,23 +172,23 @@ moduleSet* placement::selectBoxSeeds(partition* p) {
 }
 
 box* placement::selectPath(box* path, moduleSet remainingModules) {
-	for (moduleImpl* m : remainingModules) {
+	for (module* m : remainingModules) {
 		remainingModules.erase(m);
 	}
 
 	bool searchSuccess = true;
 	while (searchSuccess && path->length() <= designParameters.maxPathLength) {
 		searchSuccess = false;
-		moduleImpl* lastModule = path->boxModules.back();
+		module* lastModule = path->boxModules.back();
 		for (auto&& m : remainingModules) {
 			moduleLinkMap::iterator mapIterator = lastModule->connectedModuleLinkMap.find(m);
 			if (mapIterator != lastModule->connectedModuleLinkMap.end()) {
 				for (ulink* l : mapIterator->second) {
 					auto lType = l->linkSource->baseTerminal->type;
-					if (lType == termType::inType || lType == termType::inoutType) {
+					if (lType == terminalType::in || lType == terminalType::inout) {
 						for (splicedTerminal* t : *(l->linkSink)) {
 							auto tType = t->baseTerminal->type;
-							if (tType == termType::outType || tType == termType::inoutType) {
+							if (tType == terminalType::out || tType == terminalType::inout) {
 								remainingModules.erase(m);
 								path->add(m, l->linkSource, t);  // Note The root is added earlier
 								searchSuccess = true;
@@ -215,12 +214,12 @@ void placement::boxFormation() {
 			throw std::runtime_error("No seeds");
 		while (!p->partitionModules.empty()) {
 			if (seeds->empty()) {
-				for (moduleImpl* m : p->partitionModules) {
+				for (module* m : p->partitionModules) {
 					seeds->insert(m);
 				}
 			}
 			box* longestPath = nullptr;
-			for (moduleImpl* seed : *seeds) {
+			for (module* seed : *seeds) {
 				box* path = new box(seed);
 				path = selectPath(path, p->partitionModules);  // Call by Value
 
@@ -236,7 +235,7 @@ void placement::boxFormation() {
 				m->setParentBox(longestPath);
 			}
 
-			for (moduleImpl* m : longestPath->boxModules) {
+			for (module* m : longestPath->boxModules) {
 				seeds->erase(m);
 			}
 			p->add(longestPath);
@@ -259,7 +258,7 @@ void placement::modulePlacement() {
 }
 
 void placement::initModulePlacement(box* b, intPair& leftBottom, intPair& rightTop) {
-	moduleImpl* root = b->boxModules.front();
+	module* root = b->boxModules.front();
 	if (b->length() > 1) {
 		splicedTerminal* out = b->boxLink.front().first;
 		switch (out->baseTerminal->side) {
@@ -310,8 +309,8 @@ void placement::initModulePlacement(box* b, intPair& leftBottom, intPair& rightT
 }
 
 void placement::placeModule(box* b, unsigned int index, intPair& leftBottom, intPair& rightTop) {
-	moduleImpl* m_prev = b->boxModules[index - 1];
-	moduleImpl* m = b->boxModules[index];
+	module* m_prev = b->boxModules[index - 1];
+	module* m = b->boxModules[index];
 	splicedTerminal* source = b->boxLink[index - 1].first;
 	splicedTerminal* sink = b->boxLink[index - 1].second;
 
@@ -445,7 +444,7 @@ box* placement::selectNextBox(const hashlib::pool<box*>& remainingBoxes, const h
 
 	for (box* b : remainingBoxes) {
 		unsigned int count = 0;
-		for (moduleImpl* m : b->boxModules) {
+		for (module* m : b->boxModules) {
 			for (moduleLinkPair& connectedPair : m->connectedModuleLinkMap) {
 				if (placedBoxes.find(connectedPair.first->parentBox) != placedBoxes.end())
 					count++;
@@ -472,7 +471,7 @@ intPair placement::calculateOptimumBoxPosition(const box* b, hashlib::pool<box*>
 	int boxCount = 0;
 	int restCount = 0;
 
-	for (moduleImpl* boxModule : b->boxModules) {
+	for (module* boxModule : b->boxModules) {
 		for (moduleLinkPair& m_pair : boxModule->connectedModuleLinkMap) {
 			if (m_pair.first->parentBox != b && m_pair.first != &core->systemModule &&
 					placedBoxes.find(m_pair.first->parentBox) != placedBoxes.end()) {
@@ -668,7 +667,7 @@ partition* placement::selectNextPartition(
 	for (partition* p : remainingPartition) {
 		unsigned int conn = 0;
 		for (box* b : p->partitionBoxes) {
-			for (moduleImpl* m : b->boxModules) {
+			for (module* m : b->boxModules) {
 				for (moduleLinkPair& otherM : m->connectedModuleLinkMap) {
 					if (otherM.first == &core->systemModule)
 						continue;
@@ -695,7 +694,7 @@ intPair placement::calculateOptimumPartitionPosition(partition* p, hashlib::pool
 	int partitionCount = 0;
 	int restCount = 0;
 	for (box* b : p->partitionBoxes) {
-		for (moduleImpl* boxModule : b->boxModules) {
+		for (module* boxModule : b->boxModules) {
 			for (moduleLinkPair& m_pair : boxModule->connectedModuleLinkMap) {
 				if (m_pair.first != &core->systemModule && m_pair.first->parentBox->parentPartition != p &&
 						placedPartition.find(m_pair.first->parentBox->parentPartition) != placedPartition.end()) {
@@ -741,15 +740,15 @@ void placement::systemTerminalPlacement() {
 			intPair gravity = calculateTerminalGravity(ul->linkSink);
 			// Currently only terminalImpl directions are left and right, this can be easily changed here
 			switch (ul->linkSource->baseTerminal->type) {
-				case termType::inType:
+				case terminalType::in:
 					ul->linkSource->placedPosition = {-core->offset.x + 5, gravity.y};
 					ul->linkSource->placedSide = terminalSide::leftSide;
 					break;
-				case termType::outType:
+				case terminalType::out:
 					ul->linkSource->placedPosition = {-core->offset.x + core->size.x - 5, gravity.y};
 					ul->linkSource->placedSide = terminalSide::rightSide;
 					break;
-				case termType::inoutType:
+				case terminalType::inout:
 					if (gravity.x > -core->offset.x + core->size.x / 2) {
 						ul->linkSource->placedPosition = {-core->offset.x + core->size.x - 5, gravity.y};
 						ul->linkSource->placedSide = terminalSide::rightSide;
@@ -766,7 +765,7 @@ void placement::systemTerminalPlacement() {
 void placement::flattenSchematic() {
 	for (partition* p : allPartitions) {
 		for (box* b : p->partitionBoxes) {
-			for (moduleImpl* m : b->boxModules) {
+			for (module* m : b->boxModules) {
 				m->position = (m->position - b->offset) + (b->position - p->offset) + (p->position - core->offset);
 				for (auto&& moduleSplicedTerminal : m->moduleSplicedTerminals) {
 					moduleSplicedTerminal->placedPosition += m->position;

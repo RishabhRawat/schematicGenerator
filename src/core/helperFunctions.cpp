@@ -18,7 +18,7 @@
 #include <sstream>
 #include <iostream>
 #include <schematic.h>
-#include <moduleImpl.h>
+#include <module.h>
 #include "common.h"
 using namespace std;
 void allModules(namedModuleCollection nC) {
