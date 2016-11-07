@@ -23,11 +23,11 @@
 #include "partition.h"
 
 class placement {
-	friend class coreDesign;
+	friend class schematic;
 
 	schematicParameters designParameters;
 	partitionVector allPartitions;
-	coreDesign* core;
+	schematic* core;
 	~placement();
 
 	template <typename T>
@@ -51,7 +51,7 @@ class placement {
 		}
 	};
 
-	void place(coreDesign* inputDesign, schematicParameters& parameters);
+	void place(schematic* inputDesign, schematicParameters& parameters);
 
 	void partitionFormation();
 	module* selectPartitionSeed(hashlib::pool<module*> moduleSet) const;

@@ -17,11 +17,11 @@
 
 #include <box.h>
 #include <routing.h>
-#include "coreDesign.h"
+#include "schematic.h"
 #include "partition.h"
 #include "placement.h"
 
-std::string coreDesign::createDebugJsonSchematicFromJson() {
+std::string schematic::createDebugJsonSchematic() {
 	initializeStructures();
 	placement placementObject;
 	placementObject.place(this, designParameters);
@@ -85,7 +85,7 @@ std::string coreDesign::createDebugJsonSchematicFromJson() {
 	return outputJson.dump(2);
 }
 
-std::string coreDesign::createJsonSchematicFromJson() {
+std::string schematic::createJsonSchematic() {
 	nlohmann::json outputJson;
 	outputJson["name"] = systemModule.moduleIdentifier;
 	outputJson["size_x"] = size.x;
@@ -119,7 +119,7 @@ std::string coreDesign::createJsonSchematicFromJson() {
 	}
 	return outputJson.dump(2);
 }
-std::string coreDesign::exportRoutingJson() {
+std::string schematic::exportRoutingJson() {
 	nlohmann::json routing;
 	for (net* cN : internalNets) {
 		nlohmann::json completeNetObject;

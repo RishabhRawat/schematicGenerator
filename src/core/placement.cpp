@@ -16,7 +16,7 @@
  */
 
 #include "placement.h"
-#include "coreDesign.h"
+#include "schematic.h"
 
 /**
  * Returns the L2Norm of two intPair. Useful only if both parameters store coordinates
@@ -29,7 +29,7 @@ unsigned int placement::distanceCostFunction(const intPair a, const intPair b) {
 									 designParameters.aspectRatio.x * (a.y - b.y) * (a.y - b.y));
 }
 
-void placement::place(coreDesign* inputDesign, schematicParameters& parameters) {
+void placement::place(schematic* inputDesign, schematicParameters& parameters) {
 	core = inputDesign;
 	designParameters = parameters;
 	partitionFormation();

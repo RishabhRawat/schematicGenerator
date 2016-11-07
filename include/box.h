@@ -26,7 +26,7 @@
  */
 class box {
 	friend class placement;
-	friend class coreDesign;
+	friend class schematic;
 
 private:
 	partition* parentPartition;

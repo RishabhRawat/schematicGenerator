@@ -16,7 +16,7 @@
  */
 
 #include "routing.h"
-#include "coreDesign.h"
+#include "schematic.h"
 
 const int strokeWidth = 5;
 #ifdef WEB_COMPILATION

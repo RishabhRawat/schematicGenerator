@@ -121,7 +121,7 @@ Functions
 	.. note:: Do not use this class directly especially if you are working with YosysJS, use schematik class instead. Though you might need this for finer control.
 
 .. _topDesign.createJsonSchematicFromJson:
-.. js:function:: createJsonSchematicFromJson(jsonData)
+.. js:function:: createJsonSchematic(jsonData)
 
 	Creates the placement schematic directly from Yosys JSON data
 

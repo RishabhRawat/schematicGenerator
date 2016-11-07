@@ -16,7 +16,6 @@
  */
 
 #include "terminalImpl.h"
-#include <functional>
 #include "module.h"
 //
 // void terminalImpl::setRelativePosition(int x, int y){
@@ -139,13 +138,11 @@ void terminalImpl::createSplicedTerminals() {
 			joinable = true;
 			std::unordered_set<bitTerminal*> lowerBitTerminal;
 			for (auto&& cBT : t1.connectedBitNet->connectedBitTerminals) {
-				int lesserIndex = cBT->index;
-				lesserIndex--;
-				if (lesserIndex < 0) {
+				if (cBT->index == 0) {
 					joinable = false;
 					break;
 				} else
-					lowerBitTerminal.insert(&cBT->baseTerminal->bitTerminals.at(lesserIndex));
+					lowerBitTerminal.insert(&cBT->baseTerminal->bitTerminals.at(cBT->index - 1));
 			}
 			joinable &= (t0.connectedBitNet->connectedBitTerminals == lowerBitTerminal);
 		}
@@ -206,4 +203,36 @@ intPair net::addLineSegment(line* l, intPair p0, intPair p1) {
 			throw std::runtime_error("Incorrent point being added");
 	}
 	return corner;
+}
+
+
+terminal terminal::partial(unsigned int highIndex, unsigned int lowIndex) {
+	if (!constantValue.empty())
+		throw std::invalid_argument("constant Terminal cannot be spliced");
+
+	if (highIndex < lowIndex || highIndex > terminalPointer->highestIndex || lowIndex < terminalPointer->lowestIndex)
+		throw std::invalid_argument("Invalid value of indexes");
+
+	return {terminalPointer, highIndex, lowIndex};
+}
+
+terminal& terminal::connect(terminal t) {
+	if (!constantValue.empty())
+		throw std::invalid_argument("constant Terminal cannot be connected");
+
+	if (t.highestIndex - t.lowestIndex != highestIndex - lowestIndex)
+		throw std::invalid_argument("Make sure the width of the connections and the ");
+
+	if (t.constantValue.empty()) {
+		for (unsigned int i = 0; i <= highestIndex - lowestIndex; ++i) {
+			terminalImpl::joinbitTerminals(terminalPointer->bitTerminals.at(lowestIndex + i),
+					t.terminalPointer->bitTerminals.at(t.lowestIndex + i));
+		}
+	} else {
+		for (unsigned int i = 0; i <= highestIndex - lowestIndex; ++i) {
+			terminalImpl::setBitTerminalToConst(
+					terminalPointer->bitTerminals.at(lowestIndex + i), t.constantValue.at(t.highestIndex - i));
+		}
+	}
+	return *this;
 }

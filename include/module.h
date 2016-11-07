@@ -18,7 +18,6 @@
 #ifndef MODULES_H
 #define MODULES_H
 #include "common.h"
-#include "schematic.h"
 #include "terminalImpl.h"
 
 /**
@@ -26,7 +25,7 @@
  * Used to create and access modules
  */
 class module {
-	friend class coreDesign;
+	friend class schematic;
 	friend class placement;
 	friend class routing;
 	friend class box;

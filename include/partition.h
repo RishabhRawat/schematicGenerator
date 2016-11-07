@@ -21,7 +21,7 @@
 
 class partition {
 	friend class placement;
-	friend class coreDesign;
+	friend class schematic;
 
 private:
 	std::vector<box*> partitionBoxes;

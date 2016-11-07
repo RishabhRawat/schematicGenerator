@@ -137,7 +137,7 @@ struct schematicParameters {
 		  aspectRatio({4, 3}) {}
 };
 
-class coreDesign;
+class schematic;
 
 class module;
 class box;

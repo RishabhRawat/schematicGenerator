@@ -15,86 +15,39 @@
  *
  */
 
-#ifndef SCHEMATIC_H
-#define SCHEMATIC_H
+#ifndef COREDESIGN_H
+#define COREDESIGN_H
 
-#include <string>
-#include "terminalImpl.h"
-
-class coreDesign;
-class terminal;
-class module;
-class terminalImpl;
-
-/**
- * @class terminal
- * public side terminal class, used to create and access modules
- */
-class terminal {
-	friend class schematic;
-	friend class module;
-	terminalImpl* terminalPointer;
-	unsigned int highestIndex, lowestIndex;
-
-private:
-	std::string constantValue;
-	terminal(terminalImpl* terminalPointer, const unsigned int highestIndex, const unsigned int lowestIndex)
-		: terminalPointer(terminalPointer), highestIndex(highestIndex), lowestIndex(lowestIndex), constantValue("") {}
-
-public:
-	/**
-	 * Constructor for constructing constant terminals, non-constant terminals need module::addTerminals or
-	 * schematic::addSystemTerminals
-	 * @param constValue
-	 * @return
-	 */
-	terminal(std::string constValue)
-		: terminalPointer(nullptr),
-		  highestIndex(static_cast<unsigned int>(constValue.length() - 1)),
-		  lowestIndex(0),
-		  constantValue(constValue) {}
-	/**
-	 * Returns a partial terminal, useful for splicing terminals
-	 * @param highIndex
-	 * @param lowIndex
-	 * @return
-	 */
-	terminal partial(unsigned int highIndex, unsigned int lowIndex);
-	/**
-	 * Connects two terminals provided they are equal in width, If not use terminal::partial to splice them first
-	 * @param t
-	 * @return
-	 */
-	terminal& connect(terminal t);
-
-	unsigned int getWidth() const {
-		return highestIndex - lowestIndex + 1;
-	}
-};
-
+#include "json.hpp"
 #include "module.h"
 
-/**
- * @class schematic
- * Main class for schematic generation
- */
 class schematic {
-private:
-	coreDesign* pSchematicGenerator;
-	std::string routedJsonData;
-	std::string placedJsonData;
+	friend class placement;
+	friend class routing;
+
+	module systemModule;  // just a place holder
+	namedModuleCollection subModules;
+
+	schematicParameters designParameters;
+
+	intPair size, offset;
+	netSet internalNets;
+
+
+
+	void initializeStructures();
+
+	void doPlacement(schematicParameters parameters);
+
+	std::string createDebugJsonSchematic();
+	std::string createJsonSchematic();
+
+	std::string exportRoutingJson();
 
 public:
-	schematic();
-
+	schematic() : systemModule("topModule") {}
 	~schematic();
-	// Design Parameters
-	// With default Values
-	unsigned int wireModuleDistance = 5;
-	unsigned int maxPartitionSize = 50;
-	unsigned int maxPartitionConnections = 20;
-	unsigned int maxPathLength = 10;
-	unsigned int aspectRatioX = 4, aspectRatioY = 3;
+
 
 	/**
 	 * Adds a module to the design
@@ -116,7 +69,7 @@ public:
 	 * @param width
 	 * @return
 	 */
-	terminal addSystemTerminal(const std::string& terminalName, const terminalType type, const int width);
+	terminal addSystemTerminal(const std::string& terminalName, const terminalType type, const unsigned int width);
 
 	/**
 	 * Retrieve a toplevel terminal with corrosponding name
@@ -127,12 +80,14 @@ public:
 	/**
 	 * Run Placement Algorithm
 	 */
+	 //TODO: what about creating json schematic
 	void doPlacement();
 
 	/**
 	 * Run Routing Algorithm
 	 */
 	void doRouting();
+
 	void parseJsonFile(std::string fileName);
 
 	void parseYosysJson(std::string jsonText);
@@ -165,7 +120,8 @@ public:
 	 * @param x
 	 * @param y
 	 */
-	void setAspectRatio(unsigned int x, unsigned int y);
+	void setAspectRatio(unsigned short x, unsigned short y);
 };
 
-#endif  // SCHEMATIC_H
+
+#endif  // PLACEMENT_H

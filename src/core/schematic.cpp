@@ -20,97 +20,153 @@
 #include "emscripten/bind.h"
 #endif
 #include <initializer_list>
-#include "coreDesign.h"
+#include "schematic.h"
+#include "placement.h"
+#include "routing.h"
 
-schematic::schematic() {
-	pSchematicGenerator = new coreDesign();
+schematic::~schematic() {
+	for (auto&& item : internalNets) {
+		delete item;
+	}
+
+	for (auto&& item : subModules) {
+		delete item.second;
+	}
+}
+
+void schematic::doPlacement(schematicParameters parameters) {
+	designParameters = parameters;
+	initializeStructures();
+	placement placementObject;
+	placementObject.place(this, designParameters);
+	placementObject.flattenSchematic();
 }
 
 void schematic::doPlacement() {
-	schematicParameters designParameters{wireModuleDistance, maxPartitionSize, maxPartitionConnections, maxPathLength,
-			{static_cast<int>(aspectRatioX), static_cast<int>(aspectRatioY)}};
-	pSchematicGenerator->doPlacement(designParameters);
-	placedJsonData = pSchematicGenerator->createJsonSchematicFromJson();
+	schematicParameters parameters;
+	doPlacement(parameters);
+}
+
+void schematic::initializeStructures() {
+	subModules.insert({systemModule.moduleIdentifier, &systemModule});
+	// Iterates over all bitTerminal in the whole system
+	for (namedModulePair& m_pair : subModules) {
+		for (namedTerminalPair& t_pair : m_pair.second->moduleTerminals) {
+			if (t_pair.second->type == terminalType::out)
+				t_pair.second->side = terminalSide::rightSide;
+			else
+				t_pair.second->side = terminalSide::leftSide;
+			t_pair.second->createSplicedTerminals();
+		}
+	}
+
+	std::unordered_set<splicedTerminal*> sTSet;
+	for (namedModulePair& m_pair : subModules) {
+		for (splicedTerminal* t : m_pair.second->moduleSplicedTerminals) {
+			sTSet.insert(t);
+		}
+	}
+
+	while (!sTSet.empty()) {
+		splicedTerminal* t = *sTSet.begin();
+		if (!t->lowBitTerminal->isConst) {
+			net* n = new net();
+			n->connectSplicedTerminal(t);
+			internalNets.insert(n);
+			std::unordered_set<bitTerminal*>& tSet = t->lowBitTerminal->connectedBitNet->connectedBitTerminals;
+			for (bitTerminal* connBT : tSet) {
+				n->connectSplicedTerminal(connBT->actualTerminal);
+				sTSet.erase(connBT->actualTerminal);
+			}
+		} else
+			sTSet.erase(t);
+	}
+
+	for (namedModulePair& m : subModules) {
+		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
+			if (!t->lowBitTerminal->isConst)
+				for (moduleSplicedTerminalPair& mST_pair : t->attachedNet->connectedModuleSplicedTerminalMap) {
+					if (mST_pair.first != t->baseTerminal->parentModule)
+						m.second->connectedModuleLinkMap[mST_pair.first].push_back(
+								new ulink(t->attachedNet, t, &mST_pair.second));
+				}
+		}
+	}
+	subModules.erase(systemModule.moduleIdentifier);
+
+	// Terminal Positioning
+	for (namedModulePair m : subModules) {
+		int input = 0;  // count inout on left side :/
+		int output = 0;
+		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
+			if (t->baseTerminal->type == terminalType::out) {
+				output++;
+			} else
+				input++;
+		}
+		int maxout = output + 1;
+		int maxin = input + 1;
+		int placingLength = m.second->size.y - 2 * m.second->cornerTerminalPadding;
+		int cornerPad = m.second->cornerTerminalPadding;
+		for (splicedTerminal* t : m.second->moduleSplicedTerminals) {
+			if (t->baseTerminal->type == terminalType::out)
+				t->originalPosition = {m.second->size.x, cornerPad + (output-- * placingLength) / maxout};
+			else
+				t->originalPosition = {0, cornerPad + (input-- * placingLength) / maxin};
+			t->placedPosition = t->originalPosition;
+		}
+	}
+}
+
+void schematic::doRouting() {
+	routing routeObject(this);
+	routeObject.route();
+}
+
+net::~net() {
+	for (line* l : renderedLine) {
+		delete l;
+	}
 }
 
 std::string schematic::createDetailedJsonSchematicFromJson(std::string jsonData) {
 	parseYosysJson(jsonData);
-	return pSchematicGenerator->createDebugJsonSchematicFromJson();
+	return createDebugJsonSchematic();
 }
 
 std::string schematic::createJsonSchematicFromJson(std::string jsonData) {
 	parseYosysJson(jsonData);
-	schematicParameters designParameters{wireModuleDistance, maxPartitionSize, maxPartitionConnections, maxPathLength,
-			{static_cast<int>(aspectRatioX), static_cast<int>(aspectRatioY)}};
-	pSchematicGenerator->doPlacement(designParameters);
-	return pSchematicGenerator->createJsonSchematicFromJson();
-}
-void schematic::doRouting() {
-	routedJsonData = pSchematicGenerator->doRouting();
+	doPlacement(designParameters);
+	return createJsonSchematic();
 }
 
-schematic::~schematic() {
-	delete pSchematicGenerator;
-}
-
-terminal schematic::addSystemTerminal(const std::string& terminalName, const terminalType type, const int width) {
-	return pSchematicGenerator->systemModule.addTerminal(terminalName, type, width, true);
+terminal schematic::addSystemTerminal(const std::string& terminalName, const terminalType type,
+		const unsigned int width) {
+	return systemModule.addTerminal(terminalName, type, width, true);
 }
 
 terminal schematic::getSystemTerminal(const std::string& terminalIdentifier) {
-	return pSchematicGenerator->systemModule.getTerminal(terminalIdentifier);
+	return systemModule.getTerminal(terminalIdentifier);
 }
 
 module* schematic::addModule(const std::string& moduleName) {
-	return pSchematicGenerator->subModules.insert(std::make_pair(moduleName, new module(moduleName))).first->second;
+	return subModules.insert(std::make_pair(moduleName, new module(moduleName))).first->second;
 }
 
 module* schematic::getModule(const std::string& moduleName) {
-	return pSchematicGenerator->subModules.find(moduleName)->second;
+	return subModules.find(moduleName)->second;
 }
 
 std::string schematic::getRoutedNetsJson() {
-	return routedJsonData;
+	return exportRoutingJson();
 }
 
 std::string schematic::getPlacedModulesJson() {
-	return placedJsonData;
+	return createJsonSchematic();
 }
 
-void schematic::setAspectRatio(unsigned int x, unsigned int y) {
-	aspectRatioX = x;
-	aspectRatioY = y;
-}
-
-terminal terminal::partial(unsigned int highIndex, unsigned int lowIndex) {
-	if (!constantValue.empty())
-		throw std::invalid_argument("constant Terminal cannot be spliced");
-
-	if (highIndex < lowIndex || highIndex > terminalPointer->highestIndex || lowIndex < terminalPointer->lowestIndex)
-		throw std::invalid_argument("Invalid value of indexes");
-
-	return {terminalPointer, highIndex, lowIndex};
-}
-
-terminal& terminal::connect(terminal t) {
-	if (!constantValue.empty())
-		throw std::invalid_argument("constant Terminal cannot be connected");
-
-	if (t.highestIndex - t.lowestIndex != highestIndex - lowestIndex)
-		throw std::invalid_argument("Make sure the width of the connections and the ");
-
-	if (t.constantValue.empty()) {
-		for (unsigned int i = 0; i <= highestIndex - lowestIndex; ++i) {
-			terminalImpl::joinbitTerminals(terminalPointer->bitTerminals.at(lowestIndex + i),
-					t.terminalPointer->bitTerminals.at(t.lowestIndex + i));
-		}
-	} else {
-		for (unsigned int i = 0; i <= highestIndex - lowestIndex; ++i) {
-			terminalImpl::setBitTerminalToConst(
-					terminalPointer->bitTerminals.at(lowestIndex + i), t.constantValue.at(t.highestIndex - i));
-		}
-	}
-	return *this;
+void schematic::setAspectRatio(unsigned short x, unsigned short y) {
+	designParameters.aspectRatio = {x, y};
 }
 
 #ifdef WEB_COMPILATION

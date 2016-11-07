@@ -23,7 +23,7 @@
 #include "common.h"
 
 class routing {
-	friend class coreDesign;
+	friend class schematic;
 	enum direction { left = 0, up = 1, right = 2, down = 3 };
 
 	struct segment {
@@ -121,7 +121,7 @@ class routing {
 
 	using orderedObstacleSet = std::vector<obstacleSegment*>;
 	orderedObstacleSet hObstacleSet, vObstacleSet;
-	const coreDesign* core;
+	const schematic* core;
 
 	net* currentNet;
 	std::unordered_set<activeSegment *> activesA, activesB, inactives;
@@ -137,7 +137,7 @@ class routing {
 
 	void route();
 
-	routing(coreDesign* core) : core(core) {}
+	routing(schematic* core) : core(core) {}
 
 public:
 	virtual ~routing();

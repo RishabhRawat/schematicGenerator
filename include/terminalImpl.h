@@ -33,13 +33,60 @@ struct bitTerminal {
 	bitTerminal(terminalImpl* baseTerminal, unsigned int index) : baseTerminal(baseTerminal), index(index) {}
 };
 
+
+/**
+ * @class terminal
+ * public side terminal class, used to create and access modules
+ */
+class terminal {
+	friend class schematic;
+	friend class module;
+	terminalImpl* terminalPointer;
+	unsigned int highestIndex, lowestIndex;
+
+private:
+	std::string constantValue;
+	terminal(terminalImpl* terminalPointer, const unsigned int highestIndex, const unsigned int lowestIndex)
+			: terminalPointer(terminalPointer), highestIndex(highestIndex), lowestIndex(lowestIndex), constantValue("") {}
+
+public:
+	/**
+	 * Constructor for constructing constant terminals, non-constant terminals need module::addTerminals or
+	 * schematic::addSystemTerminals
+	 * @param constValue
+	 * @return
+	 */
+	terminal(std::string constValue)
+			: terminalPointer(nullptr),
+			  highestIndex(static_cast<unsigned int>(constValue.length() - 1)),
+			  lowestIndex(0),
+			  constantValue(constValue) {}
+	/**
+	 * Returns a partial terminal, useful for splicing terminals
+	 * @param highIndex
+	 * @param lowIndex
+	 * @return
+	 */
+	terminal partial(unsigned int highIndex, unsigned int lowIndex);
+	/**
+	 * Connects two terminals provided they are equal in width, If not use terminal::partial to splice them first
+	 * @param t
+	 * @return
+	 */
+	terminal& connect(terminal t);
+
+	unsigned int getWidth() const {
+		return highestIndex - lowestIndex + 1;
+	}
+};
+
 /**
  * @class terminal
  * Represents terminals of modules (connectivity points)
  */
 class terminalImpl {
 	friend class splicedTerminal;
-	friend class coreDesign;
+	friend class schematic;
 	friend class placement;
 	friend class module;
 	friend class module;
@@ -73,7 +120,7 @@ class terminalImpl {
 };
 
 class splicedTerminal {
-	friend class coreDesign;
+	friend class schematic;
 	friend class placement;
 	friend class routing;
 	friend class module;
@@ -108,7 +155,7 @@ struct bitNet {
 };
 
 class net {
-	friend class coreDesign;
+	friend class schematic;
 	friend class placement;
 	friend class routing;
 	moduleSplicedTerminalMap connectedModuleSplicedTerminalMap;
